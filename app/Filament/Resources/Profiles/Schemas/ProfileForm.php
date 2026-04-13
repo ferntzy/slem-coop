@@ -2,11 +2,14 @@
 
 namespace App\Filament\Resources\Profiles\Schemas;
 
-use Filament\Schemas\Schema;
+use App\Models\Branch;
+use App\Models\Role;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+
 class ProfileForm
 {
     public static function configure(Schema $schema): Schema
@@ -60,12 +63,31 @@ class ProfileForm
                     ->relationship('role', 'name')
                     ->searchable()
                     ->preload()
+                    ->reactive()
                     ->required(),
+
+                Select::make('staff_branch_id')
+                    ->label('Branch')
+                    ->options(fn (): array => Branch::where('is_active', true)->orderBy('name')->pluck('name', 'branch_id')->toArray())
+                    ->searchable()
+                    ->preload()
+                    ->visible(fn (callable $get): bool => in_array($get('roles_id'), self::branchScopedRoleIds(), true))
+                    ->required(fn (callable $get): bool => in_array($get('roles_id'), self::branchScopedRoleIds(), true)),
 
                 TextColumn::make('system_roles')
                     ->label('System Role')
                     ->badge(),
 
-        ]);
+            ]);
+    }
+
+    protected static function branchScopedRoleIds(): array
+    {
+        return Role::whereIn('name', [
+            'Manager',
+            'Staff',
+            'Cashier',
+            'Account Officer',
+        ])->pluck('id')->toArray();
     }
 }

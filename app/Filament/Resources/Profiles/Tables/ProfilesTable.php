@@ -33,6 +33,10 @@ class ProfilesTable
                 TextColumn::make('role.name')
                     ->label('Role')
                     ->sortable(),
+
+                TextColumn::make('staffDetail.branch.name')
+                    ->label('Branch')
+                    ->sortable(),
             ])
             ->filters([
                 //
