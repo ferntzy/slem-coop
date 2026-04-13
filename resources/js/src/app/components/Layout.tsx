@@ -166,7 +166,6 @@ export function Layout() {
                             ) : (
                                 <Link to="/login">
                                     <Button className="rounded-full bg-green-700 hover:bg-green-800 text-white font-bold h-9 px-4 sm:px-6 text-xs uppercase tracking-wider flex items-center gap-2">
-
                                         Login
                                     </Button>
                                 </Link>
@@ -192,12 +191,43 @@ export function Layout() {
                                 {item.submenu ? (
                                     <>
                                         <div className="px-4 py-2 text-[10px] font-black text-green-700/50 dark:text-green-400/50 uppercase tracking-widest">{item.name}</div>
-                                        {item.submenu.map(sub => (
-                                            <Link key={sub.name} to={sub.href} onClick={() => setIsMenuOpen(false)} className="block px-8 py-3 text-sm font-bold text-gray-600 dark:text-gray-400">{sub.name}</Link>
-                                        ))}
+                                        {item.submenu.map(sub => {
+                                            const isSubActive = location.pathname === sub.href;
+                                            return (
+                                                <Link
+                                                    key={sub.name}
+                                                    to={sub.href}
+                                                    onClick={() => setIsMenuOpen(false)}
+                                                    className={`flex items-center gap-2 px-8 py-3 text-sm font-bold transition-colors rounded-xl ${
+                                                        isSubActive
+                                                            ? "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-l-2 border-green-600 dark:border-green-500"
+                                                            : "text-gray-600 dark:text-gray-400"
+                                                    }`}
+                                                >
+                                                    {isSubActive && <span className="w-1.5 h-1.5 rounded-full bg-green-600 dark:bg-green-400 flex-shrink-0" />}
+                                                    {sub.name}
+                                                </Link>
+                                            );
+                                        })}
                                     </>
                                 ) : (
-                                    <Link to={item.href} onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 font-bold text-gray-800 dark:text-gray-200"><item.icon className="w-4 h-4 opacity-40"/>{item.name}</Link>
+                                    (() => {
+                                        const isActive = location.pathname === item.href;
+                                        return (
+                                            <Link
+                                                to={item.href}
+                                                onClick={() => setIsMenuOpen(false)}
+                                                className={`flex items-center gap-3 px-4 py-3 font-bold rounded-xl transition-colors ${
+                                                    isActive
+                                                        ? "bg-green-600 text-white"
+                                                        : "text-gray-800 dark:text-gray-200"
+                                                }`}
+                                            >
+                                                <item.icon className={`w-4 h-4 ${isActive ? "opacity-100" : "opacity-40"}`} />
+                                                {item.name}
+                                            </Link>
+                                        );
+                                    })()
                                 )}
                             </div>
                         ))}
@@ -220,7 +250,7 @@ export function Layout() {
                             </div>
                             <p className="text-gray-600 dark:text-green-100/60 text-sm font-medium leading-relaxed">Supporting the local community with reliable financial services and sustainable cooperative programs.</p>
                             <div className="flex gap-2">
-                                <a href="#" className="p-2.5 bg-green-800 text-white rounded-full hover:scale-110 transition-transform shadow-md"><Facebook className="w-4 h-4" /></a>
+                                <a href="https://www.facebook.com/slemcoopheadofficeonline/" className="p-2.5 bg-green-800 text-white rounded-full hover:scale-110 transition-transform shadow-md"><Facebook className="w-4 h-4" /></a>
                                 <a href="#" className="p-2.5 bg-green-800 text-white rounded-full hover:scale-110 transition-transform shadow-md"><Mail className="w-4 h-4" /></a>
                             </div>
                         </div>
@@ -246,14 +276,14 @@ export function Layout() {
                             <div className="bg-white dark:bg-white/5 rounded-3xl p-6 border border-green-200 dark:border-white/10 shadow-sm">
                             <h3 className="font-black text-xs text-green-900 dark:text-white uppercase mb-4 tracking-wider">Contact Us</h3>
                             <div className="space-y-4 text-xs font-bold text-gray-600 dark:text-gray-300">
-                                <div className="flex gap-3"><MapPin className="w-4 h-4 text-green-700 flex-shrink-0" /><span>RV Villaflores St. Hilongos, Leyte</span></div>
-                                <div className="flex gap-3"><Phone className="w-4 h-4 text-green-700 flex-shrink-0" /><span>(053) 567-8901</span></div>
-                                <div className="flex gap-3"><Mail className="w-4 h-4 text-green-700 flex-shrink-0" /><span>info@hilongosmpc.com</span></div>
+                                <div className="flex gap-3"><MapPin className="w-4 h-4 text-green-700 flex-shrink-0" /><span>SLEMCOOP Head Office 3rd Flr. New SLEMCOOP Bldg. along National Highway, Asuncion 6600 Maasin, Philippines</span></div>
+                                <div className="flex gap-3"><Phone className="w-4 h-4 text-green-700 flex-shrink-0" /><span>(053) 570 8771</span></div>
+                                <div className="flex gap-3"><Mail className="w-4 h-4 text-green-700 flex-shrink-0" /><span>slemcoopheadoffice@gmail.com</span></div>
                             </div>
                         </div>
                     </div>
                     <div className="mt-16 pt-8 border-t border-green-200 dark:border-white/5 text-center text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest">
-                        © 2026 Hilongos Multi-Purpose Cooperative. All rights reserved.
+                        © 2026 Southern Leyte Employees Multi-Purpose Cooperative. All rights reserved.
                     </div>
                 </div>
             </footer>
