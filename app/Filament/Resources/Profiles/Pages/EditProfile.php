@@ -55,7 +55,10 @@ class EditProfile extends EditRecord
             if ($this->staffBranchId) {
                 StaffDetail::updateOrCreate(
                     ['profile_id' => $profile->profile_id],
-                    ['branch_id' => $this->staffBranchId],
+                    [
+                        'position' => $profile->role?->name,
+                        'branch_id' => $this->staffBranchId,
+                    ],
                 );
             }
 
