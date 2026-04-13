@@ -1,0 +1,10 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament';
+@source '../../../../resources/views';
+@source '../../../../resources/js';
+
+.fi-btn-primary {
+    background: linear-gradient(90deg, #0d9488, #06b6d4, #3b82f6);
+    border: none;
+}

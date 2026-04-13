@@ -1,0 +1,35 @@
+{
+  "resources/css/app.css": {
+    "file": "assets/app-B13wHVXy.css",
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "name": "app",
+    "names": [
+      "app.css"
+    ]
+  },
+  "resources/css/filament/admin/theme.css": {
+    "file": "assets/theme-DrHQSuvR.css",
+    "src": "resources/css/filament/admin/theme.css",
+    "isEntry": true,
+    "name": "theme",
+    "names": [
+      "theme.css"
+    ]
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-CKl8NZMC.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  },
+  "resources/js/src/main.tsx": {
+    "file": "assets/main-BZpxfn6g.js",
+    "name": "main",
+    "src": "resources/js/src/main.tsx",
+    "isEntry": true,
+    "css": [
+      "assets/main-DhU14ua1.css"
+    ]
+  }
+}

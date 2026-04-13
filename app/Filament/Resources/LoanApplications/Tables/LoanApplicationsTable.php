@@ -1,0 +1,746 @@
+<?php
+
+namespace App\Filament\Resources\LoanApplications\Tables;
+
+use App\Filament\Resources\LoanApplications\Schemas\LoanApplicationsInfolist;
+use App\Models\LoanAccount;
+use App\Models\LoanApplication;
+use App\Models\LoanApplicationCollstat;
+use App\Models\LoanApplicationStatusLog;
+use App\Models\Notification as ModelsNotification;
+use App\Models\PenaltyRule;
+use App\Services\CoopFeeCalculatorService;
+use App\Services\NotificationService;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\RecordActionsPosition;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
+
+class LoanApplicationsTable
+{
+    private static function createUserNotification($record, $title, $description): void
+    {
+        $userId = $record->member?->profile?->user?->user_id;
+
+        if ($userId) {
+            ModelsNotification::create([
+                'user_id' => $userId,
+                'title' => $title,
+                'description' => $description,
+            ]);
+        }
+    }
+
+    public static function configure(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('member.profile.full_name')
+                    ->label('Member Name')
+                    ->action(
+                        Action::make('view')
+                            ->modalHeading(fn ($record) => 'Loan Application — '.($record->member?->profile?->full_name ?? 'N/A'))
+                            ->modalSubmitAction(false)
+                            ->modalCancelActionLabel('Close')
+                            ->modalWidth('5xl')
+                            ->infolist(fn ($record) => LoanApplicationsInfolist::schema())
+                            ->extraModalFooterActions(fn ($record) => [
+                                Action::make('download_pdf')
+                                    ->label('Download PDF')
+                                    ->icon('heroicon-o-document-arrow-down')
+                                    ->color('success')
+                                    ->url(fn () => route('loan-applications.pdf', [
+                                    'loanApplication' => $record->loan_application_id,
+                                    ]))
+                                    ->openUrlInNewTab(),
+                            ])
+                    )
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('member.profile', function (Builder $q) use ($search) {
+                            $q->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('middle_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        });
+                    })
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query
+                            ->leftJoin('member_details', 'loan_applications.member_id', '=', 'member_details.id')
+                            ->leftJoin('profiles', 'member_details.profile_id', '=', 'profiles.profile_id')
+                            ->orderBy('profiles.first_name', $direction)
+                            ->orderBy('profiles.last_name', $direction)
+                            ->select('loan_applications.*');
+                    }),
+
+                TextColumn::make('type.name')
+                    ->label('Loan Type')
+                    ->sortable()
+                    ->searchable()
+                    ->action(
+                        Action::make('view')
+                            ->modalHeading(fn ($record) => 'Loan Application — '.($record->member?->profile?->full_name ?? 'N/A'))
+                            ->modalSubmitAction(false)
+                            ->modalCancelActionLabel('Close')
+                            ->modalWidth('5xl')
+                            ->infolist(fn ($record) => LoanApplicationsInfolist::schema())
+                            ->extraModalFooterActions(fn ($record) => [
+                                Action::make('download_pdf')
+                                    ->label('Download PDF')
+                                    ->icon('heroicon-o-document-arrow-down')
+                                    ->color('success')
+                                    ->url(fn () => route('loan-applications.pdf', [
+                                    'loanApplication' => $record->loan_application_id,
+                                    ]))
+                                    ->openUrlInNewTab(),
+                            ])
+                    ),
+
+                TextColumn::make('amount_requested')
+                    ->money('PHP')
+                    ->action(
+                        Action::make('view')
+                            ->modalHeading(fn ($record) => 'Loan Application — '.($record->member?->profile?->full_name ?? 'N/A'))
+                            ->modalSubmitAction(false)
+                            ->modalCancelActionLabel('Close')
+                            ->modalWidth('5xl')
+                            ->infolist(fn ($record) => LoanApplicationsInfolist::schema())
+                            ->extraModalFooterActions(fn ($record) => [
+                                Action::make('download_pdf')
+                                    ->label('Download PDF')
+                                    ->icon('heroicon-o-document-arrow-down')
+                                    ->color('success')
+                                    ->url(fn () => route('loan-applications.pdf', [
+                                    'loanApplication' => $record->loan_application_id,
+                                    ]))
+                                    ->openUrlInNewTab(),
+                            ])
+                    ),
+
+                // ── Eye icon — between Amount Requested and Collateral File ───────
+                // TextColumn::make('loan_application_id')
+                //     ->label('')
+                //     ->formatStateUsing(fn () => '')
+                //     ->icon('heroicon-o-eye')
+                //     ->iconColor('info')
+                //     ->tooltip('View Details')
+                //     ->action(
+                //         Action::make('view')
+                //             ->modalHeading(fn ($record) => 'Loan Application — ' . ($record->member?->profile?->full_name ?? 'N/A'))
+                //             ->modalSubmitAction(false)
+                //             ->modalCancelActionLabel('Close')
+                //             ->modalWidth('5xl')
+                //             ->infolist(fn ($record) => LoanApplicationsInfolist::schema())
+                //             ->extraModalFooterActions(fn ($record) => [
+                //                 Action::make('download_pdf')
+                //                     ->label('Download PDF')
+                //                     ->icon('heroicon-o-document-arrow-down')
+                //                     ->color('success')
+                //                     ->url(fn () => route('loan-applications.pdf', [
+                //                         'loanApplication' => $record->loan_application_id,
+                //                     ]))
+                //                     ->openUrlInNewTab(),
+                //             ])
+                //     ),
+
+                BadgeColumn::make('status')
+                    ->label('Loan Status')
+                    ->colors([
+                                        'warning' => 'Pending',
+                                        'info' => 'Under Review',
+                                        'success' => 'Approved',
+                                        'danger' => 'Rejected',
+                                        'gray' => 'Cancelled',
+                                    ]),
+
+                TextColumn::make('term_months')
+                    ->label('Term'),
+
+                TextColumn::make('loanAccount.release_date')
+                    ->label('Release Date')
+                    ->placeholder('-- --, --')
+                    ->formatStateUsing(function ($record) {
+                        if ($record->loanAccount && $record->loanAccount->release_date) {
+                            return $record->loanAccount->release_date->format('F j, Y');
+                        }
+                    })
+
+                    ->extraAttributes(['style' => 'text-align: center;']),
+
+                TextColumn::make('edit_button')
+                    ->label('')
+                    ->default('Edit')
+                    ->color('warning')
+                    ->weight('bold')
+                    ->url(fn ($record) => url('/coop/loan-applications/'.$record->loan_application_id.'/edit')),
+            ])
+            ->filters([
+                //
+            ])
+            ->actions([
+
+                // ── ACTION GROUP ─────────────────────────────────────────────────
+                ActionGroup::make([
+                    Action::make('set_release_date')
+                        ->label('Release Now')
+                        ->icon('heroicon-o-calendar')
+                        ->requiresConfirmation()
+                        ->visible(function ($record): bool {
+                            $user = auth()->user();
+
+                            return $record->status === 'Approved' && ! $record->loanAccount
+                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                        })
+                        ->action(function ($record) {
+
+                            $releaseDate = now()->format('Y-m-d');
+                            $term = (int) $record->term_months;
+                            $principal = (float) $record->amount_requested;
+                            $interestRate = (float) ($record->type?->max_interest_rate ?? 0);
+
+                            $monthlyPrincipal = $term > 0 ? ($principal / $term) : $principal;
+                            $firstMonthInterest = $principal * ($interestRate / 100) / 12;
+                            $monthlyAmort = $monthlyPrincipal + $firstMonthInterest;
+
+                            $profileId = $record->member?->profile_id ?? null;
+
+                            $fees = app(CoopFeeCalculatorService::class)
+                                ->calculate('loan_application', $principal);
+
+                            $remainingBalance = 0;
+                            $parentLoanId = null;
+
+                            // CHECK IF RELOAN
+                            if ($record->reloan_from_loan_account_id) {
+                                $parentLoan = LoanAccount::find($record->reloan_from_loan_account_id);
+
+                                if ($parentLoan) {
+                                    $remainingBalance = $parentLoan->balance;
+                                    $parentLoanId = $parentLoan->loan_account_id;
+
+                                    $principal -= $remainingBalance;
+                                    $principal = max(0, $principal);
+                                }
+                            }
+
+                            $netRelease = ($fees['net_release_amount'] ?? 0) - $remainingBalance;
+                            $netRelease = max(0, $netRelease);
+
+                            $maturityDate = date('Y-m-d', strtotime("$releaseDate +$term months"));
+
+                            $record->update([
+                                'shared_capital_fee' => $fees['shared_capital_fee'] ?? 0,
+                                'insurance_fee' => $fees['insurance_fee'] ?? 0,
+                                'processing_fee' => $fees['processing_fee'] ?? 0,
+                                'coop_fee_total' => $fees['coop_fee_total'] ?? 0,
+                                'net_release_amount' => $netRelease,
+                            ]);
+
+                            LoanAccount::create([
+                                'loan_application_id' => $record->loan_application_id,
+                                'profile_id' => $profileId,
+                                'principal_amount' => $principal,
+
+                                'shared_capital_fee' => $fees['shared_capital_fee'] ?? 0,
+                                'insurance_fee' => $fees['insurance_fee'] ?? 0,
+                                'processing_fee' => $fees['processing_fee'] ?? 0,
+                                'coop_fee_total' => $fees['coop_fee_total'] ?? 0,
+                                'net_release_amount' => $netRelease,
+
+                                'interest_rate' => $interestRate,
+                                'term_months' => $term,
+                                'release_date' => $releaseDate,
+                                'maturity_date' => $maturityDate,
+                                'monthly_amortization' => $monthlyAmort,
+                                'balance' => $principal,
+                                'status' => 'Active',
+                                'parent_loan_account_id' => $parentLoanId,
+                            ]);
+
+                            Notification::make()
+                                ->title('Loan Released Successfully')
+                                ->success()
+                                ->send();
+                        }),
+
+                    Action::make('reloan')
+                        ->label('Reloan')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('warning')
+                        ->visible(function ($record): bool {
+                            $user = auth()->user();
+
+                            return $record->loanAccount && $record->loanAccount->status === 'Active'
+                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                        })
+                        ->disabled(function ($record) {
+                            $loan = $record->loanAccount;
+
+                            if (! $loan) {
+                                return true;
+                            }
+
+                            $paid = $loan->principal_amount - $loan->balance;
+                            $required = $loan->principal_amount * 0.5;
+
+                            return $paid < $required;
+                        })
+                        ->tooltip(function ($record) {
+                            $loan = $record->loanAccount;
+
+                            if (! $loan) {
+                                return 'No loan account found';
+                            }
+
+                            $paid = $loan->principal_amount - $loan->balance;
+                            $required = $loan->principal_amount * 0.5;
+
+                            if ($paid < $required) {
+                                return 'Not eligible: must pay at least 50% of the loan';
+                            }
+
+                            return 'Apply for reloan';
+                        })
+                        ->form([
+                            TextInput::make('amount_requested')
+                                ->label('Loan Amount')
+                                ->numeric()
+                                ->required(),
+
+                            TextInput::make('term_months')
+                                ->label('Term (Months)')
+                                ->numeric()
+                                ->required(),
+                        ])
+                        ->action(function ($record, array $data) {
+                            $loan = $record->loanAccount;
+
+                            $paid = $loan->principal_amount - $loan->balance;
+                            $required = $loan->principal_amount * 0.5;
+
+                            if ($paid < $required) {
+                                Notification::make()
+                                    ->title('Not eligible')
+                                    ->body('You must pay at least 50% before reloan.')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            LoanApplication::create([
+                                'member_id' => $record->member_id,
+                                'loan_type_id' => $record->loan_type_id,
+                                'amount_requested' => $data['amount_requested'],
+                                'term_months' => $data['term_months'],
+                                'status' => 'Pending',
+                                'reloan_from_loan_account_id' => $loan->loan_account_id,
+                                'previous_balance' => $loan->balance,
+                            ]);
+
+                            Notification::make()
+                                ->title('Reloan Application Created')
+                                ->success()
+                                ->send();
+                        }),
+                    Action::make('approve_collateral')
+                        ->label('Approve Collateral')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->visible(function ($record): bool {
+                            $user = auth()->user();
+
+                            return (float) $record->amount_requested > 15000 && $record->collateral_status === 'Pending Verification'
+                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                        })
+                        ->requiresConfirmation()
+                        ->action(function ($record) {
+                            $profileId = $record->member?->profile_id ?? null;
+                            $from = $record->collateral_status;
+
+                            $record->update(['collateral_status' => 'Approved']);
+
+                            LoanApplicationCollstat::create([
+                                'loan_application_id' => $record->loan_application_id,
+                                'from_status' => $from,
+                                'to_status' => 'Approved',
+                                'changed_by_user_id' => auth()->id(),
+                                'changed_at' => now(),
+                            ]);
+
+                            Notification::make()
+                                ->title('Collateral Approved')
+                                ->success()
+                                ->send();
+
+                            if ($profileId) {
+                                app(NotificationService::class)->notifyProfile(
+                                    $profileId,
+                                    'Collateral Approved',
+                                    "Collateral for loan application #{$record->loan_application_id} has been approved."
+                                );
+                            }
+
+                            app(NotificationService::class)->notifyAdmins(
+                                'Collateral approved',
+                                "Collateral for loan application #{$record->loan_application_id} is approved."
+                            );
+                        }),
+
+                    Action::make('request_correction')
+                        ->label('Request Correction')
+                        ->icon('heroicon-o-exclamation-circle')
+                        ->color('danger')
+                        ->visible(function ($record): bool {
+                            $user = auth()->user();
+
+                            return (float) $record->amount_requested > 15000 && $record->collateral_status === 'Pending Verification'
+                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                        })
+                        ->requiresConfirmation()
+                        ->action(function ($record) {
+                            $profileId = $record->member?->profile_id ?? null;
+                            $from = $record->collateral_status;
+
+                            $record->update(['collateral_status' => 'Rejected']);
+
+                            LoanApplicationCollstat::create([
+                                'loan_application_id' => $record->loan_application_id,
+                                'from_status' => $from,
+                                'to_status' => 'Rejected',
+                                'changed_by_user_id' => auth()->id(),
+                                'changed_at' => now(),
+                            ]);
+
+                            Notification::make()
+                                ->title('Collateral marked for correction')
+                                ->warning()
+                                ->send();
+
+                            if ($profileId) {
+                                app(NotificationService::class)->notifyProfile(
+                                    $profileId,
+                                    'Collateral requires correction',
+                                    "Collateral for loan application #{$record->loan_application_id} has been marked for correction."
+                                );
+                            }
+
+                            app(NotificationService::class)->notifyAdmins(
+                                'Collateral correction requested',
+                                "Collateral for loan application #{$record->loan_application_id} is requested for correction."
+                            );
+                        }),
+                    Action::make('setPenaltyRule')
+                        ->label('Set Penalty Rule')
+                        ->icon('heroicon-o-shield-exclamation')
+                        ->color('warning')
+                        ->visible(function ($record): bool {
+                            $user = auth()->user();
+
+                            return in_array($record->status, ['Pending', 'Under Review', 'Approved'], true)
+                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                        })
+                        ->form([
+                            Select::make('penalty_rule_id')
+                                ->label('Penalty Rule')
+                                ->options(fn () => PenaltyRule::where('status', 'active')->pluck('name', 'id'))
+                                ->searchable()
+                                ->preload()
+                                ->required()
+                                ->default(fn ($record) => $record->penalty_rule_id ?: PenaltyRule::where('is_default', true)->value('id'))
+                                ->helperText('Choose the penalty rule to apply if this loan becomes overdue.'),
+                        ])
+                        ->action(function ($record, array $data) {
+                            $record->update([
+                                'penalty_rule_id' => $data['penalty_rule_id'],
+                            ]);
+
+                            Notification::make()
+                                ->title('Penalty Rule Updated')
+                                ->body('The penalty rule for this loan application has been updated.')
+                                ->success()
+                                ->send();
+                        }),
+
+                    Action::make('underReview')
+                        ->label('Mark Under Review')
+                        ->icon('heroicon-o-eye')
+                        ->color('info')
+                        ->visible(function ($record): bool {
+                            $user = auth()->user();
+
+                            return $record->status === 'Pending'
+                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                        })
+                        ->action(function ($record) {
+                            $profileId = $record->member?->profile_id ?? null;
+                            $from = $record->status;
+                            $record->update(['status' => 'Under Review']);
+
+                            LoanApplicationStatusLog::create([
+                                'loan_application_id' => $record->loan_application_id,
+                                'from_status' => $from,
+                                'to_status' => 'Under Review',
+                                'changed_by_user_id' => auth()->id(),
+                                'changed_at' => now(),
+                            ]);
+
+                            Notification::make()
+                                ->title('Marked Under Review')
+                                ->success()
+                                ->send();
+
+                            if ($profileId) {
+                                app(NotificationService::class)->notifyProfile(
+                                    $profileId,
+                                    'Loan under review',
+                                    "Your loan application #{$record->loan_application_id} is now under review."
+                                );
+                            }
+
+                            app(NotificationService::class)->notifyAdmins(
+                                'Loan under review',
+                                "Loan application #{$record->loan_application_id} moved to Under Review."
+                            );
+                        }),
+
+                    // ── DOWNLOAD LOAN FORM (with preview before download) ────────
+                    Action::make('downloadLoanPdf')
+                        ->label('Download Loan Form')
+                        ->icon('heroicon-o-document-arrow-down')
+                        ->color('success')
+                        ->modalHeading(fn ($record) => 'Loan Form — '.($record->member?->profile?->full_name ?? 'N/A'))
+                        ->modalContent(fn ($record) => new HtmlString('
+                            <iframe
+                                src="'.route('loan-applications.pdf', ['loanApplication' => $record->loan_application_id]).'"
+                                style="width:100%; height:75vh; border:none; border-radius:6px;"
+                            ></iframe>
+                        '))
+                        ->modalWidth('7xl')
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Close')
+                        ->extraModalFooterActions(fn ($record) => [
+                            Action::make('confirmDownload')
+                                ->label('Download PDF')
+                                ->icon('heroicon-o-arrow-down-tray')
+                                ->color('success')
+                                ->url(fn () => route('loan-applications.pdf', [
+                                    'loanApplication' => $record->loan_application_id,
+                                ]))
+                                ->openUrlInNewTab(),
+                        ]),
+
+                    Action::make('approve')
+                        ->label('Approve')
+                        ->icon('heroicon-o-check')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->visible(function ($record): bool {
+                            $user = auth()->user();
+
+                            return in_array($record->status, ['Pending', 'Under Review'], true)
+                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                        })
+                        ->action(function ($record) {
+                            $profileId = $record->member?->profile_id ?? null;
+
+                            if (! (auth()->user()?->hasAnyRole(['Admin', 'super_admin']) ?? false)) {
+                                Notification::make()
+                                    ->title('Unauthorized')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            if ($record->approved_at) {
+                                Notification::make()
+                                    ->title('Already approved')
+                                    ->warning()
+                                    ->send();
+
+                                return;
+                            }
+
+                            $from = $record->status;
+                            $record->update([
+                                'status' => 'Approved',
+                                'approved_at' => now(),
+                            ]);
+
+                            LoanApplicationStatusLog::create([
+                                'loan_application_id' => $record->loan_application_id,
+                                'from_status' => $from,
+                                'to_status' => 'Approved',
+                                'changed_by_user_id' => auth()->id(),
+                                'changed_at' => now(),
+                            ]);
+
+                            self::createUserNotification(
+                                $record,
+                                'Loan Application',
+                                'Your loan application has been approved! waiting for release date.'
+                            );
+
+                            Notification::make()
+                                ->title('Loan Application Approved')
+                                ->body('Please set the release date to create the loan account.')
+                                ->success()
+                                ->send();
+
+                            if ($profileId) {
+                                app(NotificationService::class)->notifyProfile(
+                                    $profileId,
+                                    'Loan application approved',
+                                    "Your loan application #{$record->loan_application_id} has been approved."
+                                );
+                            }
+
+                            app(NotificationService::class)->notifyAdmins(
+                                'Loan application approved',
+                                "Loan application #{$record->loan_application_id} has been approved."
+                            );
+                        }),
+
+                    Action::make('reject')
+                        ->label('Reject')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->visible(function ($record): bool {
+                            $user = auth()->user();
+
+                            return in_array($record->status, ['Pending', 'Under Review'], true)
+                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                        })
+                        ->form([Textarea::make('reason')->required()])
+                        ->action(function ($record, array $data) {
+                            $profileId = $record->member?->profile_id ?? null;
+
+                            if (! (auth()->user()?->hasAnyRole(['Admin', 'super_admin']) ?? false)) {
+                                Notification::make()
+                                    ->title('Unauthorized')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            $from = $record->status;
+                            $record->update(['status' => 'Rejected']);
+
+                            LoanApplicationStatusLog::create([
+                                'loan_application_id' => $record->loan_application_id,
+                                'from_status' => $from,
+                                'to_status' => 'Rejected',
+                                'changed_by_user_id' => auth()->id(),
+                                'reason' => $data['reason'],
+                                'changed_at' => now(),
+                            ]);
+
+                            self::createUserNotification(
+                                $record,
+                                'Loan application was rejected',
+                                $data['reason']
+                            );
+                            Notification::make()
+                                ->title('Rejected')
+                                ->success()
+                                ->send();
+
+                            if ($profileId) {
+                                app(NotificationService::class)->notifyProfile(
+                                    $profileId,
+                                    'Loan application rejected',
+                                    "Your loan application #{$record->loan_application_id} has been rejected. Reason: {$data['reason']}"
+                                );
+                            }
+
+                            app(NotificationService::class)->notifyAdmins(
+                                'Loan application rejected',
+                                "Loan application #{$record->loan_application_id} has been rejected. Reason: {$data['reason']}"
+                            );
+                        }),
+
+                    Action::make('cancel')
+                        ->label('Cancel')
+                        ->icon('heroicon-o-x-mark')
+                        ->color('gray')
+                        ->requiresConfirmation()
+                        ->visible(function ($record): bool {
+                            $user = auth()->user();
+
+                            if (! $user) {
+                                return false;
+                            }
+
+                            return in_array($record->status, ['Pending', 'Under Review'], true)
+                                && $user->hasAnyRole(['Admin', 'super_admin']);
+                        })
+                        ->action(function ($record) {
+                            $profileId = $record->member?->profile_id ?? null;
+                            $user = auth()->user();
+
+                            $canCancel = match (true) {
+                                ! $user => false,
+                                default => in_array($record->status, ['Pending', 'Under Review'], true)
+                                    && $user->hasAnyRole(['Admin', 'super_admin']),
+                            };
+
+                            if (! $canCancel) {
+                                Notification::make()
+                                    ->title('Unauthorized')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            $from = $record->status;
+                            $record->update(['status' => 'Cancelled']);
+
+                            LoanApplicationStatusLog::create([
+                                'loan_application_id' => $record->loan_application_id,
+                                'from_status' => $from,
+                                'to_status' => 'Cancelled',
+                                'changed_by_user_id' => auth()->id(),
+                                'changed_at' => now(),
+                            ]);
+
+                            self::createUserNotification(
+                                $record,
+                                'Loan Application',
+                                'Your loan application was successfully cancelled!'
+                            );
+
+                            Notification::make()
+                                ->title('Cancelled')
+                                ->success()
+                                ->send();
+
+                            if ($profileId) {
+                                app(NotificationService::class)->notifyProfile(
+                                    $profileId,
+                                    'Loan application cancelled',
+                                    "Your loan application #{$record->loan_application_id} has been cancelled."
+                                );
+                            }
+
+                            app(NotificationService::class)->notifyAdmins(
+                                'Loan application cancelled',
+                                "Loan application #{$record->loan_application_id} is cancelled."
+                            );
+                        }),
+
+                ])->tooltip('Actions'),
+            ])
+            ->bulkActions([])
+            ->recordActionsPosition(RecordActionsPosition::BeforeColumns)
+            ->defaultSort('created_at', 'desc');
+    }
+}

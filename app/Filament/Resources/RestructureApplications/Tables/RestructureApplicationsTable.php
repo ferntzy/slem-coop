@@ -1,0 +1,239 @@
+<?php
+
+namespace App\Filament\Resources\RestructureApplications\Tables;
+
+use Filament\Tables\Table;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\BadgeColumn;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Notifications\Notification;
+use Filament\Forms\Components\Textarea;
+use App\Filament\Resources\RestructureApplications\Schemas\RestructureApplicationsInfolist;
+use App\Models\RestructureApplicationStatusLog;
+use App\Models\LoanAccount;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+
+
+class RestructureApplicationsTable
+{
+    public static function configure(Table $table): Table
+    {
+        return $table
+            ->modifyQueryUsing(function (Builder $query) {
+                $query->with([
+                    'loanApplication.member.profile',
+                    'loanApplication.type',
+                ]);
+            })
+            ->columns([
+
+                TextColumn::make('loanApplication.member.profile.full_name')
+                    ->label('Borrower')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('loan_application_id')
+                    ->label('Loan #')
+                    ->sortable(),
+
+                TextColumn::make('loanApplication.type.name')
+                    ->label('Loan Type')
+                    ->sortable(),
+
+                TextColumn::make('new_principal')
+                    ->label('New Amount')
+                    ->money('PHP')
+                    ->sortable(),
+
+                TextColumn::make('restructure_application_id')
+                    ->label('View')
+                    ->formatStateUsing(fn () => '')
+                    ->icon('heroicon-o-eye')
+                    ->iconColor('info')
+                    ->tooltip('View Details')
+                    ->action(
+                        Action::make('view')
+                            ->modalHeading(fn ($record) => 'Restructure Application — ' . ($record->loanApplication?->member?->profile?->full_name ?? 'N/A'))
+                            ->modalSubmitAction(false)
+                            ->modalCancelActionLabel('Close')
+                            ->infolist(fn ($record) => RestructureApplicationsInfolist::schema())
+                    ),
+
+                TextColumn::make('term_months')
+                    ->label('Term (Months)')
+                    ->sortable(),
+
+                BadgeColumn::make('status')
+                    ->colors([
+                        'warning' => 'Pending',
+                        'info'    => 'Under Review',
+                        'success' => 'Approved',
+                        'danger'  => 'Rejected',
+                        'gray'    => 'Cancelled',
+                    ]),
+
+            ])
+            ->filters([
+                //
+            ])
+            ->actions([
+                ActionGroup::make([
+
+                    Action::make('underReview')
+                        ->label('Mark Under Review')
+                        ->icon('heroicon-o-eye')
+                        ->color('info')
+                        ->visible(fn ($record) => $record->status === 'Pending')
+                        ->action(function ($record) {
+                            $from = $record->status;
+                            $record->update(['status' => 'Under Review']);
+
+                            RestructureApplicationStatusLog::create([
+                                'restructure_application_id' => $record->restructure_application_id,
+                                'from_status'                => $from,
+                                'to_status'                  => 'Under Review',
+                                'changed_by_user_id'         => auth()->id(),
+                                'changed_at'                 => now(),
+                            ]);
+
+                            Notification::make()
+                                ->title('Marked Under Review')
+                                ->success()
+                                ->send();
+                        }),
+
+                    Action::make('approve')
+                        ->label('Approve')
+                        ->icon('heroicon-o-check')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->visible(fn ($record) => in_array($record->status, ['Pending', 'Under Review'], true))
+                        ->action(function ($record) {
+                            $oldLoanAccount = LoanAccount::find($record->old_loan_account_id);
+
+                            if (! $oldLoanAccount) {
+                                Notification::make()
+                                    ->title('Old loan account not found')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            $principal    = (float) $record->new_principal;
+                            $interestRate = (float) $record->new_interest;
+                            $term         = (int) $record->term_months;
+                            $release      = now()->toDateString();
+
+                            $monthlyPrincipal   = $term > 0 ? ($principal / $term) : $principal;
+                            $firstMonthInterest = $principal * ($interestRate / 100) / 12;
+                            $monthlyAmort       = $monthlyPrincipal + $firstMonthInterest;
+
+                            $fees = app(\App\Services\CoopFeeCalculatorService::class)
+                                ->calculate('restructure', $principal);
+
+                            $record->update([
+                                'shared_capital_fee' => $fees['shared_capital_fee'] ?? 0,
+                                'insurance_fee'      => $fees['insurance_fee'] ?? 0,
+                                'processing_fee'     => $fees['processing_fee'] ?? 0,
+                                'coop_fee_total'     => $fees['coop_fee_total'] ?? 0,
+                                'net_release_amount' => $fees['net_release_amount'] ?? 0,
+                                'status'             => 'Approved',
+                            ]);
+
+                            DB::transaction(function () use ($record, $oldLoanAccount, $principal, $interestRate, $term, $release, $monthlyAmort, $fees) {
+
+                                $oldLoanAccount->update([
+                                    'status'          => 'Restructured',
+                                    'restructured_at' => now(),
+                                ]);
+
+                                $newLoan = LoanAccount::create([
+                                    'loan_application_id' => $record->loan_application_id,
+                                    'profile_id'          => $record->loanApplication?->member?->profile_id,
+                                    'principal_amount'     => $principal,
+                                    'shared_capital_fee'   => $fees['shared_capital_fee'] ?? 0,
+                                    'insurance_fee'        => $fees['insurance_fee'] ?? 0,
+                                    'processing_fee'       => $fees['processing_fee'] ?? 0,
+                                    'coop_fee_total'       => $fees['coop_fee_total'] ?? 0,
+                                    'net_release_amount'   => $fees['net_release_amount'] ?? 0,
+                                    'interest_rate'        => $interestRate,
+                                    'term_months'          => $term,
+                                    'release_date'         => $release,
+                                    'maturity_date'        => now()->addMonths($term)->toDateString(),
+                                    'monthly_amortization' => $monthlyAmort,
+                                    'balance'              => $principal,
+                                    'status'               => 'Active', // ✅ This is the payable loan
+                                ]);
+
+                                $oldLoanAccount->update([
+                                    'restructured_to_loan_id' => $newLoan->loan_account_id,
+                                ]);
+                            });
+
+                            Notification::make()
+                                ->title('Restructure approved')
+                                ->body('The old loan is now marked Restructured. A new Active loan has been created with the new terms.')
+                                ->success()
+                                ->send();
+                        }),
+
+                    Action::make('reject')
+                        ->label('Reject')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->visible(fn ($record) => in_array($record->status, ['Pending', 'Under Review'], true))
+                        ->form([Textarea::make('reason')->required()])
+                        ->action(function ($record, array $data) {
+                            $from = $record->status;
+                            $record->update(['status' => 'Rejected']);
+
+                            RestructureApplicationStatusLog::create([
+                                'restructure_application_id' => $record->restructure_application_id,
+                                'from_status'                => $from,
+                                'to_status'                  => 'Rejected',
+                                'changed_by_user_id'         => auth()->id(),
+                                'changed_at'                 => now(),
+                            ]);
+
+                            Notification::make()
+                                ->title('Rejected')
+                                ->success()
+                                ->send();
+                        }),
+
+                    Action::make('cancel')
+                        ->label('Cancel')
+                        ->icon('heroicon-o-x-mark')
+                        ->color('gray')
+                        ->requiresConfirmation()
+                        ->visible(fn ($record) => in_array($record->status, ['Pending', 'Under Review'], true))
+                        ->action(function ($record) {
+                            $from = $record->status;
+                            $record->update(['status' => 'Cancelled']);
+
+                            RestructureApplicationStatusLog::create([
+                                'restructure_application_id' => $record->restructure_application_id,
+                                'from_status'                => $from,
+                                'to_status'                  => 'Cancelled',
+                                'changed_by_user_id'         => auth()->id(),
+                                'changed_at'                 => now(),
+                            ]);
+
+                            Notification::make()
+                                ->title('Cancelled')
+                                ->success()
+                                ->send();
+                        }),
+
+                ])->tooltip('Actions'),
+            ])
+            ->bulkActions([
+                //
+            ])
+            ->recordActionsPosition(\Filament\Tables\Enums\RecordActionsPosition::BeforeColumns)
+            ->defaultSort('created_at', 'desc');
+    }
+}
