@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\MembershipApplications\Tables;
 
-use App\Models\Branch;
 use App\Models\MemberDetail;
 use App\Models\Profile;
 use App\Models\User;
@@ -10,7 +9,6 @@ use Carbon\Carbon;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
@@ -33,14 +31,7 @@ class MembershipApplicationsTable
                         ->icon('heroicon-o-check')
                         ->color('success')
                         ->visible(fn ($record) => in_array($record->status, ['pending', 'under_review'], true))
-                        ->form([
-                            Select::make('branch_id')
-                                ->label('Assign Branch')
-                                ->options(fn () => Branch::pluck('name', 'branch_id')->toArray())
-                                ->searchable()
-                                ->required(),
-                        ])
-                        ->action(function ($record, array $data) {
+                        ->action(function ($record) {
                             if ($record->approved_at) {
                                 Notification::make()
                                     ->title('Already approved')
@@ -53,57 +44,52 @@ class MembershipApplicationsTable
                                 'status'     => 'approved',
                                 'updated_by' => auth()->id(),
                             ]);
-  
+
                             $record->refresh();
 
                             $exists = MemberDetail::where('profile_id', $record->profile_id)->exists();
                             $detail = null;
 
                             if (! $exists) {
-                                $detail = MemberDetail::create([
-                                    'profile_id'         => $record->profile_id,
-                                    'membership_type_id' => $record->membership_type_id,
-                                    'branch_id'          => $data['branch_id'],
-                                    'status'             => 'Active',
-                                ]);
-
-                                //coop id generation
-                                $currentYear = Carbon::now()->year;
-                                $latest = User::where('coop_id', 'like', "COOP-{$currentYear}-%")
-                                            ->orderByDesc('coop_id')
-                                            ->first();
-                                if ($latest) {
-                                    $lastNumber = (int) substr($latest->coop_id, -3);
-                                    $newNumber = $lastNumber + 1;
-                                } else {
-                                    $newNumber = 1;
-                                }
-                                $formattedNumber = str_pad($newNumber, 3, '0', STR_PAD_LEFT);
-                                // Final coop_id
-                                $newCoopId = "COOP-{$currentYear}-{$formattedNumber}";
-
-                                $plainPassword = Str::random(8);
-                                $pin = random_int(1000, 9999);
-
+                                Notification::make()
+                                    ->title('Missing branch assignment')
+                                    ->warning()
+                                    ->body('This application has no branch assignment to use for member creation.')
+                                    ->send();
+                            } else {
                                 $profile = Profile::where('profile_id', $record->profile_id)->first();
 
-                                User::create([
-                                    'coop_id' => $newCoopId,
-                                    'temp_password' => $plainPassword,
-                                    'password' => Hash::make($plainPassword),
-                                    'temp_pin' => $pin,
-                                    'pin' => Hash::make($pin),
-                                    'profile_id' => $record->profile_id,
-                                    'is_active' => 1,
-                                    'username' => $profile->first_name . ' '.$profile->last_name
-                                ]);
-                            }
+                                if (! User::where('profile_id', $record->profile_id)->exists()) {
+                                    $currentYear = Carbon::now()->year;
+                                    $latest = User::where('coop_id', 'like', "COOP-{$currentYear}-%")
+                                        ->orderByDesc('coop_id')
+                                        ->first();
 
-                            Notification::make()
-                                ->title('Application Approved')
-                                ->body($exists ? 'Member detail already existed.' : "Member record created. ID: {$detail->id}")
-                                ->success()
-                                ->send();
+                                    $newNumber = $latest ? ((int) substr($latest->coop_id, -3)) + 1 : 1;
+                                    $formattedNumber = str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+                                    $newCoopId = "COOP-{$currentYear}-{$formattedNumber}";
+
+                                    $plainPassword = Str::random(8);
+                                    $pin = random_int(1000, 9999);
+
+                                    User::create([
+                                        'coop_id' => $newCoopId,
+                                        'temp_password' => $plainPassword,
+                                        'password' => Hash::make($plainPassword),
+                                        'temp_pin' => $pin,
+                                        'pin' => Hash::make($pin),
+                                        'profile_id' => $record->profile_id,
+                                        'is_active' => 1,
+                                        'username' => $profile->first_name . ' ' . $profile->last_name,
+                                    ]);
+                                }
+
+                                Notification::make()
+                                    ->title('Application Approved')
+                                    ->body($exists ? 'Member detail already existed.' : "Member record created. ID: {$detail->id}")
+                                    ->success()
+                                    ->send();
+                            }
                         }),
 
                     Action::make('reject')
