@@ -627,7 +627,7 @@ class ListCollectionAndPostings extends ListRecords
                                     ->columnSpanFull(),
 
                                 TextInput::make('document_type')
-                                    ->default('Official Receipt')
+                                    ->default('Receipt')
                                     ->hidden(),
 
                             ])
