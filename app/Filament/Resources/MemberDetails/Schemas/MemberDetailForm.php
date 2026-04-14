@@ -21,7 +21,7 @@ class MemberDetailForm
                 Wizard::make([
                     Step::make('Personal Details')
                         ->icon('heroicon-o-identification')
-                        ->CompletedIcon('heroicon-o-hand-thumb-up')
+                        ->completedIcon('heroicon-o-hand-thumb-up')
                         ->schema([
                             Section::make('Member + Membership Info')
                                 ->schema([
@@ -30,7 +30,7 @@ class MemberDetailForm
                                         ->relationship('profile', 'email')
                                         ->searchable()
                                         ->preload()
-                                        ->getOptionLabelFromRecordUsing(fn ($record) => $record->full_name.' — '.$record->email)
+                                        ->getOptionLabelFromRecordUsing(fn ($record) => $record->full_name . ' — ' . $record->email)
                                         ->required(),
 
                                     TextInput::make('member_no')
@@ -56,7 +56,6 @@ class MemberDetailForm
                                             'Active' => 'Active',
                                             'Inactive' => 'Inactive',
                                             'Delinquent' => 'Delinquent',
-
                                         ])
                                         ->required(),
                                 ])
@@ -80,9 +79,28 @@ class MemberDetailForm
 
                             Section::make('Emergency Contact')
                                 ->schema([
-                                    TextInput::make('emergency_full_name')->label('Fullname'),
-                                    TextInput::make('emergency_phone')->label('Phone'),
-                                    TextInput::make('emergency_relationship')->label('Relationship'),
+                                    TextInput::make('emergency_full_name')
+                                        ->label('Fullname'),
+
+                                 
+                                    TextInput::make('emergency_phone')
+                                        ->label('Phone')
+                                        ->tel()
+                                        ->required()
+                                        ->maxLength(11)
+                                        ->minLength(11)
+                                        ->rule('digits:11')
+                                        ->rule('regex:/^09\d{9}$/')
+                                        ->extraInputAttributes(['maxlength' => 11])
+                                        ->validationMessages([
+                                            'required' => 'Phone number is required.',
+                                            'digits' => 'Phone number must be exactly 11 digits.',
+                                            'regex' => 'Phone number must start with 09 and be valid.',
+                                        ])
+                                        ->helperText('Enter exactly 11 digits (e.g., 09123456789)'),
+
+                                    TextInput::make('emergency_relationship')
+                                        ->label('Relationship'),
                                 ]),
 
                             Section::make('Household Information')
@@ -103,33 +121,24 @@ class MemberDetailForm
                                 ])
                                 ->columns(3),
                         ]),
+
                     Step::make('Spouse & Co-Maker')
                         ->icon('heroicon-o-user')
-                        ->CompletedIcon('heroicon-o-hand-thumb-up')
+                        ->completedIcon('heroicon-o-hand-thumb-up')
                         ->schema([
                             Section::make('Spouse Information')
                                 ->relationship('spouse')
                                 ->schema([
-                                    TextInput::make('full_name')
-                                        ->label('Full Name'),
+                                    TextInput::make('full_name')->label('Full Name'),
 
                                     Forms\Components\DatePicker::make('birthdate')
                                         ->label('Birthdate'),
 
-                                    TextInput::make('occupation')
-                                        ->label('Occupation'),
-
-                                    TextInput::make('employer_name')
-                                        ->label('Employer'),
-
-                                    TextInput::make('employer_address')
-                                        ->label('Employer Address'),
-
-                                    TextInput::make('source_of_income')
-                                        ->label('Source of Income'),
-
-                                    TextInput::make('tin')
-                                        ->label('TIN'),
+                                    TextInput::make('occupation')->label('Occupation'),
+                                    TextInput::make('employer_name')->label('Employer'),
+                                    TextInput::make('employer_address')->label('Employer Address'),
+                                    TextInput::make('source_of_income')->label('Source of Income'),
+                                    TextInput::make('tin')->label('TIN'),
                                 ])
                                 ->columns(3)
                                 ->visible(function (callable $get) {
