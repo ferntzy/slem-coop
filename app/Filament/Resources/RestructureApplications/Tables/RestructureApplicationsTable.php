@@ -22,7 +22,13 @@ class RestructureApplicationsTable
     {
         return $table
             ->modifyQueryUsing(function (Builder $query) {
-                $query->with([
+                $user = auth()->user();
+
+                if ($user?->isMember()) {
+                    $query->whereHas('loanApplication.member', fn (Builder $memberQuery) => $memberQuery->where('profile_id', $user->profile_id));
+                }
+
+                return $query->with([
                     'loanApplication.member.profile',
                     'loanApplication.type',
                 ]);
