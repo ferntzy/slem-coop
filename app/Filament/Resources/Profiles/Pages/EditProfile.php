@@ -49,6 +49,8 @@ class EditProfile extends EditRecord
             'Staff',
             'Cashier',
             'Account Officer',
+            'Loan Officer',
+            'Teller',
         ];
 
         if (in_array($profile->role?->name, $branchScopedRoleNames, true)) {

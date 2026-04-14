@@ -157,12 +157,9 @@ class User extends Authenticatable implements HasAvatar
 
     public function isBranchScoped(): bool
     {
-        return $this->hasAnyRole([
-            'Manager',
-            'Staff',
-            'Cashier',
-            'Account Officer',
-        ]);
+        return ! $this->isMember()
+            && ! $this->hasAnyRole(['Admin', 'super_admin', 'Librarian'])
+            && $this->branchId() !== null;
     }
 
     public function canAccessPanel(Panel $panel): bool

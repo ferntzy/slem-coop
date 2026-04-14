@@ -2,18 +2,18 @@
 
 namespace App\Filament\Resources\SavingsAccounts;
 
-use App\Filament\Resources\SavingsAccounts\RelationManagers\SavingsAccountTransactionsRelationManager;
 use App\Filament\Resources\SavingsAccounts\Pages\CreateSavingsAccount;
 use App\Filament\Resources\SavingsAccounts\Pages\EditSavingsAccount;
 use App\Filament\Resources\SavingsAccounts\Pages\ListSavingsAccounts;
 use App\Filament\Resources\SavingsAccounts\Pages\ViewSavingsAccount;
-use App\Filament\Resources\SavingsAccounts\Tables\SavingsAccountsTable;
+use App\Filament\Resources\SavingsAccounts\RelationManagers\SavingsAccountTransactionsRelationManager;
 use App\Filament\Resources\SavingsAccounts\Schemas\SavingsAccountForm;
 use App\Filament\Resources\SavingsAccounts\Schemas\SavingsAccountInfolist;
+use App\Filament\Resources\SavingsAccounts\Tables\SavingsAccountsTable;
 use App\Models\SavingsAccount;
 use Filament\Facades\Filament;
-use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -59,6 +59,17 @@ class SavingsAccountResource extends Resource
 
         if ($user->isMember()) {
             return $query->whereHas('member', fn (Builder $memberQuery): Builder => $memberQuery->where('profile_id', $user->profile_id));
+        }
+
+        if ($user->isBranchScoped()) {
+            $branchId = $user->branchId();
+
+            if (! $branchId) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->whereHas('member.memberDetail', fn (Builder $memberDetailQuery): Builder => $memberDetailQuery->where('branch_id', $branchId)
+            );
         }
 
         return $query;

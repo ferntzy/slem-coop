@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\RestructureApplications;
 
-use App\Models\LoanPayment;
 use App\Filament\Resources\RestructureApplications\Pages\CreateRestructureApplications;
 use App\Filament\Resources\RestructureApplications\Pages\EditRestructureApplications;
 use App\Filament\Resources\RestructureApplications\Pages\ListRestructureApplications;
@@ -12,25 +11,22 @@ use App\Models\RestructureApplication;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Forms\Components\Select;
-use App\Models\MemberDetail;
-
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use App\Models\LoanApplication;
 use Illuminate\Database\Eloquent\Builder;
 
 class RestructureApplicationsResource extends Resource
 {
-    
     protected static ?string $model = RestructureApplication::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAdjustmentsVertical;
-    
+
     protected static ?string $navigationLabel = 'Restructure Applications';
 
     protected static ?string $recordTitleAttribute = 'loan_application_id';
+
     protected static string|\UnitEnum|null $navigationGroup = 'Loan Management';
+
     public static function form(Schema $schema): Schema
     {
         return RestructureApplicationsForm::configure($schema);
@@ -51,7 +47,40 @@ class RestructureApplicationsResource extends Resource
     public static function getNavigationBadge(): ?string
     {
         $count = RestructureApplication::where('status', 'Pending')->count();
+
         return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+
+        if (! $user) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($user->hasAnyRole(['Admin', 'super_admin'])) {
+            return $query;
+        }
+
+        if ($user->isMember()) {
+            return $query->whereHas('loanApplication.member', fn (Builder $memberQuery) => $memberQuery->where('profile_id', $user->profile_id)
+            );
+        }
+
+        if ($user->isBranchScoped()) {
+            $branchId = $user->branchId();
+
+            if (! $branchId) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->whereHas('loanApplication.member', fn (Builder $memberQuery) => $memberQuery->where('branch_id', $branchId)
+            );
+        }
+
+        return $query->whereRaw('1 = 0');
     }
 
     public static function getPages(): array
@@ -62,5 +91,4 @@ class RestructureApplicationsResource extends Resource
             'edit' => EditRestructureApplications::route('/{record}/edit'),
         ];
     }
-    
 }

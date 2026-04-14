@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class MembershipApplicationResource extends Resource
 {
@@ -34,7 +35,7 @@ class MembershipApplicationResource extends Resource
     {
         // Configure the table and remove the Create button above it
         return MembershipApplicationsTable::configure($table);
-           
+
     }
 
     public static function getRelations(): array
@@ -47,18 +48,50 @@ class MembershipApplicationResource extends Resource
     public static function getNavigationBadge(): ?string
     {
         $count = MembershipApplication::where('status', 'Pending')->count();
+
         return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+
+        if (! $user) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($user->hasAnyRole(['Admin', 'super_admin'])) {
+            return $query;
+        }
+
+        if ($user->isMember()) {
+            return $query->where('profile_id', $user->profile_id);
+        }
+
+        if ($user->isBranchScoped()) {
+            $branchId = $user->branchId();
+
+            if (! $branchId) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->where('branch_id', $branchId);
+        }
+
+        return $query->whereRaw('1 = 0');
     }
 
     public static function getPages(): array
     {
         return [
-            'index'  => ListMembershipApplications::route('/'),
+            'index' => ListMembershipApplications::route('/'),
             'create' => CreateMembershipApplication::route('/create'),
-            'view'   => ViewMembershipApplication::route('/{record}'),
-            'edit'   => EditMembershipApplication::route('/{record}/edit'),
+            'view' => ViewMembershipApplication::route('/{record}'),
+            'edit' => EditMembershipApplication::route('/{record}/edit'),
         ];
     }
+
     protected static function getTableHeaderActions(): array
     {
         return []; // disables the Create button

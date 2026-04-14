@@ -88,6 +88,8 @@ class ProfileForm
             'Staff',
             'Cashier',
             'Account Officer',
+            'Loan Officer',
+            'Teller',
         ])->pluck('id')->toArray();
     }
 }
