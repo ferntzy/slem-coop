@@ -76,7 +76,7 @@ class MembershipApplicationResource extends Resource
                 return $query->whereRaw('1 = 0');
             }
 
-            return $query->where('branch_id', $branchId);
+            return $query->whereHas('profile.memberDetail', fn (Builder $memberDetailQuery) => $memberDetailQuery->where('branch_id', $branchId));
         }
 
         return $query->whereRaw('1 = 0');
