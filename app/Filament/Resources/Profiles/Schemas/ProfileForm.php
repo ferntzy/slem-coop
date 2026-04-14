@@ -33,7 +33,7 @@ class ProfileForm
                     ->unique(ignoreRecord: true),
 
                 TextInput::make('mobile_number')
-                    ->maxLength(45),
+                    ->maxLength(11),
 
                 DatePicker::make('birthdate'),
 
