@@ -162,7 +162,7 @@ class User extends Authenticatable implements HasAvatar
 
     public function isMember(): bool
     {
-        return $this->hasRole('Member');
+        return $this->hasAnyRole(['Member', 'member']);
     }
 
     public function isBranchScoped(): bool
