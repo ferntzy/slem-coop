@@ -47,7 +47,8 @@ class MemberDetailForm
                                     Select::make('branch_id')
                                         ->relationship('branch', 'name')
                                         ->default(fn () => auth()->user()?->branchId())
-                                        ->readOnly(fn () => auth()->user()?->isBranchScoped())
+                                        ->disabled(fn () => auth()->user()?->isBranchScoped())
+                                        ->hint(fn () => auth()->user()?->isBranchScoped() ? 'Branch is auto-assigned from your profile.' : null)
                                         ->required(),
 
                                     Select::make('status')
@@ -145,38 +146,38 @@ class MemberDetailForm
 
                             Section::make('Co-Makers / Guarantors')
                                 ->schema([
-                                Repeater::make('coMakers')
-                                    ->relationship()
-                                    ->schema([
-                                        TextInput::make('full_name')
-                                            ->label('Full Name')
-                                            ->required(),
+                                    Repeater::make('coMakers')
+                                        ->relationship()
+                                        ->schema([
+                                            TextInput::make('full_name')
+                                                ->label('Full Name')
+                                                ->required(),
 
-                                        TextInput::make('relationship')
-                                            ->label('Relationship'),
+                                            TextInput::make('relationship')
+                                                ->label('Relationship'),
 
-                                        TextInput::make('contact_number')
-                                            ->label('Contact Number'),
+                                            TextInput::make('contact_number')
+                                                ->label('Contact Number'),
 
-                                        TextInput::make('address')
-                                            ->label('Address')
-                                            ->columnSpanFull(),
+                                            TextInput::make('address')
+                                                ->label('Address')
+                                                ->columnSpanFull(),
 
-                                        TextInput::make('occupation')
-                                            ->label('Occupation'),
+                                            TextInput::make('occupation')
+                                                ->label('Occupation'),
 
-                                        TextInput::make('employer_name')
-                                            ->label('Employer'),
+                                            TextInput::make('employer_name')
+                                                ->label('Employer'),
 
-                                        TextInput::make('monthly_income')
-                                            ->label('Monthly Income')
-                                            ->numeric()
-                                            ->prefix('₱'),
-                                    ])
-                                    ->columns(3)
-                                    ->addActionLabel('Add Co-Maker')
-                                    ->defaultItems(0)
-                                    ->reorderable(false),
+                                            TextInput::make('monthly_income')
+                                                ->label('Monthly Income')
+                                                ->numeric()
+                                                ->prefix('₱'),
+                                        ])
+                                        ->columns(3)
+                                        ->addActionLabel('Add Co-Maker')
+                                        ->defaultItems(0)
+                                        ->reorderable(false),
                                 ])
                                 ->columnSpanFull(),
                         ]),
