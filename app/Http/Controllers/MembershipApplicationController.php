@@ -134,6 +134,7 @@ class MembershipApplicationController extends Controller
 
                 // Create application
                 $application = MembershipApplication::create([
+                    'profile_id' => $profile->profile_id,
                     'first_name' => $validated['first_name'],
                     'middle_name' => $validated['middle_name'] ?? null,
                     'last_name' => $validated['last_name'],
