@@ -147,7 +147,17 @@ class User extends Authenticatable implements HasAvatar
 
     public function isAdmin(): bool
     {
-        return $this->hasRole('Admin');
+        return $this->hasAnyRole(['Admin', 'admin']);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasAnyRole(['super_admin', 'Super Admin', 'super admin']);
+    }
+
+    public function isAdminOrSuperAdmin(): bool
+    {
+        return $this->isAdmin() || $this->isSuperAdmin();
     }
 
     public function isMember(): bool
@@ -158,7 +168,8 @@ class User extends Authenticatable implements HasAvatar
     public function isBranchScoped(): bool
     {
         return ! $this->isMember()
-            && ! $this->hasAnyRole(['Admin', 'super_admin', 'Librarian'])
+            && ! $this->isAdminOrSuperAdmin()
+            && ! $this->hasAnyRole(['Librarian', 'librarian'])
             && $this->branchId() !== null;
     }
 
