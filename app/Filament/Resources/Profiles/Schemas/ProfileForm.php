@@ -34,13 +34,15 @@ class ProfileForm
 
                 TextInput::make('mobile_number')
                     ->maxLength(11)
-                    ->tel()
-                    ->rules(['digits_between:1,11', 'regex:/^[0-9]+$/'])
+                    ->rules(['regex:/^[0-9]{1,11}$/'])
                     ->validationMessages([
-                        'digits_between' => 'Mobile number must not exceed 11 digits.',
-                        'regex' => 'Mobile number must contain only numbers.',
-                    ]),
-
+                        'regex' => 'Mobile number must contain only numbers and must not exceed 11 digits.',
+                    ])
+                    ->extraInputAttributes([
+                        'inputmode' => 'numeric',
+                        'pattern'   => '[0-9]*',
+                        'oninput'   => 'this.value = this.value.replace(/[^0-9]/g, "").slice(0, 11)',
+            ]),
                 DatePicker::make('birthdate')
                     ->before(today())
                     ->required(),
