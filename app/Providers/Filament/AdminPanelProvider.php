@@ -25,6 +25,7 @@ use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use App\Http\Middleware\CheckUserIsActive;
 use Filament\Navigation\NavigationGroup;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\HtmlString;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -38,25 +39,36 @@ class AdminPanelProvider extends PanelProvider
             ->login(CustomLogin::class)
             ->globalSearch(false)
             ->viteTheme('resources/css/filament/admin/theme.css')
-            ->brandLogo(fn () => view('filament.brand'))
+            ->brandLogo(new HtmlString('
+    <div class="flex items-center gap-2">
+        <img src="' . asset('logo-dark.png') . '" alt="Logo" class="h-8" />
+
+        <span class="text-xl font-normal leading-5 tracking-tight dark:text-white">
+            SLEM
+        </span>
+
+        <span class="text-xl font-bold leading-5 tracking-tight text-green-600">
+            COOP
+        </span>
+    </div>
+'))
             ->brandLogoHeight('2rem')
 
             ->favicon(function () {
                 // Prevent crash during migrations
                 if (!Schema::hasTable('system_settings')) {
-                    return asset('images/my-logo.svg');
+                    return asset('logo-dark.png');
                 }
                 $favicon = SystemSetting::get('favicon');
                 return $favicon
                     ? Storage::disk('public')->url($favicon)
-                    : asset('images/my-logo.svg');
-
+                    : asset('logo-dark.png');
             })
 
-           ->renderHook(
-            PanelsRenderHook::USER_MENU_BEFORE,
-            fn () => view('filament.Notification'),
-        )
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_BEFORE,
+                fn() => view('filament.Notification'),
+            )
             // Plugins
             ->plugins([
                 FilamentShieldPlugin::make()
@@ -129,15 +141,15 @@ class AdminPanelProvider extends PanelProvider
                 CheckUserIsActive::class,
             ])
             ->navigationGroups([
-            'Dashboard',
-            'Membership Management',
-            'Loan Management',
-            'Payment Management',
-            'Share Capital',
-            'User Management',
-            'Pages',
-            'Savings Management',
-            'Settings',
+                'Dashboard',
+                'Membership Management',
+                'Loan Management',
+                'Payment Management',
+                'Share Capital',
+                'User Management',
+                'Pages',
+                'Savings Management',
+                'Settings',
             ]);
     }
 
