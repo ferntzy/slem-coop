@@ -4,6 +4,7 @@ namespace App\Filament\Resources\LoanApplications\Pages;
 
 use App\Filament\Resources\LoanApplications\LoanApplicationsResource;
 use App\Services\CoopFeeCalculatorService;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\EditRecord;
 
 class EditLoanApplications extends EditRecord
@@ -13,6 +14,37 @@ class EditLoanApplications extends EditRecord
     public function getTitle(): string
     {
         return 'Edit ' . $this->record->member?->profile?->first_name;
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('approve')
+                ->label('Approve')
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->requiresConfirmation()
+                ->visible(fn (): bool => auth()->user()?->hasAnyRole(['super_admin', 'Admin', 'Manager', 'Account Officer', 'Loan Officer']) && in_array($this->record->status, ['Pending', 'Under Review']))
+                ->action(function (): void {
+                    $this->record->update(['status' => 'Approved']);
+                    $this->notification()->success()
+                        ->title('Loan Approved')
+                        ->send();
+                }),
+
+            Action::make('reject')
+                ->label('Reject')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->visible(fn (): bool => auth()->user()?->hasAnyRole(['super_admin', 'Admin', 'Manager', 'Account Officer', 'Loan Officer']) && in_array($this->record->status, ['Pending', 'Under Review']))
+                ->action(function (): void {
+                    $this->record->update(['status' => 'Rejected']);
+                    $this->notification()->danger()
+                        ->title('Loan Rejected')
+                        ->send();
+                }),
+        ];
     }
 
     protected function mutateFormDataBeforeFill(array $data): array

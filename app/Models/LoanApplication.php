@@ -154,6 +154,10 @@ class LoanApplication extends Model
     return $this->belongsTo(\App\Models\LoanAccount::class, 'reloan_from_loan_account_id', 'loan_account_id');
 }
 
+public function loanType(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+{
+    return $this->belongsTo(\App\Models\LoanType::class);
+}
 
 }
 
