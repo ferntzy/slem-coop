@@ -61,7 +61,7 @@ class LoanScheduleService
 
         $paymentsQuery = CollectionAndPosting::query()
                 ->where('loan_account_id', $loanAccount->loan_account_id)
-                ->where('status', 'Posted');
+                ->whereIn('status', ['Posted', 'Draft']);
 
             if ($loanAccount->restructured_at) {
                 $paymentsQuery->whereDate('payment_date', '>=', $loanAccount->restructured_at);
@@ -133,7 +133,7 @@ class LoanScheduleService
 
         $paymentsQuery = CollectionAndPosting::query()
             ->where('loan_account_id', $loanAccount->loan_account_id)
-            ->where('status', 'Posted');
+            ->whereIn('status', ['Posted', 'Draft']);
 
         if ($loanAccount->restructured_at) {
             $paymentsQuery->whereDate('payment_date', '>=', $loanAccount->restructured_at);

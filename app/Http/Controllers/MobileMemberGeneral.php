@@ -51,7 +51,7 @@ class MobileMemberGeneral extends Controller
 
             // Return payment_date strings grouped by loan_account_id
             $paidDates = CollectionAndPosting::whereIn('loan_account_id', $loanIds)
-                ->where('status', 'Posted')
+                ->whereIn('status', ['Posted', 'Draft'])
                 ->get(['loan_account_id', 'payment_date'])
                 ->groupBy('loan_account_id')
                 ->map(fn($rows) => $rows->pluck('payment_date')->toArray());
@@ -84,7 +84,7 @@ class MobileMemberGeneral extends Controller
             $loanIds = $loans->pluck('loan_account_id');
 
             $paidDates = CollectionAndPosting::whereIn('loan_account_id', $loanIds)
-                ->where('status', 'Posted')
+                ->whereIn('status', ['Posted', 'Draft'])
                 ->get(['loan_account_id', 'payment_date'])
                 ->groupBy('loan_account_id')
                 ->map(fn($rows) => $rows->pluck('payment_date')->toArray());

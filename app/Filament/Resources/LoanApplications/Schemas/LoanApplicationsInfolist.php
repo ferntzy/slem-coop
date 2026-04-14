@@ -537,12 +537,12 @@ class LoanApplicationsInfolist
                                 ->columns(3),
 
                             Section::make('Loan Payment History')
-                                ->description('Latest and older payment records for this loan.')
+                                ->description('Payment records for this loan.')
                                 ->icon('heroicon-o-clock')
                                 ->extraAttributes(static::sectionCard())
                                 ->schema([
-                                    RepeatableEntry::make('latest_payment')
-                                        ->label('Latest Payment')
+                                    RepeatableEntry::make('payment_history')
+                                        ->label('Payment History')
                                         ->getStateUsing(function ($record): array {
                                             $loanAccount = $record->loanAccount;
 
@@ -552,11 +552,7 @@ class LoanApplicationsInfolist
 
                                             $history = app(LoanScheduleService::class)->buildPaymentHistory($loanAccount);
 
-                                            if (empty($history)) {
-                                                return [];
-                                            }
-
-                                            return [collect($history)->first()];
+                                            return $history;
                                         })
                                         ->schema([
                                             TextEntry::make('payment_date')
