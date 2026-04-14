@@ -10,12 +10,12 @@ use App\Http\Controllers\HeroNewsEventController;
 use App\Http\Controllers\LoanApplication as ControllersLoanApplication;
 use App\Http\Controllers\MembershipApplicationController;
 use App\Http\Controllers\MobileAuth\Auth;
-use App\Http\Controllers\OrientationSettingsController;
 use App\Http\Controllers\MobileMemberGeneral;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\NewsEventController;
 use App\Http\Controllers\Notifications;
 use App\Http\Controllers\OrientationController;
+use App\Http\Controllers\OrientationSettingsController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -26,18 +26,18 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('/mobile-login', [Auth::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/mobile-set-pin',    [Auth::class, 'setPin']);
+    Route::post('/mobile-set-pin', [Auth::class, 'setPin']);
     Route::post('/mobile-verify-pin', [Auth::class, 'verifyPin']);
 });
 
 Route::get('/membership-types', [MembershipApplicationController::class, 'membershipTypes']);
+Route::get('/branches', [MembershipApplicationController::class, 'branches']);
 Route::post('/profiles', [ProfileController::class, 'store']);
 
 Route::post('/membership-application', [MembershipApplicationController::class, 'store']);
 
 // edit profile
 Route::post('/edit-profile', [ProfileController::class, 'editProfile']);
-
 
 // loan mobile routes
 Route::put('/loan-officer/profile/{profileId}', [LoanOfficerProfileController::class, 'update']);
@@ -47,14 +47,14 @@ Route::get('/loan-applications', [LoanOfficerApplicationController::class, 'inde
 Route::get('/loan-applications/{id}', [LoanOfficerApplicationController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
-//loan application actions
-Route::post('/loan-applications/{id}/approve', [LoanOfficerApplicationController::class, 'approve']);
-Route::post('/loan-applications/{id}/reloan', [LoanOfficerApplicationController::class, 'reloan']);
-Route::post('/loan-applications/{id}/set-penalty-rule', [LoanOfficerApplicationController::class, 'setPenaltyRule']);
-Route::post('/loan-applications/{id}/under-review', [LoanOfficerApplicationController::class, 'markUnderReview']);
-Route::get('/loan-applications/{id}/download-form', [LoanOfficerApplicationController::class, 'downloadLoanForm']);
-Route::post('/loan-applications/{id}/reject', [LoanOfficerApplicationController::class, 'reject']);
-Route::post('/loan-applications/{id}/cancel', [LoanOfficerApplicationController::class, 'cancel']);
+    // loan application actions
+    Route::post('/loan-applications/{id}/approve', [LoanOfficerApplicationController::class, 'approve']);
+    Route::post('/loan-applications/{id}/reloan', [LoanOfficerApplicationController::class, 'reloan']);
+    Route::post('/loan-applications/{id}/set-penalty-rule', [LoanOfficerApplicationController::class, 'setPenaltyRule']);
+    Route::post('/loan-applications/{id}/under-review', [LoanOfficerApplicationController::class, 'markUnderReview']);
+    Route::get('/loan-applications/{id}/download-form', [LoanOfficerApplicationController::class, 'downloadLoanForm']);
+    Route::post('/loan-applications/{id}/reject', [LoanOfficerApplicationController::class, 'reject']);
+    Route::post('/loan-applications/{id}/cancel', [LoanOfficerApplicationController::class, 'cancel']);
 });
 
 // account officer

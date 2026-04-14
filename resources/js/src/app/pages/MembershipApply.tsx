@@ -127,7 +127,13 @@ type CoMakerData = {
 type ApplicationData = {
   application_date: string;
   membership_type_id: string;
+  branch_id: string;
   remarks: string;
+};
+
+type BranchOption = {
+  branch_id: number;
+  name: string;
 };
 
 type OrientationProgress = {
@@ -382,6 +388,7 @@ export function MembershipApply() {
   const [applicationData, setApplicationData] = useState<ApplicationData | null>(null);
   const [spouseData, setSpouseData] = useState<SpouseData | null>(null);
   const [coMakersData, setCoMakersData] = useState<CoMakerData[]>([]);
+  const [branches, setBranches] = useState<BranchOption[]>([]);
 
   const [selectedTypeId, setSelectedTypeId] = useState<string>(
     MEMBERSHIP_TYPE_LABELS[initialTypeId] ? initialTypeId : '2'
@@ -472,10 +479,11 @@ export function MembershipApply() {
   const {
     register: reg2,
     handleSubmit: handle2,
+    formState: { errors: err2 },
     setValue: set2,
     watch: watch2,
   } = useForm<ApplicationData>({
-    defaultValues: { application_date: new Date().toISOString().split('T')[0], remarks: '', membership_type_id: selectedTypeId },
+    defaultValues: { application_date: new Date().toISOString().split('T')[0], remarks: '', membership_type_id: selectedTypeId, branch_id: '' },
   });
 
   const {
@@ -550,6 +558,19 @@ export function MembershipApply() {
   }, []);
 
   useEffect(() => {
+    fetch('/api/branches')
+      .then((res) => res.json())
+      .then((data) => {
+        const options = Array.isArray(data) ? data : [];
+        setBranches(options);
+        if (options.length === 1) {
+          set2('branch_id', String(options[0].branch_id));
+        }
+      })
+      .catch(() => {
+        toast.error('Failed to load branch options.');
+      });
+
     fetch('/api/orientation-settings')
       .then((res) => res.json())
       .then((data) => {
@@ -625,6 +646,7 @@ export function MembershipApply() {
         setApplicationData(draft.applicationData);
         set2('application_date', draft.applicationData.application_date ?? new Date().toISOString().split('T')[0]);
         set2('remarks', draft.applicationData.remarks ?? '');
+        set2('branch_id', draft.applicationData.branch_id ?? '');
         set2('membership_type_id', draft.applicationData.membership_type_id ?? draft.selectedTypeId ?? selectedTypeId);
       }
       if (draft.spouseData) {
@@ -693,6 +715,7 @@ export function MembershipApply() {
   const submitFinalApplication = async () => {
     if (!profileData) { toast.error('Personal data missing. Please go back to step 1.'); return; }
     if (!applicationData) { toast.error('Application details missing. Please go back to step 2.'); return; }
+  if (!applicationData.branch_id) { toast.error('Please select a branch in step 2.'); return; }
     if (!orientationComplete) { toast.error('Please complete the orientation first.'); return; }
     if (!idFileFront || !idFileBack) { toast.error('Please upload both front and back of your ID.'); return; }
 
@@ -702,6 +725,7 @@ export function MembershipApply() {
       Object.entries(profileData).forEach(([k, v]) => { if (v && String(v).trim()) formData.append(k, String(v)); });
       formData.append('membership_type_id', selectedTypeId);
       formData.append('application_date', applicationData.application_date);
+  formData.append('branch_id', applicationData.branch_id);
       if (applicationData.remarks && applicationData.remarks.trim()) formData.append('remarks', applicationData.remarks);
       if (spouseData && spouseData.full_name && spouseData.full_name.trim()) {
         Object.entries(spouseData).forEach(([k, v]) => { if (v && String(v).trim()) formData.append(`spouse_${k}`, String(v)); });
@@ -1111,6 +1135,22 @@ export function MembershipApply() {
                         <div className="space-y-1.5">
                           <Label className={labelClass}>Application Date</Label>
                           <Input type="date" {...reg2('application_date')} className={`${inputClass} opacity-60 cursor-not-allowed`} readOnly />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className={labelClass}>Branch <span className="text-red-500">*</span></Label>
+                          <select
+                            {...reg2('branch_id', { required: 'Please select a branch.' })}
+                            className={`h-11 w-full rounded-xl border border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] px-3 text-sm text-gray-900 dark:text-white focus:border-green-500 dark:focus:border-green-400 focus:ring-2 focus:ring-green-500/20 appearance-none`}
+                          >
+                            <option value="">Select branch</option>
+                            {branches.map((branch) => (
+                              <option key={branch.branch_id} value={String(branch.branch_id)}>
+                                {branch.name}
+                              </option>
+                            ))}
+                          </select>
+                          {err2.branch_id && <p className="text-xs text-red-500 font-medium">{err2.branch_id.message}</p>}
                         </div>
 
                         <div className="space-y-1.5">
