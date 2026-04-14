@@ -67,13 +67,17 @@ class MemberDetailResource extends Resource
             return $query;
         }
 
-        $branchId = $user->branchId();
+        if ($user->isBranchScoped()) {
+            $branchId = $user->branchId();
 
-        if (! $branchId) {
-            return $query->whereRaw('1=0');
+            if (! $branchId) {
+                return $query->whereRaw('1=0');
+            }
+
+            return $query->where('branch_id', $branchId);
         }
 
-        return $query->where('branch_id', $branchId);
+        return $query->whereRaw('1=0');
     }
 
     public static function getPages(): array

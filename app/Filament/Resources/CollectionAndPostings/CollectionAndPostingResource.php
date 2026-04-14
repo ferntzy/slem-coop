@@ -10,7 +10,6 @@ use App\Filament\Resources\CollectionAndPostings\Schemas\CollectionAndPostingFor
 use App\Filament\Resources\CollectionAndPostings\Schemas\CollectionAndPostingInfolist;
 use App\Filament\Resources\CollectionAndPostings\Tables\CollectionAndPostingsTable;
 use App\Models\CollectionAndPosting;
-use BackedEnum;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -22,8 +21,11 @@ class CollectionAndPostingResource extends Resource
     protected static ?string $model = CollectionAndPosting::class;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Payment Management';
+
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
+
     protected static ?string $navigationLabel = 'Payments';
+
     protected static ?int $navigationSort = 1;
 
     public static function getEloquentQuery(): Builder
@@ -43,6 +45,17 @@ class CollectionAndPostingResource extends Resource
             return $query->whereHas('loanAccount', function (Builder $q) use ($user) {
                 $q->where('profile_id', $user->profile_id);
             });
+        }
+
+        if ($user->isBranchScoped()) {
+            $branchId = $user->branchId();
+
+            if (! $branchId) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->whereHas('loanAccount.loanApplication.member', fn (Builder $memberQuery): Builder => $memberQuery->where('branch_id', $branchId)
+            );
         }
 
         return $query->whereRaw('1 = 0');
@@ -71,10 +84,10 @@ class CollectionAndPostingResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListCollectionAndPostings::route('/'),
+            'index' => ListCollectionAndPostings::route('/'),
             'create' => CreateCollectionAndPosting::route('/create'),
-            'view'   => ViewCollectionAndPosting::route('/{record}'),
-            'edit'   => EditCollectionAndPosting::route('/{record}/edit'),
+            'view' => ViewCollectionAndPosting::route('/{record}'),
+            'edit' => EditCollectionAndPosting::route('/{record}/edit'),
         ];
     }
 }

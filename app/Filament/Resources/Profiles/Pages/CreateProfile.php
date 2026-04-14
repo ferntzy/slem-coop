@@ -35,6 +35,8 @@ class CreateProfile extends CreateRecord
             'Staff',
             'Cashier',
             'Account Officer',
+            'Loan Officer',
+            'Teller',
         ];
 
         if (in_array($profile->role?->name, $branchScopedRoleNames, true)) {

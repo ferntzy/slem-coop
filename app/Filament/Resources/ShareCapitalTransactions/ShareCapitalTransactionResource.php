@@ -42,10 +42,37 @@ class ShareCapitalTransactionResource extends Resource
             //
         ];
     }
+
     public static function getEloquentQuery(): Builder
-{
-    return parent::getEloquentQuery()->latest('transaction_date')->latest('id');
-}
+    {
+        $query = parent::getEloquentQuery()->latest('transaction_date')->latest('id');
+        $user = auth()->user();
+
+        if (! $user) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($user->hasAnyRole(['Admin', 'super_admin'])) {
+            return $query;
+        }
+
+        if ($user->isMember()) {
+            return $query->where('profile_id', $user->profile_id);
+        }
+
+        if ($user->isBranchScoped()) {
+            $branchId = $user->branchId();
+
+            if (! $branchId) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->whereHas('profile.memberDetail', fn (Builder $memberDetailQuery): Builder => $memberDetailQuery->where('branch_id', $branchId)
+            );
+        }
+
+        return $query->whereRaw('1 = 0');
+    }
 
     public static function getPages(): array
     {

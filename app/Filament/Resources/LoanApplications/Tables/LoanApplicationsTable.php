@@ -58,7 +58,7 @@ class LoanApplicationsTable
                                     ->icon('heroicon-o-document-arrow-down')
                                     ->color('success')
                                     ->url(fn () => route('loan-applications.pdf', [
-                                    'loanApplication' => $record->loan_application_id,
+                                        'loanApplication' => $record->loan_application_id,
                                     ]))
                                     ->openUrlInNewTab(),
                             ])
@@ -96,7 +96,7 @@ class LoanApplicationsTable
                                     ->icon('heroicon-o-document-arrow-down')
                                     ->color('success')
                                     ->url(fn () => route('loan-applications.pdf', [
-                                    'loanApplication' => $record->loan_application_id,
+                                        'loanApplication' => $record->loan_application_id,
                                     ]))
                                     ->openUrlInNewTab(),
                             ])
@@ -117,7 +117,7 @@ class LoanApplicationsTable
                                     ->icon('heroicon-o-document-arrow-down')
                                     ->color('success')
                                     ->url(fn () => route('loan-applications.pdf', [
-                                    'loanApplication' => $record->loan_application_id,
+                                        'loanApplication' => $record->loan_application_id,
                                     ]))
                                     ->openUrlInNewTab(),
                             ])
@@ -152,12 +152,12 @@ class LoanApplicationsTable
                 BadgeColumn::make('status')
                     ->label('Loan Status')
                     ->colors([
-                                        'warning' => 'Pending',
-                                        'info' => 'Under Review',
-                                        'success' => 'Approved',
-                                        'danger' => 'Rejected',
-                                        'gray' => 'Cancelled',
-                                    ]),
+                        'warning' => 'Pending',
+                        'info' => 'Under Review',
+                        'success' => 'Approved',
+                        'danger' => 'Rejected',
+                        'gray' => 'Cancelled',
+                    ]),
 
                 TextColumn::make('term_months')
                     ->label('Term'),
@@ -195,7 +195,7 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return $record->status === 'Approved' && ! $record->loanAccount
-                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
                         })
                         ->action(function ($record) {
 
@@ -277,7 +277,7 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return $record->loanAccount && $record->loanAccount->status === 'Active'
-                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
                         })
                         ->disabled(function ($record) {
                             $loan = $record->loanAccount;
@@ -357,7 +357,7 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return (float) $record->amount_requested > 15000 && $record->collateral_status === 'Pending Verification'
-                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
                         })
                         ->requiresConfirmation()
                         ->action(function ($record) {
@@ -401,7 +401,7 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return (float) $record->amount_requested > 15000 && $record->collateral_status === 'Pending Verification'
-                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
                         })
                         ->requiresConfirmation()
                         ->action(function ($record) {
@@ -444,7 +444,7 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return in_array($record->status, ['Pending', 'Under Review', 'Approved'], true)
-                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
                         })
                         ->form([
                             Select::make('penalty_rule_id')
@@ -476,7 +476,7 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return $record->status === 'Pending'
-                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
                         })
                         ->action(function ($record) {
                             $profileId = $record->member?->profile_id ?? null;
@@ -545,12 +545,12 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return in_array($record->status, ['Pending', 'Under Review'], true)
-                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
                         })
                         ->action(function ($record) {
                             $profileId = $record->member?->profile_id ?? null;
 
-                            if (! (auth()->user()?->hasAnyRole(['Admin', 'super_admin']) ?? false)) {
+                            if (! ((auth()->user()?->hasAnyRole(['Admin', 'super_admin']) ?? false) || auth()->user()?->isBranchScoped())) {
                                 Notification::make()
                                     ->title('Unauthorized')
                                     ->danger()
@@ -616,13 +616,13 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return in_array($record->status, ['Pending', 'Under Review'], true)
-                                && ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false);
+                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
                         })
                         ->form([Textarea::make('reason')->required()])
                         ->action(function ($record, array $data) {
                             $profileId = $record->member?->profile_id ?? null;
 
-                            if (! (auth()->user()?->hasAnyRole(['Admin', 'super_admin']) ?? false)) {
+                            if (! ((auth()->user()?->hasAnyRole(['Admin', 'super_admin']) ?? false) || auth()->user()?->isBranchScoped())) {
                                 Notification::make()
                                     ->title('Unauthorized')
                                     ->danger()
@@ -680,7 +680,7 @@ class LoanApplicationsTable
                             }
 
                             return in_array($record->status, ['Pending', 'Under Review'], true)
-                                && $user->hasAnyRole(['Admin', 'super_admin']);
+                                && (($user->hasAnyRole(['Admin', 'super_admin'])) || $user->isBranchScoped());
                         })
                         ->action(function ($record) {
                             $profileId = $record->member?->profile_id ?? null;
@@ -689,7 +689,7 @@ class LoanApplicationsTable
                             $canCancel = match (true) {
                                 ! $user => false,
                                 default => in_array($record->status, ['Pending', 'Under Review'], true)
-                                    && $user->hasAnyRole(['Admin', 'super_admin']),
+                                    && ($user->hasAnyRole(['Admin', 'super_admin']) || $user->isBranchScoped()),
                             };
 
                             if (! $canCancel) {
