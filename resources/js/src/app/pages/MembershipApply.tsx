@@ -76,6 +76,29 @@ const SOURCE_OF_INCOME_OPTIONS = [
   'Others',
 ];
 
+// Membership type age requirements
+const MEMBERSHIP_AGE_REQUIREMENTS: Record<string, number> = {
+  '1': 16, // Associate Member
+  '2': 18, // Regular Member
+};
+
+const getMinimumAge = (membershipTypeId: string): number => {
+  return MEMBERSHIP_AGE_REQUIREMENTS[membershipTypeId] ?? 18;
+};
+
+const calculateAge = (birthdate: string): number => {
+  const today = new Date();
+  const birth = new Date(birthdate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  
+  return age;
+};
+
 type ProfileData = {
   first_name: string;
   middle_name: string;
@@ -905,7 +928,24 @@ export function MembershipApply() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Birthdate <span className="text-red-500">*</span></Label>
-                        <Input type="date" {...reg1('birthdate', { required: 'Required' })} className={inputClass} />
+                        <Input 
+                          type="date" 
+                          {...reg1('birthdate', { 
+                            required: 'Birthdate is required',
+                            validate: {
+                              notToday: (value) => {
+                                const today = new Date().toISOString().split('T')[0];
+                                return value !== today || 'Cannot select today as birthdate';
+                              },
+                              ageRequirement: (value) => {
+                                const minAge = getMinimumAge(selectedTypeId);
+                                const age = calculateAge(value);
+                                return age >= minAge || `Minimum age requirement is ${minAge} years (your age: ${age})`;
+                              },
+                            },
+                          })} 
+                          className={inputClass} 
+                        />
                         {err1.birthdate && <p className="text-xs text-red-500 font-medium">{err1.birthdate.message}</p>}
                       </div>
                       <div className="space-y-1.5">
@@ -1199,7 +1239,25 @@ export function MembershipApply() {
                           </div>
                           <div className="space-y-1.5">
                             <Label className={labelClass}>Birthdate</Label>
-                            <Input type="date" {...reg3('birthdate')} className={inputClass} />
+                            <Input 
+                              type="date" 
+                              {...reg3('birthdate', {
+                                validate: {
+                                  notToday: (value) => {
+                                    if (!value) return true;
+                                    const today = new Date().toISOString().split('T')[0];
+                                    return value !== today || 'Cannot select today as birthdate';
+                                  },
+                                  ageRequirement: (value) => {
+                                    if (!value) return true;
+                                    const minAge = getMinimumAge(selectedTypeId);
+                                    const age = calculateAge(value);
+                                    return age >= minAge || `Spouse minimum age requirement is ${minAge} years (age: ${age})`;
+                                  },
+                                },
+                              })} 
+                              className={inputClass} 
+                            />
                           </div>
                           <div className="space-y-1.5">
                             <Label className={labelClass}>Occupation</Label>

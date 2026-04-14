@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\MemberDetails\Schemas;
 
 use App\Models\Profile;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -14,6 +15,21 @@ use Filament\Schemas\Schema;
 
 class MemberDetailForm
 {
+    /**
+     * Membership type age requirements
+     * 1 = Associate Member (16+)
+     * 2 = Regular Member (18+)
+     */
+    protected static function getMinimumAge(?int $membershipTypeId): int
+    {
+        $ageRequirements = [
+            1 => 16, // Associate Member
+            2 => 18, // Regular Member
+        ];
+
+        return $ageRequirements[$membershipTypeId] ?? 18;
+    }
+
     public static function configure(Schema $schema): Schema
     {
         return $schema
@@ -42,6 +58,7 @@ class MemberDetailForm
                                         ->relationship('membershipType', 'name')
                                         ->searchable()
                                         ->preload()
+                                        ->live()
                                         ->required(),
 
                                     Select::make('branch_id')
@@ -75,6 +92,31 @@ class MemberDetailForm
                                 ->schema([
                                     TextInput::make('id_type')->label('ID Type'),
                                     TextInput::make('id_number')->label('ID Number'),
+                                    
+                                    Forms\Components\DatePicker::make('birthdate')
+                                        ->label('Birthdate')
+                                        ->before(today())
+                                        ->required()
+                                        ->rules([
+                                            'before:' . today()->toDateString(),
+                                            'date',
+                                            function (callable $get) {
+                                                return function ($attribute, $birthdate, $fail) use ($get) {
+                                                    $membershipTypeId = $get('membership_type_id');
+                                                    $minAge = static::getMinimumAge($membershipTypeId);
+                                                    $age = Carbon::parse($birthdate)->age;
+
+                                                    if ($age < $minAge) {
+                                                        $fail("Minimum age requirement is {$minAge} years old for this membership type. Current age: {$age} years old.");
+                                                    }
+                                                };
+                                            },
+                                        ])
+                                        ->validationMessages([
+                                            'before' => 'Birthdate cannot be today or in the future.',
+                                            'date' => 'Please provide a valid birthdate.',
+                                        ])
+                                        ->helperText('Birthdate validation based on membership type age requirement'),
                                 ]),
 
                             Section::make('Emergency Contact')
@@ -132,7 +174,16 @@ class MemberDetailForm
                                     TextInput::make('full_name')->label('Full Name'),
 
                                     Forms\Components\DatePicker::make('birthdate')
-                                        ->label('Birthdate'),
+                                        ->label('Birthdate')
+                                        ->before(today())
+                                        ->rules([
+                                            'before:' . today()->toDateString(),
+                                            'date',
+                                        ])
+                                        ->validationMessages([
+                                            'before' => 'Birthdate cannot be today or in the future.',
+                                            'date' => 'Please provide a valid birthdate.',
+                                        ]),
 
                                     TextInput::make('occupation')->label('Occupation'),
                                     TextInput::make('employer_name')->label('Employer'),
