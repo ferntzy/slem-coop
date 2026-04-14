@@ -160,6 +160,33 @@ class User extends Authenticatable implements HasAvatar
         return $this->isAdmin() || $this->isSuperAdmin();
     }
 
+    public function isHQManager(): bool
+    {
+        return $this->hasAnyRole([
+            'hqmanager',
+            'HQ Manager',
+            'hq_manager',
+        ]);
+    }
+
+    public function isHQStaff(): bool
+    {
+        return $this->hasAnyRole([
+            'hq',
+            'HQ',
+            'hq_staff',
+            'HQ Staff',
+            'hq staff',
+        ]);
+    }
+
+    public function isHeadOffice(): bool
+    {
+        return $this->isAdminOrSuperAdmin()
+            || $this->isHQManager()
+            || $this->isHQStaff();
+    }
+
     public function isMember(): bool
     {
         return $this->hasAnyRole(['Member', 'member']);
