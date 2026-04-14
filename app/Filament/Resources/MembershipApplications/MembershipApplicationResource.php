@@ -61,7 +61,7 @@ class MembershipApplicationResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        if ($user->hasAnyRole(['Admin', 'super_admin'])) {
+        if ($user->isAdminOrSuperAdmin()) {
             return $query;
         }
 

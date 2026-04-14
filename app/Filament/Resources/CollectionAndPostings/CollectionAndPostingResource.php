@@ -37,7 +37,7 @@ class CollectionAndPostingResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        if ($user->hasRole('Admin') || $user->hasRole('super_admin')) {
+        if ($user->isAdminOrSuperAdmin()) {
             return $query;
         }
 
