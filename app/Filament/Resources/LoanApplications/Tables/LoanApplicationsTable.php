@@ -211,7 +211,7 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return $record->status === 'Approved' && ! $record->loanAccount
-                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
+                                && (($user?->isHeadOffice() ?? false) || $user?->isBranchScoped());
                         })
                         ->action(function ($record) {
 
@@ -293,7 +293,7 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return $record->loanAccount && $record->loanAccount->status === 'Active'
-                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
+                                && (($user?->isHeadOffice() ?? false) || $user?->isBranchScoped());
                         })
                         ->disabled(function ($record) {
                             $loan = $record->loanAccount;
@@ -373,7 +373,7 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return (float) $record->amount_requested > 15000 && $record->collateral_status === 'Pending Verification'
-                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
+                                && (($user?->isHeadOffice() ?? false) || $user?->isBranchScoped());
                         })
                         ->requiresConfirmation()
                         ->action(function ($record) {
@@ -417,7 +417,7 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return (float) $record->amount_requested > 15000 && $record->collateral_status === 'Pending Verification'
-                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
+                                && (($user?->isHeadOffice() ?? false) || $user?->isBranchScoped());
                         })
                         ->requiresConfirmation()
                         ->action(function ($record) {
@@ -460,7 +460,7 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return in_array($record->status, ['Pending', 'Under Review', 'Approved'], true)
-                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
+                                && (($user?->isHeadOffice() ?? false) || $user?->isBranchScoped());
                         })
                         ->form([
                             Select::make('penalty_rule_id')
@@ -492,7 +492,7 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return $record->status === 'Pending'
-                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
+                                && (($user?->isHeadOffice() ?? false) || $user?->isBranchScoped());
                         })
                         ->action(function ($record) {
                             $profileId = $record->member?->profile_id ?? null;
@@ -561,12 +561,12 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return in_array($record->status, ['Pending', 'Under Review'], true)
-                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
+                                && (($user?->isHeadOffice() ?? false) || $user?->isBranchScoped());
                         })
                         ->action(function ($record) {
                             $profileId = $record->member?->profile_id ?? null;
 
-                            if (! ((auth()->user()?->hasAnyRole(['Admin', 'super_admin']) ?? false) || auth()->user()?->isBranchScoped())) {
+                            if (! ((auth()->user()?->isHeadOffice() ?? false) || auth()->user()?->isBranchScoped())) {
                                 Notification::make()
                                     ->title('Unauthorized')
                                     ->danger()
@@ -632,13 +632,13 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return in_array($record->status, ['Pending', 'Under Review'], true)
-                                && (($user?->hasAnyRole(['Admin', 'super_admin']) ?? false) || $user?->isBranchScoped());
+                                && (($user?->isHeadOffice() ?? false) || $user?->isBranchScoped());
                         })
                         ->form([Textarea::make('reason')->required()])
                         ->action(function ($record, array $data) {
                             $profileId = $record->member?->profile_id ?? null;
 
-                            if (! ((auth()->user()?->hasAnyRole(['Admin', 'super_admin']) ?? false) || auth()->user()?->isBranchScoped())) {
+                            if (! ((auth()->user()?->isHeadOffice() ?? false) || auth()->user()?->isBranchScoped())) {
                                 Notification::make()
                                     ->title('Unauthorized')
                                     ->danger()
@@ -696,7 +696,7 @@ class LoanApplicationsTable
                             }
 
                             return in_array($record->status, ['Pending', 'Under Review'], true)
-                                && (($user->hasAnyRole(['Admin', 'super_admin'])) || $user->isBranchScoped());
+                                && ($user->isHeadOffice() || $user->isBranchScoped());
                         })
                         ->action(function ($record) {
                             $profileId = $record->member?->profile_id ?? null;
@@ -705,7 +705,7 @@ class LoanApplicationsTable
                             $canCancel = match (true) {
                                 ! $user => false,
                                 default => in_array($record->status, ['Pending', 'Under Review'], true)
-                                    && ($user->hasAnyRole(['Admin', 'super_admin']) || $user->isBranchScoped()),
+                                    && ($user->isHeadOffice() || $user->isBranchScoped()),
                             };
 
                             if (! $canCancel) {
