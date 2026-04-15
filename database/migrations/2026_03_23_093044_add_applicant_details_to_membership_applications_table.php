@@ -35,7 +35,7 @@ return new class extends Migration
                 $table->string('email')->unique()->after('last_name');
             }
             if (! Schema::hasColumn('membership_applications', 'mobile_number')) {
-                $table->string('mobile_number', 45)->after('email');
+                $table->string('mobile_number', 11)->after('email');
             }
             if (! Schema::hasColumn('membership_applications', 'birthdate')) {
                 $table->date('birthdate')->after('mobile_number');
