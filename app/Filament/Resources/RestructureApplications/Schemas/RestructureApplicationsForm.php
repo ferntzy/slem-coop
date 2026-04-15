@@ -2,14 +2,16 @@
 
 namespace App\Filament\Resources\RestructureApplications\Schemas;
 
-use Filament\Schemas\Schema;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Hidden;
 use App\Models\LoanApplication;
 use App\Models\LoanType;
+use App\Models\MemberDetail;
+use App\Services\CoopFeeCalculatorService;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 
@@ -21,7 +23,7 @@ class RestructureApplicationsForm
             return null;
         }
 
-        return rtrim(rtrim((string) $type->max_interest_rate, '0'), '.') . '%';
+        return rtrim(rtrim((string) $type->max_interest_rate, '0'), '.').'%';
     }
 
     protected static function applyLoanTypeFields(callable $set, ?LoanType $type): void
@@ -40,14 +42,19 @@ class RestructureApplicationsForm
             Select::make('loan_application_id')
                 ->label('Select Existing Loan')
                 ->options(function () {
-                    return LoanApplication::with(['member.profile', 'type'])
-                        ->get()
+                    $query = LoanApplication::with(['member.profile', 'type']);
+
+                    if (Auth::user()?->isMember()) {
+                        $memberId = MemberDetail::where('profile_id', Auth::user()->profile_id)->value('id');
+                        $query->where('member_id', $memberId);
+                    }
+
+                    return $query->get()
                         ->mapWithKeys(function ($loan) {
                             $name = $loan->member?->profile?->full_name ?? 'Unknown Member';
 
                             return [
-                                $loan->loan_application_id =>
-                                    $name . " — Loan #{$loan->loan_application_id}",
+                                $loan->loan_application_id => $name." — Loan #{$loan->loan_application_id}",
                             ];
                         })
                         ->toArray();
@@ -56,10 +63,14 @@ class RestructureApplicationsForm
                 ->required()
                 ->reactive()
                 ->afterStateHydrated(function ($state, callable $set) {
-                    if (! $state) return;
+                    if (! $state) {
+                        return;
+                    }
 
                     $loan = LoanApplication::with('type')->find($state);
-                    if (! $loan) return;
+                    if (! $loan) {
+                        return;
+                    }
 
                     $set('loan_type_id', $loan->loan_type_id);
 
@@ -73,7 +84,7 @@ class RestructureApplicationsForm
 
                     $principal = (float) ($loanAccount?->balance ?? 0);
 
-                    $fees = app(\App\Services\CoopFeeCalculatorService::class)
+                    $fees = app(CoopFeeCalculatorService::class)
                         ->calculate('restructure', $principal);
 
                     $set('shared_capital_fee', $fees['shared_capital_fee'] ?? 0);
@@ -93,6 +104,7 @@ class RestructureApplicationsForm
                         $set('interest_rate_display', null);
                         $set('new_principal', null);
                         $set('old_loan_account_id', null);
+
                         return;
                     }
 
@@ -103,6 +115,7 @@ class RestructureApplicationsForm
                         $set('interest_rate_display', null);
                         $set('new_principal', null);
                         $set('old_loan_account_id', null);
+
                         return;
                     }
 
@@ -118,7 +131,7 @@ class RestructureApplicationsForm
 
                     $principal = (float) ($loanAccount?->balance ?? 0);
 
-                    $fees = app(\App\Services\CoopFeeCalculatorService::class)
+                    $fees = app(CoopFeeCalculatorService::class)
                         ->calculate('restructure', $principal);
 
                     $set('shared_capital_fee', $fees['shared_capital_fee'] ?? 0);
@@ -156,31 +169,31 @@ class RestructureApplicationsForm
                         ->where('status', 'Active')
                         ->first();
 
-                    $totalAmount   = (float) $loan->amount_requested;
+                    $totalAmount = (float) $loan->amount_requested;
                     $principalPaid = $loanAccount
                         ? (float) $loanAccount->principal_amount - (float) $loanAccount->balance
                         : 0;
 
-                    $threshold   = $totalAmount * 0.5;
-                    $balance     = $loanAccount ? (float) $loanAccount->balance : $totalAmount;
-                    $percentage  = $totalAmount > 0
+                    $threshold = $totalAmount * 0.5;
+                    $balance = $loanAccount ? (float) $loanAccount->balance : $totalAmount;
+                    $percentage = $totalAmount > 0
                         ? min(100, round(($principalPaid / $totalAmount) * 100, 1))
                         : 0;
-                    $isEligible  = $principalPaid >= $threshold;
+                    $isEligible = $principalPaid >= $threshold;
                     $stillNeeded = max(0, $threshold - $principalPaid);
 
-                    $barColor        = $isEligible ? '#1D9E75' : '#E24B4A';
-                    $bgStyle         = $isEligible ? 'background:#d1fae5' : 'background:#fee2e2';
-                    $statusText      = $isEligible
+                    $barColor = $isEligible ? '#1D9E75' : '#E24B4A';
+                    $bgStyle = $isEligible ? 'background:#d1fae5' : 'background:#fee2e2';
+                    $statusText = $isEligible
                         ? 'Eligible for restructuring — 50% threshold reached'
                         : 'Not eligible — must pay at least 50% of the original loan first';
-                    $statusColor     = $isEligible ? '#065f46' : '#991b1b';
-                    $paidFormatted   = '₱' . number_format($principalPaid, 2);
-                    $amountFormatted = '₱' . number_format($totalAmount, 2);
-                    $balanceLabel    = $isEligible ? 'Balance remaining' : 'Still needed';
-                    $balanceValue    = $isEligible
-                        ? '₱' . number_format($balance, 2)
-                        : '₱' . number_format($stillNeeded, 2);
+                    $statusColor = $isEligible ? '#065f46' : '#991b1b';
+                    $paidFormatted = '₱'.number_format($principalPaid, 2);
+                    $amountFormatted = '₱'.number_format($totalAmount, 2);
+                    $balanceLabel = $isEligible ? 'Balance remaining' : 'Still needed';
+                    $balanceValue = $isEligible
+                        ? '₱'.number_format($balance, 2)
+                        : '₱'.number_format($stillNeeded, 2);
 
                     return new HtmlString(<<<HTML
                         <div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;{$bgStyle}">
@@ -267,7 +280,9 @@ class RestructureApplicationsForm
                 ->minValue(1)
                 ->maxValue(function (callable $get) {
                     $loanId = $get('loan_application_id');
-                    if (! $loanId) return null;
+                    if (! $loanId) {
+                        return null;
+                    }
 
                     $loan = LoanApplication::with('type')->find($loanId);
 
@@ -275,19 +290,25 @@ class RestructureApplicationsForm
                 })
                 ->helperText(function (callable $get) {
                     $loanId = $get('loan_application_id');
-                    if (! $loanId) return null;
+                    if (! $loanId) {
+                        return null;
+                    }
 
                     $loan = LoanApplication::with('type')->find($loanId);
-                    $max  = $loan?->type?->max_term_months;
+                    $max = $loan?->type?->max_term_months;
 
                     return $max ? "Max term: {$max} months" : null;
                 })
                 ->rules(function (callable $get) {
                     $loanId = $get('loan_application_id');
-                    if (! $loanId) return [];
+                    if (! $loanId) {
+                        return [];
+                    }
 
                     $loan = LoanApplication::with('type')->find($loanId);
-                    if (! $loan?->type) return [];
+                    if (! $loan?->type) {
+                        return [];
+                    }
 
                     return [
                         'min:1',
