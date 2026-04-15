@@ -11,10 +11,17 @@ class SavingsAccountTransaction extends Model
         'profile_id',
         'savings_type_id',
         'terms',
+        'deposit',
+        'withdrawal',
         'amount',
         'type',
+        'direction',
+        'status',
+        'transaction_date',
+        'reference_no',
         'notes',
         'proof_of_transaction',
+        'posted_by_user_id',
     ];
 
     protected $casts = [
