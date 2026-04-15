@@ -12,18 +12,33 @@ use Illuminate\Support\Str;
 
 class NotificationService
 {
-    public function notifyUser(int $userId, string $title, string $description, bool $isRead = false): Notification
-    {
+    public function notifyUser(
+        int $userId,
+        string $title,
+        string $description,
+        bool $isRead = false,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): Notification {
         return Notification::create([
             'user_id' => $userId,
             'title' => $title,
             'description' => $description,
             'status' => $isRead ? 'seen' : 'unseen',
+            'is_read' => $isRead,
+            'notifiable_type' => $notifiableType,
+            'notifiable_id' => $notifiableId,
         ]);
     }
 
-    public function notifyProfile(string|int $profileId, string $title, string $description, bool $isRead = false): ?Notification
-    {
+    public function notifyProfile(
+        string|int $profileId,
+        string $title,
+        string $description,
+        bool $isRead = false,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): ?Notification {
         $user = User::where('profile_id', $profileId)->first();
 
         if (! $user) {
@@ -32,22 +47,34 @@ class NotificationService
             return null;
         }
 
-        return $this->notifyUser($user->user_id, $title, $description, $isRead);
+        return $this->notifyUser($user->user_id, $title, $description, $isRead, $notifiableType, $notifiableId);
     }
 
-    public function notifyRoles(array|string $roles, string $title, string $description, bool $isRead = false): void
-    {
+    public function notifyRoles(
+        array|string $roles,
+        string $title,
+        string $description,
+        bool $isRead = false,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): void {
         $roleUsers = User::role($roles)->get();
 
         foreach ($roleUsers as $user) {
-            $this->notifyUser($user->user_id, $title, $description, $isRead);
+            $this->notifyUser($user->user_id, $title, $description, $isRead, $notifiableType, $notifiableId);
         }
     }
 
-    public function notifyAdmins(string $title, string $description, bool $isRead = false): void
-    {
-        $this->notifyRoles(['Admin', 'super_admin'], $title, $description, $isRead);
+    public function notifyAdmins(
+        string $title,
+        string $description,
+        bool $isRead = false,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): void {
+        $this->notifyRoles(['Admin', 'super_admin'], $title, $description, $isRead, $notifiableType, $notifiableId);
     }
+
     public function createUserWithAutoPassword(Profile $profile): ?User
     {
         $existing = User::where('profile_id', $profile->profile_id)->first();

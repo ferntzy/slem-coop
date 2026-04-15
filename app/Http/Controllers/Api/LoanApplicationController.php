@@ -2,34 +2,36 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\LoanApplication;
+use App\Http\Controllers\Controller;
 use App\Models\LoanAccount;
-use App\Models\LoanApplicationCollstat;
+use App\Models\LoanApplication;
 use App\Models\LoanApplicationStatusLog;
 use App\Models\Notification as ModelsNotification;
 use App\Models\PenaltyRule;
-use App\Models\Profile;
 use App\Services\CoopFeeCalculatorService;
 use App\Services\NotificationService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
 
 class LoanApplicationController extends Controller
 {
     private function isLoanOfficer(): bool
     {
         $user = auth()->user();
-        if (!$user) return false;
+        if (! $user) {
+            return false;
+        }
 
-        if (!$user->relationLoaded('profile')) {
+        if (! $user->relationLoaded('profile')) {
             $user->load('profile');
         }
 
         $profile = $user->profile;
 
-        if (!$profile) return false;
+        if (! $profile) {
+            return false;
+        }
 
         $isLoanOfficer = ($profile->roles_id === 6);
 
@@ -39,9 +41,11 @@ class LoanApplicationController extends Controller
     private function getUserRoleInfo(): array
     {
         $user = auth()->user();
-        if (!$user) return ['error' => 'No authenticated user'];
+        if (! $user) {
+            return ['error' => 'No authenticated user'];
+        }
 
-        if (!$user->relationLoaded('profile')) {
+        if (! $user->relationLoaded('profile')) {
             $user->load('profile');
         }
 
@@ -55,9 +59,9 @@ class LoanApplicationController extends Controller
         ];
     }
 
-    public function index(Request $request):JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        //pagination for mobile
+        // pagination for mobile
         $loanApplications = LoanApplication::query()
             ->with(['member.profile', 'type', 'documents', 'cashflows', 'loanAccount'])
             ->paginate($request->query('per_page', 15));
@@ -65,7 +69,7 @@ class LoanApplicationController extends Controller
         return response()->json($loanApplications);
     }
 
-    public function show(string $id):JsonResponse
+    public function show(string $id): JsonResponse
     {
         $loanApplication = LoanApplication::query()
             ->with(['member.profile', 'type', 'documents', 'cashflows', 'loanAccount', 'payments', 'statusLogs'])
@@ -74,13 +78,14 @@ class LoanApplicationController extends Controller
 
         return response()->json($loanApplication);
     }
-    //approval actions for loan officers
+
+    // approval actions for loan officers
     public function approve(Request $request, $id): JsonResponse
     {
-        if (!$this->isLoanOfficer()) {
+        if (! $this->isLoanOfficer()) {
             return response()->json([
                 'message' => 'Unauthorized. You need Loan Officer or Admin access to approve loans.',
-                'user_info' => $this->getUserRoleInfo()
+                'user_info' => $this->getUserRoleInfo(),
             ], 403);
         }
 
@@ -97,58 +102,65 @@ class LoanApplicationController extends Controller
         }
 
         $profileId = $record->member?->profile_id ?? null;
-        $from      = $record->status;
+        $from = $record->status;
 
         DB::transaction(function () use ($record, $from, $profileId) {
 
             $record->update([
-                'status'      => 'Approved',
+                'status' => 'Approved',
                 'approved_at' => now(),
             ]);
 
             LoanApplicationStatusLog::create([
                 'loan_application_id' => $record->loan_application_id,
-                'from_status'         => $from,
-                'to_status'           => 'Approved',
-                'changed_by_user_id'  => auth()->id(),
-                'changed_at'          => now(),
+                'from_status' => $from,
+                'to_status' => 'Approved',
+                'changed_by_user_id' => auth()->id(),
+                'changed_at' => now(),
             ]);
 
             ModelsNotification::create([
-                'user_id'     => $record->member->profile->user->user_id,
-                'title'       => 'Loan Application',
+                'user_id' => $record->member->profile->user->user_id,
+                'title' => 'Loan Application',
                 'description' => 'Your loan application has been approved! Waiting for release date.',
+                'notifiable_type' => 'loan_application',
+                'notifiable_id' => $record->loan_application_id,
             ]);
 
             if ($profileId) {
                 app(NotificationService::class)->notifyProfile(
                     $profileId,
                     'Loan application approved',
-                    "Your loan application #{$record->loan_application_id} has been approved."
+                    "Your loan application #{$record->loan_application_id} has been approved.",
+                    notifiableType: 'loan_application',
+                    notifiableId: $record->loan_application_id
                 );
             }
 
             app(NotificationService::class)->notifyAdmins(
                 'Loan application approved',
-                "Loan application #{$record->loan_application_id} has been approved."
+                "Loan application #{$record->loan_application_id} has been approved.",
+                notifiableType: 'loan_application',
+                notifiableId: $record->loan_application_id
             );
         });
 
         return response()->json(['message' => 'Loan application approved successfully. Please set the release date to create the loan account.']);
     }
-    //reloan - Allow Loan Officers
+
+    // reloan - Allow Loan Officers
     public function reloan(Request $request, $id): JsonResponse
     {
-        if (!$this->isLoanOfficer()) {
+        if (! $this->isLoanOfficer()) {
             return response()->json([
                 'message' => 'Unauthorized. You need Loan Officer or Admin access to process reloans.',
-                'user_info' => $this->getUserRoleInfo()
+                'user_info' => $this->getUserRoleInfo(),
             ], 403);
         }
 
         $request->validate([
             'amount_requested' => 'required|numeric|min:1',
-            'term_months'      => 'required|integer|min:1',
+            'term_months' => 'required|integer|min:1',
         ]);
 
         $record = LoanApplication::with(['member.profile', 'loanAccount', 'type'])
@@ -166,71 +178,71 @@ class LoanApplicationController extends Controller
         }
 
         // 50 % rule
-        $paid     = $loan->principal_amount - $loan->balance;
+        $paid = $loan->principal_amount - $loan->balance;
         $required = $loan->principal_amount * 0.5;
 
         if ($paid < $required) {
             return response()->json([
-                'message'          => 'Must pay at least 50% of previous loan before reloaning.',
-                'paid'             => $paid,
-                'required'         => $required,
-                'remaining_balance'=> $loan->balance,
+                'message' => 'Must pay at least 50% of previous loan before reloaning.',
+                'paid' => $paid,
+                'required' => $required,
+                'remaining_balance' => $loan->balance,
             ], 422);
         }
 
         DB::transaction(function () use ($record, $request, $loan) {
 
-            $principal    = (float) $request->amount_requested;
-            $term         = (int)   $request->term_months;
+            $principal = (float) $request->amount_requested;
+            $term = (int) $request->term_months;
             $interestRate = (float) ($record->type?->max_interest_rate ?? 0);
-            $releaseDate  = now()->format('Y-m-d');
-            $profileId    = $record->member?->profile_id ?? null;
+            $releaseDate = now()->format('Y-m-d');
+            $profileId = $record->member?->profile_id ?? null;
 
-            $monthlyPrincipal   = $term > 0 ? ($principal / $term) : $principal;
+            $monthlyPrincipal = $term > 0 ? ($principal / $term) : $principal;
             $firstMonthInterest = $principal * ($interestRate / 100) / 12;
-            $monthlyAmort       = $monthlyPrincipal + $firstMonthInterest;
+            $monthlyAmort = $monthlyPrincipal + $firstMonthInterest;
 
             $fees = app(CoopFeeCalculatorService::class)->calculate('reloan', $principal);
 
             $remainingBalance = $loan->balance;
-            $netPrincipal     = max(0, $principal - $remainingBalance);
-            $netRelease       = max(0, ($fees['net_release_amount'] ?? 0) - $remainingBalance);
+            $netPrincipal = max(0, $principal - $remainingBalance);
+            $netRelease = max(0, ($fees['net_release_amount'] ?? 0) - $remainingBalance);
 
             // New loan application (pre-approved)
             $newLoanApp = LoanApplication::create([
-                'member_id'                    => $record->member_id,
-                'loan_type_id'                 => $record->loan_type_id,
-                'amount_requested'             => $principal,
-                'term_months'                  => $term,
-                'status'                       => 'Approved',
-                'reloan_from_loan_account_id'  => $loan->loan_account_id,
-                'previous_balance'             => $loan->balance,
+                'member_id' => $record->member_id,
+                'loan_type_id' => $record->loan_type_id,
+                'amount_requested' => $principal,
+                'term_months' => $term,
+                'status' => 'Approved',
+                'reloan_from_loan_account_id' => $loan->loan_account_id,
+                'previous_balance' => $loan->balance,
             ]);
 
             $newLoanApp->update([
                 'shared_capital_fee' => $fees['shared_capital_fee'] ?? 0,
-                'insurance_fee'      => $fees['insurance_fee']      ?? 0,
-                'processing_fee'     => $fees['processing_fee']     ?? 0,
-                'coop_fee_total'     => $fees['coop_fee_total']     ?? 0,
+                'insurance_fee' => $fees['insurance_fee'] ?? 0,
+                'processing_fee' => $fees['processing_fee'] ?? 0,
+                'coop_fee_total' => $fees['coop_fee_total'] ?? 0,
                 'net_release_amount' => $netRelease,
             ]);
 
             LoanAccount::create([
-                'loan_application_id'  => $newLoanApp->loan_application_id,
-                'profile_id'           => $profileId,
-                'principal_amount'     => $netPrincipal,
-                'shared_capital_fee'   => $fees['shared_capital_fee'] ?? 0,
-                'insurance_fee'        => $fees['insurance_fee']      ?? 0,
-                'processing_fee'       => $fees['processing_fee']     ?? 0,
-                'coop_fee_total'       => $fees['coop_fee_total']     ?? 0,
-                'net_release_amount'   => $netRelease,
-                'interest_rate'        => $interestRate,
-                'term_months'          => $term,
-                'release_date'         => $releaseDate,
-                'maturity_date'        => date('Y-m-d', strtotime("{$releaseDate} +{$term} months")),
+                'loan_application_id' => $newLoanApp->loan_application_id,
+                'profile_id' => $profileId,
+                'principal_amount' => $netPrincipal,
+                'shared_capital_fee' => $fees['shared_capital_fee'] ?? 0,
+                'insurance_fee' => $fees['insurance_fee'] ?? 0,
+                'processing_fee' => $fees['processing_fee'] ?? 0,
+                'coop_fee_total' => $fees['coop_fee_total'] ?? 0,
+                'net_release_amount' => $netRelease,
+                'interest_rate' => $interestRate,
+                'term_months' => $term,
+                'release_date' => $releaseDate,
+                'maturity_date' => date('Y-m-d', strtotime("{$releaseDate} +{$term} months")),
                 'monthly_amortization' => $monthlyAmort,
-                'balance'              => $netPrincipal,
-                'status'               => 'Active',
+                'balance' => $netPrincipal,
+                'status' => 'Active',
                 'parent_loan_account_id' => $loan->loan_account_id,
             ]);
         });
@@ -244,10 +256,10 @@ class LoanApplicationController extends Controller
 
     public function setPenaltyRule(Request $request, $id): JsonResponse
     {
-        if (!$this->isLoanOfficer()) {
+        if (! $this->isLoanOfficer()) {
             return response()->json([
                 'message' => 'Unauthorized. You need Loan Officer or Admin access to set penalty rules.',
-                'user_info' => $this->getUserRoleInfo()
+                'user_info' => $this->getUserRoleInfo(),
             ], 403);
         }
 
@@ -281,10 +293,10 @@ class LoanApplicationController extends Controller
 
     public function markUnderReview(Request $request, $id): JsonResponse
     {
-        if (!$this->isLoanOfficer()) {
+        if (! $this->isLoanOfficer()) {
             return response()->json([
                 'message' => 'Unauthorized. You need Loan Officer or Admin access to mark under review.',
-                'user_info' => $this->getUserRoleInfo()
+                'user_info' => $this->getUserRoleInfo(),
             ], 403);
         }
 
@@ -297,7 +309,7 @@ class LoanApplicationController extends Controller
         }
 
         $profileId = $record->member?->profile_id ?? null;
-        $from      = $record->status;
+        $from = $record->status;
 
         DB::transaction(function () use ($record, $from, $profileId) {
 
@@ -305,10 +317,10 @@ class LoanApplicationController extends Controller
 
             LoanApplicationStatusLog::create([
                 'loan_application_id' => $record->loan_application_id,
-                'from_status'         => $from,
-                'to_status'           => 'Under Review',
-                'changed_by_user_id'  => auth()->id(),
-                'changed_at'          => now(),
+                'from_status' => $from,
+                'to_status' => 'Under Review',
+                'changed_by_user_id' => auth()->id(),
+                'changed_at' => now(),
             ]);
 
             if ($profileId) {
@@ -335,10 +347,10 @@ class LoanApplicationController extends Controller
 
     public function downloadLoanForm($id): JsonResponse
     {
-        if (!$this->isLoanOfficer()) {
+        if (! $this->isLoanOfficer()) {
             return response()->json([
                 'message' => 'Unauthorized. You need Loan Officer or Admin access.',
-                'user_info' => $this->getUserRoleInfo()
+                'user_info' => $this->getUserRoleInfo(),
             ], 403);
         }
 
@@ -347,8 +359,8 @@ class LoanApplicationController extends Controller
         $url = route('loan-applications.pdf', ['loanApplication' => $id]);
 
         return response()->json([
-            'message'  => 'PDF URL generated successfully.',
-            'pdf_url'  => $url,
+            'message' => 'PDF URL generated successfully.',
+            'pdf_url' => $url,
         ]);
     }
 
@@ -359,10 +371,10 @@ class LoanApplicationController extends Controller
 
     public function reject(Request $request, $id): JsonResponse
     {
-        if (!$this->isLoanOfficer()) {
+        if (! $this->isLoanOfficer()) {
             return response()->json([
                 'message' => 'Unauthorized. You need Loan Officer or Admin access to reject loans.',
-                'user_info' => $this->getUserRoleInfo()
+                'user_info' => $this->getUserRoleInfo(),
             ], 403);
         }
 
@@ -379,7 +391,7 @@ class LoanApplicationController extends Controller
         }
 
         $profileId = $record->member?->profile_id ?? null;
-        $from      = $record->status;
+        $from = $record->status;
 
         DB::transaction(function () use ($record, $from, $profileId, $request) {
 
@@ -387,30 +399,36 @@ class LoanApplicationController extends Controller
 
             LoanApplicationStatusLog::create([
                 'loan_application_id' => $record->loan_application_id,
-                'from_status'         => $from,
-                'to_status'           => 'Rejected',
-                'changed_by_user_id'  => auth()->id(),
-                'reason'              => $request->reason,
-                'changed_at'          => now(),
+                'from_status' => $from,
+                'to_status' => 'Rejected',
+                'changed_by_user_id' => auth()->id(),
+                'reason' => $request->reason,
+                'changed_at' => now(),
             ]);
 
             ModelsNotification::create([
-                'user_id'     => $record->member->profile->user->user_id,
-                'title'       => 'Loan application was rejected',
+                'user_id' => $record->member->profile->user->user_id,
+                'title' => 'Loan application was rejected',
                 'description' => $request->reason,
+                'notifiable_type' => 'loan_application',
+                'notifiable_id' => $record->loan_application_id,
             ]);
 
             if ($profileId) {
                 app(NotificationService::class)->notifyProfile(
                     $profileId,
                     'Loan application rejected',
-                    "Your loan application #{$record->loan_application_id} has been rejected. Reason: {$request->reason}"
+                    "Your loan application #{$record->loan_application_id} has been rejected. Reason: {$request->reason}",
+                    notifiableType: 'loan_application',
+                    notifiableId: $record->loan_application_id
                 );
             }
 
             app(NotificationService::class)->notifyAdmins(
                 'Loan application rejected',
-                "Loan application #{$record->loan_application_id} has been rejected. Reason: {$request->reason}"
+                "Loan application #{$record->loan_application_id} has been rejected. Reason: {$request->reason}",
+                notifiableType: 'loan_application',
+                notifiableId: $record->loan_application_id
             );
         });
 
@@ -424,10 +442,10 @@ class LoanApplicationController extends Controller
 
     public function cancel(Request $request, $id): JsonResponse
     {
-        if (!$this->isLoanOfficer()) {
+        if (! $this->isLoanOfficer()) {
             return response()->json([
                 'message' => 'Unauthorized. You need Loan Officer or Admin access to cancel loans.',
-                'user_info' => $this->getUserRoleInfo()
+                'user_info' => $this->getUserRoleInfo(),
             ], 403);
         }
 
@@ -440,7 +458,7 @@ class LoanApplicationController extends Controller
         }
 
         $profileId = $record->member?->profile_id ?? null;
-        $from      = $record->status;
+        $from = $record->status;
 
         DB::transaction(function () use ($record, $from, $profileId) {
 
@@ -448,29 +466,35 @@ class LoanApplicationController extends Controller
 
             LoanApplicationStatusLog::create([
                 'loan_application_id' => $record->loan_application_id,
-                'from_status'         => $from,
-                'to_status'           => 'Cancelled',
-                'changed_by_user_id'  => auth()->id(),
-                'changed_at'          => now(),
+                'from_status' => $from,
+                'to_status' => 'Cancelled',
+                'changed_by_user_id' => auth()->id(),
+                'changed_at' => now(),
             ]);
 
             ModelsNotification::create([
-                'user_id'     => $record->member->profile->user->user_id,
-                'title'       => 'Loan Application',
+                'user_id' => $record->member->profile->user->user_id,
+                'title' => 'Loan Application',
                 'description' => 'Your loan application was successfully cancelled!',
+                'notifiable_type' => 'loan_application',
+                'notifiable_id' => $record->loan_application_id,
             ]);
 
             if ($profileId) {
                 app(NotificationService::class)->notifyProfile(
                     $profileId,
                     'Loan application cancelled',
-                    "Your loan application #{$record->loan_application_id} has been cancelled."
+                    "Your loan application #{$record->loan_application_id} has been cancelled.",
+                    notifiableType: 'loan_application',
+                    notifiableId: $record->loan_application_id
                 );
             }
 
             app(NotificationService::class)->notifyAdmins(
                 'Loan application cancelled',
-                "Loan application #{$record->loan_application_id} is cancelled."
+                "Loan application #{$record->loan_application_id} is cancelled.",
+                notifiableType: 'loan_application',
+                notifiableId: $record->loan_application_id
             );
         });
 
