@@ -6,17 +6,18 @@ use App\Models\LoanType;
 use App\Models\MemberDetail;
 use App\Services\CoopFeeCalculatorService;
 use Carbon\Carbon;
-use App\Models\PenaltyRule;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Wizard;
 use Filament\Schemas\Components\Wizard\Step;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class LoanApplicationsForm
@@ -51,7 +52,7 @@ class LoanApplicationsForm
 
     protected static function money(?float $amount): string
     {
-        return $amount !== null ? '₱' . number_format($amount, 2) : '—';
+        return $amount !== null ? '₱'.number_format($amount, 2) : '—';
     }
 
     protected static function getInterestRateDisplay(?LoanType $type): ?string
@@ -60,7 +61,7 @@ class LoanApplicationsForm
             return null;
         }
 
-        return rtrim(rtrim((string) $type->max_interest_rate, '0'), '.') . '%';
+        return rtrim(rtrim((string) $type->max_interest_rate, '0'), '.').'%';
     }
 
     protected static function requiresCollateral(?LoanType $type, float $amount): bool
@@ -78,13 +79,13 @@ class LoanApplicationsForm
     {
         $threshold = (float) ($type?->collateral_threshold ?? 0);
 
-        return '₱' . number_format($threshold, 2);
+        return '₱'.number_format($threshold, 2);
     }
 
     protected static function applyDerivedLoanFields(callable $set, ?LoanType $type, float $amount): void
     {
         $fees = app(CoopFeeCalculatorService::class)
-                ->calculate('loan_application', $amount);
+            ->calculate('loan_application', $amount);
 
         $set('interest_rate_display', static::getInterestRateDisplay($type));
         $set(
@@ -108,29 +109,33 @@ class LoanApplicationsForm
                             Section::make('Loan Application Details')
                                 ->schema([
                                     Select::make('member_id')
-                                    ->label('Member')
-                                    ->searchable()
-                                    ->getSearchResultsUsing(function (string $search) {
-                                        return MemberDetail::with('profile')
-                                            ->where('status', 'Active')
-                                            ->whereHas('profile', function ($query) use ($search) {
-                                                $query->where('first_name', 'like', "%{$search}%")
-                                                    ->orWhere('last_name', 'like', "%{$search}%");
-                                            })
-                                            ->limit(50)
-                                            ->get()
-                                            ->mapWithKeys(fn ($member) => [
-                                                $member->id => $member->profile->full_name . ' — ' . $member->member_no,
-                                            ]);
-                                    })
-                                    ->getOptionLabelUsing(fn ($value) => 
-                                        optional(MemberDetail::with('profile')->find($value))
-                                            ?->profile->full_name . ' — ' . 
-                                        optional(MemberDetail::find($value))->member_no
-                                    )
-                                    ->reactive()
-                                    ->required(fn () => ! Auth::user()?->hasRole('Member'))
-                                    ->visible(fn () => ! Auth::user()?->hasRole('Member')),
+                                        ->label('Member')
+                                        ->searchable()
+                                        ->getSearchResultsUsing(function (string $search) {
+                                            return MemberDetail::with('profile')
+                                                ->where('status', 'Active')
+                                                ->where(function (Builder $query) use ($search) {
+                                                    $query->where('member_no', 'like', "%{$search}%")
+                                                        ->orWhereHas('profile', function (Builder $query) use ($search) {
+                                                            $query->where('first_name', 'like', "%{$search}%")
+                                                                ->orWhere('middle_name', 'like', "%{$search}%")
+                                                                ->orWhere('last_name', 'like', "%{$search}%")
+                                                                ->orWhere('email', 'like', "%{$search}%");
+                                                        });
+                                                })
+                                                ->limit(50)
+                                                ->get()
+                                                ->mapWithKeys(fn ($member) => [
+                                                    $member->id => $member->profile->full_name.' — '.$member->member_no,
+                                                ]);
+                                        })
+                                        ->getOptionLabelUsing(fn ($value) => optional(MemberDetail::with('profile')->find($value))
+                                            ?->profile->full_name.' — '.
+                                            optional(MemberDetail::find($value))->member_no
+                                        )
+                                        ->reactive()
+                                        ->required(fn () => ! Auth::user()?->isMember())
+                                        ->visible(fn () => ! Auth::user()?->isMember()),
 
                                     Hidden::make('member_id')
                                         ->default(function () {
@@ -143,8 +148,8 @@ class LoanApplicationsForm
                                             return MemberDetail::where('profile_id', $user->profile_id)->value('id');
                                         })
                                         ->reactive()
-                                        ->required(fn () => Auth::user()?->hasRole('Member'))
-                                        ->visible(fn () => Auth::user()?->hasRole('Member')),
+                                        ->required(fn () => Auth::user()?->isMember())
+                                        ->visible(fn () => Auth::user()?->isMember()),
 
                                     Placeholder::make('member_display')
                                         ->label('Member')
@@ -163,9 +168,9 @@ class LoanApplicationsForm
                                                 return 'No member record found';
                                             }
 
-                                            return $member->profile->full_name . ' — ' . $member->member_no;
+                                            return $member->profile->full_name.' — '.$member->member_no;
                                         })
-                                        ->visible(fn () => Auth::user()?->hasRole('Member')),
+                                        ->visible(fn () => Auth::user()?->isMember()),
 
                                     Select::make('loan_type_id')
                                         ->label('Loan Type')
@@ -473,7 +478,7 @@ class LoanApplicationsForm
 
                             Section::make('Co-Makers / Guarantors')
                                 ->schema([
-                                    \Filament\Schemas\Components\Grid::make(1)
+                                    Grid::make(1)
                                         ->schema(function (callable $get) {
                                             $member = static::getMember($get);
 
@@ -486,7 +491,7 @@ class LoanApplicationsForm
                                             }
 
                                             return $member->coMakers->map(function ($coMaker, $index) {
-                                                return Section::make('Co-Maker #' . ($index + 1))
+                                                return Section::make('Co-Maker #'.($index + 1))
                                                     ->schema([
                                                         Placeholder::make("co_maker_name_{$index}")
                                                             ->label('Full Name')
@@ -512,7 +517,7 @@ class LoanApplicationsForm
                                                             ->label('Monthly Income')
                                                             ->content(
                                                                 $coMaker->monthly_income !== null
-                                                                    ? '₱' . number_format($coMaker->monthly_income, 2)
+                                                                    ? '₱'.number_format($coMaker->monthly_income, 2)
                                                                     : '—'
                                                             ),
 
@@ -529,7 +534,6 @@ class LoanApplicationsForm
                                 ->columnSpanFull()
                                 ->visible(fn (callable $get) => filled($get('member_id'))),
                         ]),
-
 
                     Step::make('Cash Flow Form')
                         ->schema([
@@ -580,7 +584,7 @@ class LoanApplicationsForm
                                         return 'Collateral verification is not required for this loan type.';
                                     }
 
-                                    return 'Collateral verification is required when the loan amount exceeds ' . static::getCollateralThresholdLabel($type) . '.';
+                                    return 'Collateral verification is required when the loan amount exceeds '.static::getCollateralThresholdLabel($type).'.';
                                 })
                                 ->schema([
                                     Placeholder::make('collateral_warning')
@@ -592,7 +596,7 @@ class LoanApplicationsForm
                                                 return 'Collateral is not required for this loan type.';
                                             }
 
-                                            return '⚠ Collateral is required when the loan amount exceeds ' . static::getCollateralThresholdLabel($type) . '. Please upload supporting documents.';
+                                            return '⚠ Collateral is required when the loan amount exceeds '.static::getCollateralThresholdLabel($type).'. Please upload supporting documents.';
                                         })
                                         ->extraAttributes([
                                             'class' => 'p-4 rounded-lg bg-yellow-50 border border-yellow-400 text-yellow-800 font-semibold',
@@ -681,16 +685,15 @@ class LoanApplicationsForm
                                 ])
                                 ->columns(1),
                         ])
-                        ->visible(fn (string $operation) =>
-                            $operation !== 'create'
+                        ->visible(fn (string $operation) => $operation !== 'create'
                             && auth()->check()
                             && auth()->user()->hasAnyRole(['super_admin', 'Admin', 'Staff', 'Teller', 'Manager'])
                         )
 
                         ->columnSpanFull(),
                 ])
-                ->skippable()
-                ->columnSpanFull(),
+                    ->skippable()
+                    ->columnSpanFull(),
             ]);
     }
 }

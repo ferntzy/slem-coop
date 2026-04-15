@@ -16,7 +16,7 @@ class CreateLoanApplications extends CreateRecord
     {
         $amountRequested = (float) ($data['amount_requested'] ?? 0);
         $fees = app(CoopFeeCalculatorService::class)
-        ->calculate('loan_application', $amountRequested);
+            ->calculate('loan_application', $amountRequested);
 
         unset(
             $data['salary'],
@@ -30,7 +30,7 @@ class CreateLoanApplications extends CreateRecord
             $data['interest_rate_display']
         );
 
-        if (Auth::user()?->hasRole('Member')) {
+        if (Auth::user()?->isMember()) {
             $data['member_id'] = MemberDetail::where('profile_id', Auth::user()->profile_id)->value('id');
         }
 
