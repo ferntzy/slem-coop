@@ -2,10 +2,8 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class MembershipApplication extends Model
 {
@@ -112,35 +110,6 @@ class MembershipApplication extends Model
                 $model->updated_by = auth()->user()?->user_id ?? 1;
             }
         });
-    }
-
-    public function save(array $options = [])
-    {
-        if ($this->isDirty('status') && $this->status === 'approved' && ! $this->profile_id) {
-
-            return DB::transaction(function () use ($options) {
-                $role = Role::where('name', 'Member')->firstOrFail();
-
-                $profile = Profile::create([
-                    'first_name' => $this->first_name,
-                    'middle_name' => $this->middle_name,
-                    'last_name' => $this->last_name,
-                    'email' => $this->email,
-                    'mobile_number' => $this->mobile_number,
-                    'birthdate' => $this->birthdate,
-                    'sex' => $this->sex,
-                    'address' => $this->address,
-                    'roles_id' => $role->id,
-                ]);
-
-                $this->profile_id = $profile->profile_id;
-                $this->approved_at = Carbon::now();
-
-                return parent::save($options);
-            });
-        }
-
-        return parent::save($options);
     }
 
     public function orientationAssessments()
