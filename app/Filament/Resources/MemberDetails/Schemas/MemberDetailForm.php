@@ -71,8 +71,8 @@ class MemberDetailForm
 
                                     Select::make('status')
                                         ->options([
-                                            'Active'     => 'Active',
-                                            'Inactive'   => 'Inactive',
+                                            'Active' => 'Active',
+                                            'Inactive' => 'Inactive',
                                             'Delinquent' => 'Delinquent',
                                         ])
                                         ->required(),
@@ -133,7 +133,7 @@ class MemberDetailForm
                                     Select::make('sex')
                                         ->label('Sex')
                                         ->options([
-                                            'Male'   => 'Male',
+                                            'Male' => 'Male',
                                             'Female' => 'Female',
                                         ])
                                         ->required(),
@@ -141,18 +141,22 @@ class MemberDetailForm
                                     Select::make('civil_status')
                                         ->label('Civil Status')
                                         ->options([
-                                            'Single'    => 'Single',
-                                            'Married'   => 'Married',
-                                            'Widowed'   => 'Widowed',
+                                            'Single' => 'Single',
+                                            'Married' => 'Married',
+                                            'Widowed' => 'Widowed',
                                             'Separated' => 'Separated',
-                                            'Annulled'  => 'Annulled',
+                                            'Annulled' => 'Annulled',
                                         ])
                                         ->required()
                                         // ->live() broadcasts changes immediately so the Spouse
                                         // section visibility updates without a page reload.
                                         ->live(),
+                                ])
+                                ->columns(3),
 
-                                    // Address fields — merged here from the old separate section
+                            // Address fields live on MemberDetail, not Profile — save them directly
+                            Section::make('Address')
+                                ->schema([
                                     TextInput::make('house_no')
                                         ->label('House No.')
                                         ->required(),
@@ -182,16 +186,16 @@ class MemberDetailForm
                                     Select::make('id_type')
                                         ->label('ID Type')
                                         ->options([
-                                            'TIN'                                 => 'TIN',
+                                            'TIN' => 'TIN',
                                             'Philippine National ID (PhilSys ID)' => 'Philippine National ID (PhilSys ID)',
-                                            'Passport'                            => 'Passport',
-                                            "Driver's License"                    => "Driver's License",
-                                            'UMID (SSS/GSIS ID)'                  => 'UMID (SSS/GSIS ID)',
+                                            'Passport' => 'Passport',
+                                            "Driver's License" => "Driver's License",
+                                            'UMID (SSS/GSIS ID)' => 'UMID (SSS/GSIS ID)',
                                             'PRC ID (for licensed professionals)' => 'PRC ID (for licensed professionals)',
-                                            "Voter's ID (if still available)"     => "Voter's ID (if still available)",
-                                            'Postal ID'                           => 'Postal ID',
-                                            'Senior Citizen ID'                   => 'Senior Citizen ID',
-                                            'PWD ID'                              => 'PWD ID',
+                                            "Voter's ID (if still available)" => "Voter's ID (if still available)",
+                                            'Postal ID' => 'Postal ID',
+                                            'Senior Citizen ID' => 'Senior Citizen ID',
+                                            'PWD ID' => 'PWD ID',
                                         ])
                                         ->searchable()
                                         ->required(),
@@ -214,12 +218,12 @@ class MemberDetailForm
                                     Select::make('source_of_income')
                                         ->label('Source of Income')
                                         ->options([
-                                            'Employment'         => 'Employment',
-                                            'Business'           => 'Business',
-                                            'Remittance'         => 'Remittance',
+                                            'Employment' => 'Employment',
+                                            'Business' => 'Business',
+                                            'Remittance' => 'Remittance',
                                             'Pension/Retirement' => 'Pension/Retirement',
-                                            'Agriculture'        => 'Agriculture',
-                                            'Others'             => 'Others',
+                                            'Agriculture' => 'Agriculture',
+                                            'Others' => 'Others',
                                         ])
                                         ->required()
                                         ->live(),
@@ -227,12 +231,12 @@ class MemberDetailForm
                                     Select::make('monthly_income_range')
                                         ->label('Monthly Income Range')
                                         ->options([
-                                            'Below ₱10,000'       => 'Below ₱10,000',
-                                            '₱10,000 – ₱20,000'  => '₱10,000 – ₱20,000',
-                                            '₱20,001 – ₱30,000'  => '₱20,001 – ₱30,000',
-                                            '₱30,001 – ₱50,000'  => '₱30,001 – ₱50,000',
+                                            'Below ₱10,000' => 'Below ₱10,000',
+                                            '₱10,000 – ₱20,000' => '₱10,000 – ₱20,000',
+                                            '₱20,001 – ₱30,000' => '₱20,001 – ₱30,000',
+                                            '₱30,001 – ₱50,000' => '₱30,001 – ₱50,000',
                                             '₱50,001 – ₱100,000' => '₱50,001 – ₱100,000',
-                                            'Above ₱100,000'      => 'Above ₱100,000',
+                                            'Above ₱100,000' => 'Above ₱100,000',
                                         ])
                                         ->required(),
 
@@ -398,12 +402,12 @@ class MemberDetailForm
                                     Select::make('source_of_income')
                                         ->label('Source of Income')
                                         ->options([
-                                            'Employment'         => 'Employment',
-                                            'Business'           => 'Business',
-                                            'Remittance'         => 'Remittance',
+                                            'Employment' => 'Employment',
+                                            'Business' => 'Business',
+                                            'Remittance' => 'Remittance',
                                             'Pension/Retirement' => 'Pension/Retirement',
-                                            'Agriculture'        => 'Agriculture',
-                                            'Others'             => 'Others',
+                                            'Agriculture' => 'Agriculture',
+                                            'Others' => 'Others',
                                         ]),
 
                                     TextInput::make('monthly_income')
