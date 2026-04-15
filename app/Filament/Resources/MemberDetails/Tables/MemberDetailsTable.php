@@ -18,8 +18,10 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\RecordActionsPosition;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
+
 class MemberDetailsTable
 {
     protected static function getSavingsType(callable $get): ?SavingsType
@@ -35,7 +37,7 @@ class MemberDetailsTable
 
     protected static function money(?float $amount): string
     {
-        return $amount !== null ? '₱' . number_format($amount, 2) : '—';
+        return $amount !== null ? '₱'.number_format($amount, 2) : '—';
     }
 
     protected static function getRegularSavingsBalance(int $profileId): float
@@ -54,34 +56,47 @@ class MemberDetailsTable
         return max($totalDeposit - $totalWithdrawal, 0);
     }
 
-protected static function getTimeDepositMaturityDate(?SavingsAccountTransaction $transaction): ?Carbon
-{
-    if (! $transaction || ! $transaction->transaction_date || ! $transaction->terms) {
-        return null;
+    protected static function getTimeDepositMaturityDate(?SavingsAccountTransaction $transaction): ?Carbon
+    {
+        if (! $transaction || ! $transaction->transaction_date || ! $transaction->terms) {
+            return null;
+        }
+
+        return Carbon::parse($transaction->transaction_date)
+            ->addMonths((int) $transaction->terms);
     }
 
-    return Carbon::parse($transaction->transaction_date)
-        ->addMonths((int) $transaction->terms);
-}
+    protected static function isTimeDepositMatured(?SavingsAccountTransaction $transaction): bool
+    {
+        $maturityDate = static::getTimeDepositMaturityDate($transaction);
 
-protected static function isTimeDepositMatured(?SavingsAccountTransaction $transaction): bool
-{
-    $maturityDate = static::getTimeDepositMaturityDate($transaction);
+        if (! $maturityDate) {
+            return false;
+        }
 
-    if (! $maturityDate) {
-        return false;
+        return now()->greaterThanOrEqualTo($maturityDate);
     }
 
-    return now()->greaterThanOrEqualTo($maturityDate);
-}
     public static function configure(Table $table): Table
     {
         return $table
             ->columns([
                 TextColumn::make('profile.full_name')
                     ->label('Member')
-                    ->searchable()
-                    ->sortable(),
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('profile', function (Builder $q) use ($search) {
+                            $q->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('middle_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        });
+                    })
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query
+                            ->leftJoin('profiles', 'member_details.profile_id', '=', 'profiles.profile_id')
+                            ->orderBy('profiles.first_name', $direction)
+                            ->orderBy('profiles.last_name', $direction)
+                            ->select('member_details.*');
+                    }),
 
                 TextColumn::make('profile.email')
                     ->label('Login Email')
@@ -141,7 +156,8 @@ protected static function isTimeDepositMatured(?SavingsAccountTransaction $trans
                                         ->get()
                                         ->mapWithKeys(function ($type) {
                                             $code = $type->code ? " ({$type->code})" : '';
-                                            return [$type->id => $type->name . $code];
+
+                                            return [$type->id => $type->name.$code];
                                         })
                                         ->toArray();
                                 })
@@ -209,7 +225,7 @@ protected static function isTimeDepositMatured(?SavingsAccountTransaction $trans
 
                                     $min = (float) ($type->minimum_initial_deposit ?? 0);
 
-                                    return $min > 0 ? 'Minimum initial deposit: ' . static::money($min) : null;
+                                    return $min > 0 ? 'Minimum initial deposit: '.static::money($min) : null;
                                 })
                                 ->dehydrated(true)
                                 ->required(),
@@ -288,7 +304,8 @@ protected static function isTimeDepositMatured(?SavingsAccountTransaction $trans
                                         ->get()
                                         ->mapWithKeys(function ($type) {
                                             $code = $type->code ? " ({$type->code})" : '';
-                                            return [$type->id => $type->name . $code];
+
+                                            return [$type->id => $type->name.$code];
                                         })
                                         ->toArray();
                                 })
@@ -399,7 +416,7 @@ protected static function isTimeDepositMatured(?SavingsAccountTransaction $trans
 
                                     $min = (float) ($type->minimum_initial_deposit ?? 0);
 
-                                    return $min > 0 ? 'Minimum initial deposit: ' . static::money($min) : null;
+                                    return $min > 0 ? 'Minimum initial deposit: '.static::money($min) : null;
                                 })
                                 ->required(),
 
@@ -480,7 +497,8 @@ protected static function isTimeDepositMatured(?SavingsAccountTransaction $trans
                                         ->get()
                                         ->mapWithKeys(function ($type) {
                                             $code = $type->code ? " ({$type->code})" : '';
-                                            return [$type->id => $type->name . $code];
+
+                                            return [$type->id => $type->name.$code];
                                         })
                                         ->toArray();
                                 })
@@ -510,10 +528,10 @@ protected static function isTimeDepositMatured(?SavingsAccountTransaction $trans
                                         ->get()
                                         ->mapWithKeys(function ($account) {
                                             return [
-                                                $account->id => 'Time Deposit: ₱' . number_format((float) ($account->deposit ?? 0), 2)
-                                                    . ' | Term: ' . ($account->terms ?? 'N/A')
-                                                    . ' | Status: ' . ucfirst($account->status ?? 'ongoing')
-                                                    . ' | Date: ' . optional($account->transaction_date)->format('Y-m-d'),
+                                                $account->id => 'Time Deposit: ₱'.number_format((float) ($account->deposit ?? 0), 2)
+                                                    .' | Term: '.($account->terms ?? 'N/A')
+                                                    .' | Status: '.ucfirst($account->status ?? 'ongoing')
+                                                    .' | Date: '.optional($account->transaction_date)->format('Y-m-d'),
                                             ];
                                         })
                                         ->toArray();
@@ -526,6 +544,7 @@ protected static function isTimeDepositMatured(?SavingsAccountTransaction $trans
                                 ->afterStateUpdated(function ($state, callable $set) {
                                     if (! $state) {
                                         $set('amount', null);
+
                                         return;
                                     }
 
@@ -558,7 +577,8 @@ protected static function isTimeDepositMatured(?SavingsAccountTransaction $trans
                                 ->rule(function (callable $get) {
                                     if ((int) $get('savings_type_id') === 2) {
                                         $balance = static::getRegularSavingsBalance((int) $get('profile_id'));
-                                        return 'lte:' . $balance;
+
+                                        return 'lte:'.$balance;
                                     }
 
                                     return null;
@@ -570,7 +590,8 @@ protected static function isTimeDepositMatured(?SavingsAccountTransaction $trans
 
                                     if ((int) $get('savings_type_id') === 2) {
                                         $balance = static::getRegularSavingsBalance((int) $get('profile_id'));
-                                        return 'Available balance: ₱' . number_format($balance, 2);
+
+                                        return 'Available balance: ₱'.number_format($balance, 2);
                                     }
 
                                     return null;
@@ -608,47 +629,47 @@ protected static function isTimeDepositMatured(?SavingsAccountTransaction $trans
                             $amount = (float) ($data['amount'] ?? 0);
                             $timeDepositTransaction = null;
 
-if ((int) $data['savings_type_id'] === 1) {
-    $timeDepositTransaction = SavingsAccountTransaction::find($data['time_deposit_transaction_id'] ?? null);
+                            if ((int) $data['savings_type_id'] === 1) {
+                                $timeDepositTransaction = SavingsAccountTransaction::find($data['time_deposit_transaction_id'] ?? null);
 
-    if (! $timeDepositTransaction) {
-        Notification::make()
-            ->title('Time deposit transaction not found.')
-            ->danger()
-            ->send();
-        return;
-    }
+                                if (! $timeDepositTransaction) {
+                                    Notification::make()
+                                        ->title('Time deposit transaction not found.')
+                                        ->danger()
+                                        ->send();
 
+                                    return;
+                                }
 
-    if (! static::isTimeDepositMatured($timeDepositTransaction)) {
-        $maturityDate = static::getTimeDepositMaturityDate($timeDepositTransaction);
+                                if (! static::isTimeDepositMatured($timeDepositTransaction)) {
+                                    $maturityDate = static::getTimeDepositMaturityDate($timeDepositTransaction);
 
-        Notification::make()
-            ->title('Cannot Withdraw Yet')
-            ->body('Maturity Date: ' . ($maturityDate ? $maturityDate->format('Y-m-d') : 'N/A'))
-            ->danger()
-            ->send();
+                                    Notification::make()
+                                        ->title('Cannot Withdraw Yet')
+                                        ->body('Maturity Date: '.($maturityDate ? $maturityDate->format('Y-m-d') : 'N/A'))
+                                        ->danger()
+                                        ->send();
 
-        return;
-    }
+                                    return;
+                                }
 
+                                if (($timeDepositTransaction->status ?? null) === 'ongoing') {
+                                    $timeDepositTransaction->update([
+                                        'status' => 'completed',
+                                    ]);
+                                }
 
-    if (($timeDepositTransaction->status ?? null) === 'ongoing') {
-        $timeDepositTransaction->update([
-            'status' => 'completed',
-        ]);
-    }
+                                if (($timeDepositTransaction->status ?? null) === 'withdrawn') {
+                                    Notification::make()
+                                        ->title('Already withdrawn')
+                                        ->danger()
+                                        ->send();
 
-    if (($timeDepositTransaction->status ?? null) === 'withdrawn') {
-        Notification::make()
-            ->title('Already withdrawn')
-            ->danger()
-            ->send();
-        return;
-    }
+                                    return;
+                                }
 
-    $amount = (float) ($timeDepositTransaction->deposit ?? 0);
-}
+                                $amount = (float) ($timeDepositTransaction->deposit ?? 0);
+                            }
 
                             SavingsAccountTransaction::create([
                                 'profile_id' => $data['profile_id'],
@@ -673,7 +694,7 @@ if ((int) $data['savings_type_id'] === 1) {
                         }),
                 ]),
             ])
-            ->recordActionsPosition(\Filament\Tables\Enums\RecordActionsPosition::BeforeColumns)
+            ->recordActionsPosition(RecordActionsPosition::BeforeColumns)
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
