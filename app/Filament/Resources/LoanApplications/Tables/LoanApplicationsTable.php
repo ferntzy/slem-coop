@@ -27,7 +27,7 @@ use Illuminate\Support\HtmlString;
 
 class LoanApplicationsTable
 {
-    private static function createUserNotification($record, $title, $description): void
+    private static function createUserNotification($record, $title, $description, $notifiableType = null, $notifiableId = null): void
     {
         $userId = $record->member?->profile?->user?->user_id;
 
@@ -36,6 +36,8 @@ class LoanApplicationsTable
                 'user_id' => $userId,
                 'title' => $title,
                 'description' => $description,
+                'notifiable_type' => $notifiableType,
+                'notifiable_id' => $notifiableId,
             ]);
         }
     }
@@ -601,7 +603,9 @@ class LoanApplicationsTable
                             self::createUserNotification(
                                 $record,
                                 'Loan Application',
-                                'Your loan application has been approved! waiting for release date.'
+                                'Your loan application has been approved! waiting for release date.',
+                                'loan_application',
+                                $record->loan_application_id
                             );
 
                             Notification::make()
@@ -614,13 +618,17 @@ class LoanApplicationsTable
                                 app(NotificationService::class)->notifyProfile(
                                     $profileId,
                                     'Loan application approved',
-                                    "Your loan application #{$record->loan_application_id} has been approved."
+                                    "Your loan application #{$record->loan_application_id} has been approved.",
+                                    notifiableType: 'loan_application',
+                                    notifiableId: $record->loan_application_id
                                 );
                             }
 
                             app(NotificationService::class)->notifyAdmins(
                                 'Loan application approved',
-                                "Loan application #{$record->loan_application_id} has been approved."
+                                "Loan application #{$record->loan_application_id} has been approved.",
+                                notifiableType: 'loan_application',
+                                notifiableId: $record->loan_application_id
                             );
                         }),
 
@@ -662,7 +670,9 @@ class LoanApplicationsTable
                             self::createUserNotification(
                                 $record,
                                 'Loan application was rejected',
-                                $data['reason']
+                                $data['reason'],
+                                'loan_application',
+                                $record->loan_application_id
                             );
                             Notification::make()
                                 ->title('Rejected')
@@ -673,13 +683,17 @@ class LoanApplicationsTable
                                 app(NotificationService::class)->notifyProfile(
                                     $profileId,
                                     'Loan application rejected',
-                                    "Your loan application #{$record->loan_application_id} has been rejected. Reason: {$data['reason']}"
+                                    "Your loan application #{$record->loan_application_id} has been rejected. Reason: {$data['reason']}",
+                                    notifiableType: 'loan_application',
+                                    notifiableId: $record->loan_application_id
                                 );
                             }
 
                             app(NotificationService::class)->notifyAdmins(
                                 'Loan application rejected',
-                                "Loan application #{$record->loan_application_id} has been rejected. Reason: {$data['reason']}"
+                                "Loan application #{$record->loan_application_id} has been rejected. Reason: {$data['reason']}",
+                                notifiableType: 'loan_application',
+                                notifiableId: $record->loan_application_id
                             );
                         }),
 
@@ -731,7 +745,9 @@ class LoanApplicationsTable
                             self::createUserNotification(
                                 $record,
                                 'Loan Application',
-                                'Your loan application was successfully cancelled!'
+                                'Your loan application was successfully cancelled!',
+                                'loan_application',
+                                $record->loan_application_id
                             );
 
                             Notification::make()
@@ -743,13 +759,17 @@ class LoanApplicationsTable
                                 app(NotificationService::class)->notifyProfile(
                                     $profileId,
                                     'Loan application cancelled',
-                                    "Your loan application #{$record->loan_application_id} has been cancelled."
+                                    "Your loan application #{$record->loan_application_id} has been cancelled.",
+                                    notifiableType: 'loan_application',
+                                    notifiableId: $record->loan_application_id
                                 );
                             }
 
                             app(NotificationService::class)->notifyAdmins(
                                 'Loan application cancelled',
-                                "Loan application #{$record->loan_application_id} is cancelled."
+                                "Loan application #{$record->loan_application_id} is cancelled.",
+                                notifiableType: 'loan_application',
+                                notifiableId: $record->loan_application_id
                             );
                         }),
 
