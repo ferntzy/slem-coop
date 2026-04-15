@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Profiles\Schemas;
 
 use App\Models\Branch;
 use App\Models\Role;
+use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -42,10 +43,32 @@ class ProfileForm
                         'inputmode' => 'numeric',
                         'pattern'   => '[0-9]*',
                         'oninput'   => 'this.value = this.value.replace(/[^0-9]/g, "").slice(0, 11)',
-            ]),
+                    ]),
+
                 DatePicker::make('birthdate')
-                    ->before(today())
-                    ->required(),
+                    ->required()
+                    ->maxDate(today()->subYears(18))
+                    ->rules([
+                        function () {
+                            return function (string $attribute, mixed $value, \Closure $fail) {
+                                if (!$value) {
+                                    return;
+                                }
+
+                                $birthdate = Carbon::parse($value);
+
+                                if ($birthdate->isToday() || $birthdate->isFuture()) {
+                                    $fail('Birthdate cannot be today or a future date.');
+                                    return;
+                                }
+
+                                $age = $birthdate->age;
+                                if ($age < 18) {
+                                    $fail("You must be at least 18 years old. Current age: {$age} years.");
+                                }
+                            };
+                        },
+                    ]),
 
                 Select::make('sex')
                     ->options([
@@ -87,7 +110,6 @@ class ProfileForm
                 TextColumn::make('system_roles')
                     ->label('System Role')
                     ->badge(),
-
             ]);
     }
 
