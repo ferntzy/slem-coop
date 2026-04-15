@@ -231,6 +231,28 @@ class CoopSettings extends Page
                         ->schema([
                             Livewire::make(\App\Filament\Widgets\PaymentPriorityWidget::class)->columnSpanFull(),
                         ]),
+                        Tab::make('Member Status')
+                        ->icon('heroicon-o-user-minus')
+                        ->schema([
+                            Section::make('Delinquent Member Settings')
+                                ->description('Configure when members are automatically marked as delinquent based on missed loan payments.')
+                                ->schema([
+                                    TextInput::make('member_status_delinquent_months_threshold')
+                                        ->label('Delinquent Months Threshold')
+                                        ->numeric()
+                                        ->minValue(1)
+                                        ->maxValue(12)
+                                        ->suffix('months')
+                                        ->helperText('Number of consecutive months a member can miss loan payments before being marked as delinquent.')
+                                        ->required(),
+
+                                    Toggle::make('member_status_auto_mark_delinquent')
+                                        ->label('Automatically Mark Members as Delinquent')
+                                        ->helperText('When enabled, members will be automatically marked as delinquent after missing payments for the specified number of months.')
+                                        ->default(true),
+                                ])
+                                ->columns(2),
+                        ]),
 
                     Tab::make('Orientation')
                         ->icon('heroicon-o-play-circle')
