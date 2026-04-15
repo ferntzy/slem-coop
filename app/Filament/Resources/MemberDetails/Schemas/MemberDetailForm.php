@@ -41,6 +41,12 @@ class MemberDetailForm
                                         ->getOptionLabelFromRecordUsing(
                                             fn ($record) => $record->full_name.' — '.$record->email
                                         )
+                                        // Prevent switching profile on edit — doing so would orphan
+                                        // all nested relationship data (address, spouse, co-makers).
+                                        ->disabledOn('edit')
+                                        // Must dehydrate even when disabled so the value survives
+                                        // the save payload and isn't silently wiped.
+                                        ->dehydratedWhenHidden()
                                         ->required(),
 
                                     TextInput::make('member_no')
@@ -58,19 +64,44 @@ class MemberDetailForm
                                         ->relationship('branch', 'name')
                                         ->default(fn () => auth()->user()?->branchId())
                                         ->disabled(fn () => auth()->user()?->isStaff())
+                                        // Dehydrate even when disabled so staff edits don't
+                                        // accidentally null out the branch on save.
+                                        ->dehydratedWhenHidden()
                                         ->required(),
 
                                     Select::make('status')
                                         ->options([
-                                            'Active' => 'Active',
-                                            'Inactive' => 'Inactive',
+                                            'Active'     => 'Active',
+                                            'Inactive'   => 'Inactive',
                                             'Delinquent' => 'Delinquent',
                                         ])
                                         ->required(),
                                 ])
                                 ->columns(2),
 
-                            Section::make('Basic Information')
+                            // ─────────────────────────────────────────────────────────────────
+                            // BUG — WHY ADDRESS DATA WAS LOST ON EDIT:
+                            //
+                            // The original code had TWO separate Section components both using
+                            // ->relationship('profile'): "Basic Information" and "Address".
+                            //
+                            // Filament treats each ->relationship() section as an independent
+                            // save scope. On save, it calls updateOrCreate on the profile record
+                            // TWICE — once per section — but each write only includes the fields
+                            // that section knows about.
+                            //
+                            // The second write (Address) does not know about first_name, email,
+                            // etc., so it does NOT include them → those columns get wiped.
+                            // The first write (Basic Info) does not know about house_no, etc.,
+                            // so address columns get wiped by the second write overriding them.
+                            // The result: whichever section saves last wins, and the other
+                            // section's data is lost.
+                            //
+                            // FIX: Merge ALL profile fields into a SINGLE Section with ONE
+                            // ->relationship('profile') call. Filament then performs a single
+                            // write with every profile field present, so nothing is overwritten.
+                            // ─────────────────────────────────────────────────────────────────
+                            Section::make('Basic Information & Address')
                                 ->relationship('profile')
                                 ->schema([
                                     TextInput::make('first_name')
@@ -102,7 +133,7 @@ class MemberDetailForm
                                     Select::make('sex')
                                         ->label('Sex')
                                         ->options([
-                                            'Male' => 'Male',
+                                            'Male'   => 'Male',
                                             'Female' => 'Female',
                                         ])
                                         ->required(),
@@ -110,44 +141,18 @@ class MemberDetailForm
                                     Select::make('civil_status')
                                         ->label('Civil Status')
                                         ->options([
-                                            'Single' => 'Single',
-                                            'Married' => 'Married',
-                                            'Widowed' => 'Widowed',
+                                            'Single'    => 'Single',
+                                            'Married'   => 'Married',
+                                            'Widowed'   => 'Widowed',
                                             'Separated' => 'Separated',
-                                            'Annulled' => 'Annulled',
+                                            'Annulled'  => 'Annulled',
                                         ])
-                                        ->required(),
-                                ])
-                                ->columns(3),
+                                        ->required()
+                                        // ->live() broadcasts changes immediately so the Spouse
+                                        // section visibility updates without a page reload.
+                                        ->live(),
 
-                            Section::make('Identification')
-                                ->schema([
-                                    Select::make('id_type')
-                                        ->label('ID Type')
-                                        ->options([
-                                            'TIN' => 'TIN',
-                                            'Philippine National ID (PhilSys ID)' => 'Philippine National ID (PhilSys ID)',
-                                            'Passport' => 'Passport',
-                                            "Driver's License" => "Driver's License",
-                                            'UMID (SSS/GSIS ID)' => 'UMID (SSS/GSIS ID)',
-                                            'PRC ID (for licensed professionals)' => 'PRC ID (for licensed professionals)',
-                                            "Voter's ID (if still available)" => "Voter's ID (if still available)",
-                                            'Postal ID' => 'Postal ID',
-                                            'Senior Citizen ID' => 'Senior Citizen ID',
-                                            'PWD ID' => 'PWD ID',
-                                        ])
-                                        ->searchable()
-                                        ->required(),
-
-                                    TextInput::make('id_number')
-                                        ->label('ID Number')
-                                        ->required(),
-                                ])
-                                ->columns(2),
-
-                            Section::make('Address')
-                                ->relationship('profile')
-                                ->schema([
+                                    // Address fields — merged here from the old separate section
                                     TextInput::make('house_no')
                                         ->label('House No.')
                                         ->required(),
@@ -171,6 +176,33 @@ class MemberDetailForm
                                 ])
                                 ->columns(3),
 
+                            // Identification columns live on MemberDetail — no ->relationship()
+                            Section::make('Identification')
+                                ->schema([
+                                    Select::make('id_type')
+                                        ->label('ID Type')
+                                        ->options([
+                                            'TIN'                                 => 'TIN',
+                                            'Philippine National ID (PhilSys ID)' => 'Philippine National ID (PhilSys ID)',
+                                            'Passport'                            => 'Passport',
+                                            "Driver's License"                    => "Driver's License",
+                                            'UMID (SSS/GSIS ID)'                  => 'UMID (SSS/GSIS ID)',
+                                            'PRC ID (for licensed professionals)' => 'PRC ID (for licensed professionals)',
+                                            "Voter's ID (if still available)"     => "Voter's ID (if still available)",
+                                            'Postal ID'                           => 'Postal ID',
+                                            'Senior Citizen ID'                   => 'Senior Citizen ID',
+                                            'PWD ID'                              => 'PWD ID',
+                                        ])
+                                        ->searchable()
+                                        ->required(),
+
+                                    TextInput::make('id_number')
+                                        ->label('ID Number')
+                                        ->required(),
+                                ])
+                                ->columns(2),
+
+                            // Employment columns live on MemberDetail — no ->relationship()
                             Section::make('Employment & Income')
                                 ->schema([
                                     TextInput::make('occupation')
@@ -182,12 +214,12 @@ class MemberDetailForm
                                     Select::make('source_of_income')
                                         ->label('Source of Income')
                                         ->options([
-                                            'Employment' => 'Employment',
-                                            'Business' => 'Business',
-                                            'Remittance' => 'Remittance',
+                                            'Employment'         => 'Employment',
+                                            'Business'           => 'Business',
+                                            'Remittance'         => 'Remittance',
                                             'Pension/Retirement' => 'Pension/Retirement',
-                                            'Agriculture' => 'Agriculture',
-                                            'Others' => 'Others',
+                                            'Agriculture'        => 'Agriculture',
+                                            'Others'             => 'Others',
                                         ])
                                         ->required()
                                         ->live(),
@@ -195,12 +227,12 @@ class MemberDetailForm
                                     Select::make('monthly_income_range')
                                         ->label('Monthly Income Range')
                                         ->options([
-                                            'Below ₱10,000' => 'Below ₱10,000',
-                                            '₱10,000 – ₱20,000' => '₱10,000 – ₱20,000',
-                                            '₱20,001 – ₱30,000' => '₱20,001 – ₱30,000',
-                                            '₱30,001 – ₱50,000' => '₱30,001 – ₱50,000',
+                                            'Below ₱10,000'       => 'Below ₱10,000',
+                                            '₱10,000 – ₱20,000'  => '₱10,000 – ₱20,000',
+                                            '₱20,001 – ₱30,000'  => '₱20,001 – ₱30,000',
+                                            '₱30,001 – ₱50,000'  => '₱30,001 – ₱50,000',
                                             '₱50,001 – ₱100,000' => '₱50,001 – ₱100,000',
-                                            'Above ₱100,000' => 'Above ₱100,000',
+                                            'Above ₱100,000'      => 'Above ₱100,000',
                                         ])
                                         ->required(),
 
@@ -282,22 +314,56 @@ class MemberDetailForm
                                 ->columns(2),
 
                             Section::make('ID Documents')
-                                ->description('Upload the front and back of the member\'s valid ID.')
+                                ->description("Upload the front and back of the member's valid ID.")
                                 ->schema([
+                                    // ─────────────────────────────────────────────────────────
+                                    // BUG — WHY PHOTOS HAD TO BE RE-UPLOADED ON EVERY EDIT:
+                                    //
+                                    // 1. Missing ->disk() / ->directory(): Without these, Filament
+                                    //    cannot resolve the stored filename back to a real file path,
+                                    //    so the field renders empty on the edit form.
+                                    //
+                                    // 2. Missing ->deletable(false): When a FileUpload field is
+                                    //    empty and the user saves, Filament interprets that as
+                                    //    "the user removed the file" and writes NULL to the column,
+                                    //    deleting the stored path.
+                                    //
+                                    // 3. Unconditional ->required(): Even if the field pre-filled
+                                    //    correctly, this forces validation to fail on every edit
+                                    //    save unless a new file is chosen.
+                                    //
+                                    // FIX:
+                                    //   • ->disk('public') + ->directory('member-ids') so Filament
+                                    //     knows where the existing file lives and can pre-populate.
+                                    //   • ->deletable(false) so an untouched field keeps its value.
+                                    //   • ->required() only on create; edit skips the validation.
+                                    //   • ->downloadable() + ->openable() so the current file is
+                                    //     visible and accessible on the edit form.
+                                    // ─────────────────────────────────────────────────────────
                                     FileUpload::make('id_document_front')
                                         ->label('ID Front')
                                         ->image()
+                                        ->disk('public')
+                                        ->directory('member-ids')
                                         ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'])
                                         ->maxSize(5120)
-                                        ->required()
+                                        ->deletable(false)
+                                        ->downloadable()
+                                        ->openable()
+                                        ->required(fn (string $operation): bool => $operation === 'create')
                                         ->helperText('Front side of the ID (JPG, PNG, or PDF, max 5MB)'),
 
                                     FileUpload::make('id_document_back')
                                         ->label('ID Back')
                                         ->image()
+                                        ->disk('public')
+                                        ->directory('member-ids')
                                         ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'])
                                         ->maxSize(5120)
-                                        ->required()
+                                        ->deletable(false)
+                                        ->downloadable()
+                                        ->openable()
+                                        ->required(fn (string $operation): bool => $operation === 'create')
                                         ->helperText('Back side of the ID (JPG, PNG, or PDF, max 5MB)'),
                                 ])
                                 ->columns(2),
@@ -332,12 +398,12 @@ class MemberDetailForm
                                     Select::make('source_of_income')
                                         ->label('Source of Income')
                                         ->options([
-                                            'Employment' => 'Employment',
-                                            'Business' => 'Business',
-                                            'Remittance' => 'Remittance',
+                                            'Employment'         => 'Employment',
+                                            'Business'           => 'Business',
+                                            'Remittance'         => 'Remittance',
                                             'Pension/Retirement' => 'Pension/Retirement',
-                                            'Agriculture' => 'Agriculture',
-                                            'Others' => 'Others',
+                                            'Agriculture'        => 'Agriculture',
+                                            'Others'             => 'Others',
                                         ]),
 
                                     TextInput::make('monthly_income')
@@ -350,16 +416,28 @@ class MemberDetailForm
                                         ->label('TIN'),
                                 ])
                                 ->columns(3)
+                                // ─────────────────────────────────────────────────────────
+                                // The original visibility only did a DB lookup via profile_id.
+                                // This breaks on edit when profile_id is disabled (returns null)
+                                // and also doesn't react to live civil_status changes in the form.
+                                //
+                                // FIX: Read `profile.civil_status` from Filament's live form state
+                                // first (works on both create and edit, reflects unsaved changes).
+                                // Fall back to a DB lookup only for the initial create page load
+                                // before the user has interacted with the civil_status field.
+                                // ─────────────────────────────────────────────────────────
                                 ->visible(function (Get $get) {
-                                    $profileId = $get('profile_id');
+                                    $civilStatus = $get('profile.civil_status');
 
-                                    if (! $profileId) {
-                                        return false;
+                                    if (! $civilStatus) {
+                                        $profileId = $get('profile_id');
+                                        if (! $profileId) {
+                                            return false;
+                                        }
+                                        $civilStatus = Profile::find($profileId)?->civil_status;
                                     }
 
-                                    $profile = Profile::find($profileId);
-
-                                    return strtolower($profile?->civil_status ?? '') === 'married';
+                                    return strtolower($civilStatus ?? '') === 'married';
                                 }),
 
                             Section::make('Co-Makers / Guarantors')
@@ -403,6 +481,7 @@ class MemberDetailForm
                         ]),
                 ])
                     ->skippable()
+                    ->persistStepInQueryString('step')
                     ->columnSpanFull(),
             ]);
     }
