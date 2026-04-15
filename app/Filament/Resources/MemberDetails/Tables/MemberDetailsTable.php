@@ -20,6 +20,7 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\RecordActionsPosition;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 
 class MemberDetailsTable
@@ -83,20 +84,16 @@ class MemberDetailsTable
             ->columns([
                 TextColumn::make('profile.full_name')
                     ->label('Member')
-                    ->searchable(query: function (Builder $query, string $search): Builder {
-                        return $query->whereHas('profile', function (Builder $q) use ($search) {
-                            $q->where('first_name', 'like', "%{$search}%")
-                                ->orWhere('middle_name', 'like', "%{$search}%")
-                                ->orWhere('last_name', 'like', "%{$search}%");
-                        });
-                    })
-                    ->sortable(query: function (Builder $query, string $direction): Builder {
-                        return $query
-                            ->leftJoin('profiles', 'member_details.profile_id', '=', 'profiles.profile_id')
-                            ->orderBy('profiles.first_name', $direction)
-                            ->orderBy('profiles.last_name', $direction)
-                            ->select('member_details.*');
-                    }),
+                    ->searchable(
+                        query: function (Builder $query, string $search): Builder {
+                            return $query->whereHas('profile', function (Builder $q) use ($search) {
+                                $q->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('middle_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%");
+                            });
+                        }
+                    )
+                    ->sortable(),
 
                 TextColumn::make('profile.email')
                     ->label('Login Email')
