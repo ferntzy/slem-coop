@@ -76,10 +76,9 @@ const SOURCE_OF_INCOME_OPTIONS = [
   'Others',
 ];
 
-// Membership type age requirements
 const MEMBERSHIP_AGE_REQUIREMENTS: Record<string, number> = {
-  '1': 16, // Associate Member
-  '2': 18, // Regular Member
+  '1': 16,
+  '2': 18,
 };
 
 const getMinimumAge = (membershipTypeId: string): number => {
@@ -91,12 +90,18 @@ const calculateAge = (birthdate: string): number => {
   const birth = new Date(birthdate);
   let age = today.getFullYear() - birth.getFullYear();
   const monthDiff = today.getMonth() - birth.getMonth();
-  
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
     age--;
   }
-  
   return age;
+};
+
+// ─── Max birthdate: today minus minimum age ───
+const getMaxBirthdate = (membershipTypeId: string): string => {
+  const minAge = getMinimumAge(membershipTypeId);
+  const max = new Date();
+  max.setFullYear(max.getFullYear() - minAge);
+  return max.toISOString().split('T')[0];
 };
 
 type ProfileData = {
@@ -198,7 +203,21 @@ const emptyOrientationProgress: OrientationProgress = {
   certificate_generated: false,
 };
 
-/* ─── Particles (same as MembershipInfo) ─── */
+/* ─── Shared input helpers ─── */
+// Strips non-digits and enforces max length
+const digitsOnly = (value: string, maxLen = 999) =>
+  value.replace(/[^0-9]/g, '').slice(0, maxLen);
+
+// Strips non-digits, enforces 09 prefix, max 11 digits
+const phMobileFormat = (value: string): string => {
+  let digits = value.replace(/[^0-9]/g, '').slice(0, 11);
+  if (digits.length >= 2 && !digits.startsWith('09')) {
+    digits = '09' + digits.replace(/^0*9*/, '').slice(0, 9);
+  }
+  return digits;
+};
+
+/* ─── Particles ─── */
 function Particles() {
   const colorClasses = [
     'bg-green-300 dark:bg-green-600',
@@ -360,7 +379,7 @@ function FileDropZone({
   );
 }
 
-/* ─── Membership Type Card (inline form version) ─── */
+/* ─── Membership Type Card ─── */
 function MembershipTypeCard({
   type,
   selected,
@@ -738,7 +757,7 @@ export function MembershipApply() {
   const submitFinalApplication = async () => {
     if (!profileData) { toast.error('Personal data missing. Please go back to step 1.'); return; }
     if (!applicationData) { toast.error('Application details missing. Please go back to step 2.'); return; }
-  if (!applicationData.branch_id) { toast.error('Please select a branch in step 2.'); return; }
+    if (!applicationData.branch_id) { toast.error('Please select a branch in step 2.'); return; }
     if (!orientationComplete) { toast.error('Please complete the orientation first.'); return; }
     if (!idFileFront || !idFileBack) { toast.error('Please upload both front and back of your ID.'); return; }
 
@@ -748,7 +767,7 @@ export function MembershipApply() {
       Object.entries(profileData).forEach(([k, v]) => { if (v && String(v).trim()) formData.append(k, String(v)); });
       formData.append('membership_type_id', selectedTypeId);
       formData.append('application_date', applicationData.application_date);
-  formData.append('branch_id', applicationData.branch_id);
+      formData.append('branch_id', applicationData.branch_id);
       if (applicationData.remarks && applicationData.remarks.trim()) formData.append('remarks', applicationData.remarks);
       if (spouseData && spouseData.full_name && spouseData.full_name.trim()) {
         Object.entries(spouseData).forEach(([k, v]) => { if (v && String(v).trim()) formData.append(`spouse_${k}`, String(v)); });
@@ -800,7 +819,6 @@ export function MembershipApply() {
     window.location.reload();
   };
 
-  /* ─── Shared input/label style helpers ─── */
   const labelClass = 'text-xs font-black uppercase tracking-widest text-gray-600 dark:text-gray-400';
   const inputClass = 'rounded-xl border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] focus:border-green-500 dark:focus:border-green-400 focus:ring-green-500/20';
   const cardClass = 'rounded-[2rem] border border-green-100 dark:border-green-900/30 bg-white dark:bg-[#111b17] shadow-sm';
@@ -808,7 +826,6 @@ export function MembershipApply() {
   const navButtonClass = 'rounded-full border-2 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 font-black uppercase tracking-widest text-xs px-8 py-3 gap-2';
   const primaryButtonClass = 'rounded-full bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-400 text-white font-black uppercase tracking-widest text-xs px-8 py-3 shadow-lg shadow-green-500/20';
 
-  /* ─── Submitted State ─── */
   if (submitted) {
     return (
       <div className="flex flex-col bg-white dark:bg-[#0a0f0c] text-gray-900 dark:text-white transition-colors duration-500">
@@ -854,11 +871,9 @@ export function MembershipApply() {
       <div className="flex flex-col bg-white dark:bg-[#0a0f0c] text-gray-900 dark:text-white transition-colors duration-500">
         <HeroSection heroVisible={heroVisible} membershipTypeLabel={membershipTypeLabel} />
 
-        {/* ── Form Section ── */}
         <section className="relative py-16 sm:py-24 overflow-hidden bg-green-50/30 dark:bg-[#0d1410]">
           <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
-            {/* Badge + Clear Draft */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
               <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-green-100/60 dark:bg-white/10 border border-green-300 dark:border-white/20 backdrop-blur-md">
                 <div className="w-2 h-2 bg-green-600 dark:bg-green-400 rounded-full animate-pulse" />
@@ -918,36 +933,63 @@ export function MembershipApply() {
                         <Input type="email" {...reg1('email', { required: 'Required' })} className={inputClass} />
                         {err1.email && <p className="text-xs text-red-500 font-medium">{err1.email.message}</p>}
                       </div>
+
+                      {/* ── Mobile Number (PH format) ── */}
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Mobile number <span className="text-red-500">*</span></Label>
-                        <Input type="tel" maxLength={11} {...reg1('mobile_number', { required: 'Required', pattern: { value: /^09\d{9}$/, message: 'Must be a valid PH number (09XXXXXXXXX)' } })} className={inputClass} />
+                        <div className="flex items-center rounded-xl border border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] overflow-hidden focus-within:border-green-500 dark:focus-within:border-green-400 focus-within:ring-2 focus-within:ring-green-500/20">
+                          <span className="px-3 text-sm font-black text-gray-500 dark:text-gray-400 border-r border-green-200 dark:border-green-900/50 select-none">+63</span>
+                          <Input
+                            inputMode="numeric"
+                            placeholder="09XXXXXXXXX"
+                            maxLength={11}
+                            className="border-0 shadow-none focus-visible:ring-0 rounded-none bg-transparent"
+                            {...reg1('mobile_number', {
+                              required: 'Required',
+                              pattern: { value: /^09\d{9}$/, message: 'Must be a valid PH number starting with 09 (e.g. 09123456789)' },
+                            })}
+                            onInput={(e) => {
+                              const input = e.currentTarget;
+                              input.value = phMobileFormat(input.value);
+                              set1('mobile_number', input.value, { shouldValidate: true });
+                            }}
+                            onPaste={(e) => e.preventDefault()}
+                            onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
+                          />
+                        </div>
                         {err1.mobile_number && <p className="text-xs text-red-500 font-medium">{err1.mobile_number.message}</p>}
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {/* ── Birthdate — max capped at minAge years ago ── */}
                       <div className="space-y-1.5">
-                        <Label className={labelClass}>Birthdate <span className="text-red-500">*</span></Label>
-                        <Input 
-                          type="date" 
-                          {...reg1('birthdate', { 
+                        <Label className={labelClass}>
+                          Birthdate <span className="text-red-500">*</span>
+                          <span className="ml-1 text-gray-400 normal-case font-medium">(must be {getMinimumAge(selectedTypeId)}+ years old)</span>
+                        </Label>
+                        <Input
+                          type="date"
+                          max={getMaxBirthdate(selectedTypeId)}
+                          {...reg1('birthdate', {
                             required: 'Birthdate is required',
                             validate: {
-                              notToday: (value) => {
+                              notFuture: (value) => {
                                 const today = new Date().toISOString().split('T')[0];
-                                return value !== today || 'Cannot select today as birthdate';
+                                return value < today || 'Birthdate cannot be today or in the future';
                               },
                               ageRequirement: (value) => {
                                 const minAge = getMinimumAge(selectedTypeId);
                                 const age = calculateAge(value);
-                                return age >= minAge || `Minimum age requirement is ${minAge} years (your age: ${age})`;
+                                return age >= minAge || `You must be at least ${minAge} years old (your age: ${age})`;
                               },
                             },
-                          })} 
-                          className={inputClass} 
+                          })}
+                          className={inputClass}
                         />
                         {err1.birthdate && <p className="text-xs text-red-500 font-medium">{err1.birthdate.message}</p>}
                       </div>
+
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Sex <span className="text-red-500">*</span></Label>
                         <input type="hidden" {...reg1('sex', { required: 'Required' })} />
@@ -991,9 +1033,26 @@ export function MembershipApply() {
                         </Select>
                         {err1.id_type && <p className="text-xs text-red-500 font-medium">{err1.id_type.message}</p>}
                       </div>
+
+                      {/* ── ID Number — digits only ── */}
                       <div className="space-y-1.5">
                         <Label className={labelClass}>ID Number <span className="text-red-500">*</span></Label>
-                        <Input {...reg1('id_number', { required: 'Required' })} className={inputClass} />
+                        <Input
+                          inputMode="numeric"
+                          placeholder="Enter ID number"
+                          {...reg1('id_number', {
+                            required: 'Required',
+                            pattern: { value: /^[0-9]+$/, message: 'ID number must contain digits only' },
+                          })}
+                          className={inputClass}
+                          onInput={(e) => {
+                            const input = e.currentTarget;
+                            input.value = digitsOnly(input.value);
+                            set1('id_number', input.value, { shouldValidate: true });
+                          }}
+                          onPaste={(e) => e.preventDefault()}
+                          onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
+                        />
                         {err1.id_number && <p className="text-xs text-red-500 font-medium">{err1.id_number.message}</p>}
                       </div>
                     </div>
@@ -1026,7 +1085,19 @@ export function MembershipApply() {
                       </div>
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Zip code <span className="text-red-500">*</span></Label>
-                        <Input {...reg1('zip_code', { required: 'Required', pattern: { value: /^\d{4}$/, message: 'Must be a 4-digit zip code' } })} className={inputClass} />
+                        <Input
+                          inputMode="numeric"
+                          maxLength={4}
+                          {...reg1('zip_code', { required: 'Required', pattern: { value: /^\d{4}$/, message: 'Must be a 4-digit zip code' } })}
+                          className={inputClass}
+                          onInput={(e) => {
+                            const input = e.currentTarget;
+                            input.value = digitsOnly(input.value, 4);
+                            set1('zip_code', input.value, { shouldValidate: true });
+                          }}
+                          onPaste={(e) => e.preventDefault()}
+                          onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
+                        />
                         {err1.zip_code && <p className="text-xs text-red-500 font-medium">{err1.zip_code.message}</p>}
                       </div>
                     </div>
@@ -1071,15 +1142,45 @@ export function MembershipApply() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* ── Monthly Income — digits only ── */}
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Monthly Income (₱) <span className="text-red-500">*</span></Label>
-                        <Input type="number" min={0} {...reg1('monthly_income', { required: 'Required' })} className={inputClass} />
+                        <div className="flex items-center rounded-xl border border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] overflow-hidden focus-within:border-green-500 dark:focus-within:border-green-400 focus-within:ring-2 focus-within:ring-green-500/20">
+                          <span className="px-3 text-sm font-black text-gray-500 dark:text-gray-400 border-r border-green-200 dark:border-green-900/50 select-none">₱</span>
+                          <Input
+                            inputMode="numeric"
+                            placeholder="0"
+                            className="border-0 shadow-none focus-visible:ring-0 rounded-none bg-transparent"
+                            {...reg1('monthly_income', {
+                              required: 'Required',
+                              pattern: { value: /^[0-9]+$/, message: 'Must be a valid amount' },
+                            })}
+                            onInput={(e) => {
+                              const input = e.currentTarget;
+                              input.value = digitsOnly(input.value);
+                              set1('monthly_income', input.value, { shouldValidate: true });
+                            }}
+                            onPaste={(e) => e.preventDefault()}
+                            onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
+                          />
+                        </div>
                         {err1.monthly_income && <p className="text-xs text-red-500 font-medium">{err1.monthly_income.message}</p>}
                       </div>
                       {sourceOfIncome === 'Business' && (
                         <div className="space-y-1.5">
                           <Label className={labelClass}>Years in Business</Label>
-                          <Input type="number" min={0} {...reg1('years_in_business')} className={inputClass} />
+                          <Input
+                            inputMode="numeric"
+                            {...reg1('years_in_business')}
+                            className={inputClass}
+                            onInput={(e) => {
+                              const input = e.currentTarget;
+                              input.value = digitsOnly(input.value);
+                              set1('years_in_business', input.value);
+                            }}
+                            onPaste={(e) => e.preventDefault()}
+                            onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
+                          />
                         </div>
                       )}
                     </div>
@@ -1089,11 +1190,33 @@ export function MembershipApply() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Number of Dependents</Label>
-                        <Input type="number" min={0} {...reg1('dependents_count')} className={inputClass} />
+                        <Input
+                          inputMode="numeric"
+                          {...reg1('dependents_count')}
+                          className={inputClass}
+                          onInput={(e) => {
+                            const input = e.currentTarget;
+                            input.value = digitsOnly(input.value);
+                            set1('dependents_count', input.value);
+                          }}
+                          onPaste={(e) => e.preventDefault()}
+                          onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
+                        />
                       </div>
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Children Currently in School</Label>
-                        <Input type="number" min={0} {...reg1('children_in_school_count')} className={inputClass} />
+                        <Input
+                          inputMode="numeric"
+                          {...reg1('children_in_school_count')}
+                          className={inputClass}
+                          onInput={(e) => {
+                            const input = e.currentTarget;
+                            input.value = digitsOnly(input.value);
+                            set1('children_in_school_count', input.value);
+                          }}
+                          onPaste={(e) => e.preventDefault()}
+                          onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
+                        />
                       </div>
                     </div>
 
@@ -1105,11 +1228,33 @@ export function MembershipApply() {
                         <Input {...reg1('emergency_full_name', { required: 'Required' })} className={inputClass} />
                         {err1.emergency_full_name && <p className="text-xs text-red-500 font-medium">{err1.emergency_full_name.message}</p>}
                       </div>
+
+                      {/* ── Emergency Phone (PH format) ── */}
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Phone Number <span className="text-red-500">*</span></Label>
-                        <Input type="tel" maxLength={11} {...reg1('emergency_phone', { required: 'Required', pattern: { value: /^09\d{9}$/, message: 'Must be a valid PH number' } })} className={inputClass} />
+                        <div className="flex items-center rounded-xl border border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] overflow-hidden focus-within:border-green-500 dark:focus-within:border-green-400 focus-within:ring-2 focus-within:ring-green-500/20">
+                          <span className="px-3 text-sm font-black text-gray-500 dark:text-gray-400 border-r border-green-200 dark:border-green-900/50 select-none">+63</span>
+                          <Input
+                            inputMode="numeric"
+                            placeholder="09XXXXXXXXX"
+                            maxLength={11}
+                            className="border-0 shadow-none focus-visible:ring-0 rounded-none bg-transparent"
+                            {...reg1('emergency_phone', {
+                              required: 'Required',
+                              pattern: { value: /^09\d{9}$/, message: 'Must be a valid PH number starting with 09' },
+                            })}
+                            onInput={(e) => {
+                              const input = e.currentTarget;
+                              input.value = phMobileFormat(input.value);
+                              set1('emergency_phone', input.value, { shouldValidate: true });
+                            }}
+                            onPaste={(e) => e.preventDefault()}
+                            onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
+                          />
+                        </div>
                         {err1.emergency_phone && <p className="text-xs text-red-500 font-medium">{err1.emergency_phone.message}</p>}
                       </div>
+
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Relationship <span className="text-red-500">*</span></Label>
                         <Input {...reg1('emergency_relationship', { required: 'Required' })} className={inputClass} />
@@ -1131,7 +1276,6 @@ export function MembershipApply() {
             {step === 2 && (
               <form onSubmit={handle2(saveApplicationStep)}>
                 <div className="flex flex-col lg:flex-row gap-6">
-                  {/* Documents — top on mobile */}
                   <div className="lg:w-72 xl:w-80 order-first lg:order-last">
                     <Card className={cardClass}>
                       <div className={cardHeaderClass}>
@@ -1239,24 +1383,25 @@ export function MembershipApply() {
                           </div>
                           <div className="space-y-1.5">
                             <Label className={labelClass}>Birthdate</Label>
-                            <Input 
-                              type="date" 
+                            <Input
+                              type="date"
+                              max={getMaxBirthdate(selectedTypeId)}
                               {...reg3('birthdate', {
                                 validate: {
-                                  notToday: (value) => {
+                                  notFuture: (value) => {
                                     if (!value) return true;
                                     const today = new Date().toISOString().split('T')[0];
-                                    return value !== today || 'Cannot select today as birthdate';
+                                    return value < today || 'Birthdate cannot be today or in the future';
                                   },
                                   ageRequirement: (value) => {
                                     if (!value) return true;
                                     const minAge = getMinimumAge(selectedTypeId);
                                     const age = calculateAge(value);
-                                    return age >= minAge || `Spouse minimum age requirement is ${minAge} years (age: ${age})`;
+                                    return age >= minAge || `Spouse must be at least ${minAge} years old (age: ${age})`;
                                   },
                                 },
-                              })} 
-                              className={inputClass} 
+                              })}
+                              className={inputClass}
                             />
                           </div>
                           <div className="space-y-1.5">
@@ -1276,7 +1421,18 @@ export function MembershipApply() {
                         </div>
                         <div className="space-y-1.5">
                           <Label className={labelClass}>Monthly Income (₱)</Label>
-                          <Input type="number" min={0} {...reg3('monthly_income')} className={inputClass} />
+                          <Input
+                            inputMode="numeric"
+                            {...reg3('monthly_income')}
+                            className={inputClass}
+                            onInput={(e) => {
+                              const input = e.currentTarget;
+                              input.value = digitsOnly(input.value);
+                              set3('monthly_income', input.value);
+                            }}
+                            onPaste={(e) => e.preventDefault()}
+                            onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
+                          />
                         </div>
                       </>
                     )}
@@ -1309,7 +1465,19 @@ export function MembershipApply() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="space-y-1.5">
                               <Label className={labelClass}>Contact Number</Label>
-                              <Input type="tel" value={coMaker.contact_number} onChange={(e) => { const u = [...coMakersData]; u[idx].contact_number = e.target.value; setCoMakersData(u); }} className={inputClass} />
+                              <Input
+                                inputMode="numeric"
+                                placeholder="09XXXXXXXXX"
+                                maxLength={11}
+                                value={coMaker.contact_number}
+                                onChange={(e) => {
+                                  const val = phMobileFormat(e.target.value);
+                                  const u = [...coMakersData]; u[idx].contact_number = val; setCoMakersData(u);
+                                }}
+                                onPaste={(e) => e.preventDefault()}
+                                onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
+                                className={inputClass}
+                              />
                             </div>
                             <div className="space-y-1.5">
                               <Label className={labelClass}>Occupation</Label>
@@ -1326,7 +1494,17 @@ export function MembershipApply() {
                           </div>
                           <div className="space-y-1.5">
                             <Label className={labelClass}>Monthly Income (₱)</Label>
-                            <Input type="number" min={0} value={coMaker.monthly_income} onChange={(e) => { const u = [...coMakersData]; u[idx].monthly_income = e.target.value; setCoMakersData(u); }} className={inputClass} />
+                            <Input
+                              inputMode="numeric"
+                              value={coMaker.monthly_income}
+                              onChange={(e) => {
+                                const val = digitsOnly(e.target.value);
+                                const u = [...coMakersData]; u[idx].monthly_income = val; setCoMakersData(u);
+                              }}
+                              onPaste={(e) => e.preventDefault()}
+                              onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
+                              className={inputClass}
+                            />
                           </div>
                         </div>
                       ))}
@@ -1373,9 +1551,7 @@ export function MembershipApply() {
                   </div>
 
                   <CardContent className="space-y-6 p-6 sm:p-8">
-                    {/* Zoom + Video */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Zoom */}
                       <div className="rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10">
                         <div className="flex items-center gap-2 mb-3">
                           <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
@@ -1384,7 +1560,6 @@ export function MembershipApply() {
                           <h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Zoom Orientation</h3>
                         </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-4">Attend the Zoom pre-membership orientation.</p>
-
                         {orientationSettings.zoom_link ? (
                           <button
                             onClick={handleZoomClick}
@@ -1402,7 +1577,6 @@ export function MembershipApply() {
                         </p>
                       </div>
 
-                      {/* Video */}
                       <div className="rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10">
                         <div className="flex items-center gap-2 mb-3">
                           <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
@@ -1411,7 +1585,6 @@ export function MembershipApply() {
                           <h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Orientation Video</h3>
                         </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-4">Watch the orientation video completely.</p>
-
                         {orientationSettings.video_link ? (
                           <div className="space-y-3">
                             <div className="w-full bg-black rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
@@ -1435,7 +1608,6 @@ export function MembershipApply() {
                       </div>
                     </div>
 
-                    {/* Assessment */}
                     <div className="rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
@@ -1446,14 +1618,12 @@ export function MembershipApply() {
                       <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 font-medium">
                         Passing score: <strong className="text-green-700 dark:text-green-400 font-black">{orientationSettings.passing_score}%</strong>
                       </p>
-
                       <div className="space-y-5">
                         {normalizedQuestions.length === 0 && (
                           <div className="rounded-2xl border border-green-100 dark:border-green-900/40 bg-green-50/30 px-4 py-4 text-sm text-gray-400 dark:text-gray-600 font-medium">
                             No assessment questions configured yet.
                           </div>
                         )}
-
                         {normalizedQuestions.map((question: any, index: number) => (
                           <div key={index} className="space-y-2">
                             <Label className={labelClass}>{index + 1}. {question.question}</Label>
@@ -1470,7 +1640,6 @@ export function MembershipApply() {
                           </div>
                         ))}
                       </div>
-
                       {!assessmentSubmitted && normalizedQuestions.length > 0 && (
                         <div className="mt-6 rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-5">
                           <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-4">
@@ -1481,13 +1650,10 @@ export function MembershipApply() {
                             disabled={!allQuestionsAnswered}
                             className={`w-full inline-flex items-center justify-center ${allQuestionsAnswered ? primaryButtonClass : 'rounded-full bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 font-black uppercase tracking-widest text-xs px-8 py-3 cursor-not-allowed'}`}
                           >
-                            {allQuestionsAnswered
-                              ? 'Submit Assessment'
-                              : `Answer all questions (${Object.keys(assessmentAnswers).length}/${normalizedQuestions.length})`}
+                            {allQuestionsAnswered ? 'Submit Assessment' : `Answer all questions (${Object.keys(assessmentAnswers).length}/${normalizedQuestions.length})`}
                           </button>
                         </div>
                       )}
-
                       {assessmentSubmitted && (
                         <div className={`mt-6 rounded-2xl border p-5 ${assessmentPassed ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20' : 'border-red-200 dark:border-red-900 bg-red-50/30 dark:bg-red-900/10'}`}>
                           <div className="flex items-center justify-between mb-2">
@@ -1509,7 +1675,6 @@ export function MembershipApply() {
                       )}
                     </div>
 
-                    {/* Checklist */}
                     <div className="rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-5">
                       <p className="font-black uppercase tracking-widest text-xs text-green-700 dark:text-green-400 mb-4">Orientation Checklist</p>
                       <div className="space-y-3">
@@ -1534,7 +1699,6 @@ export function MembershipApply() {
                         Submit Application will stay disabled until orientation is completed and the assessment passing score is met.
                       </div>
                     )}
-
                     {orientationComplete && (
                       <div className="rounded-2xl border border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20 px-5 py-4 text-sm text-green-800 dark:text-green-400 font-medium">
                         ✓ Orientation completed. You can now submit the application.
@@ -1580,7 +1744,6 @@ function HeroSection({ heroVisible, membershipTypeLabel }: { heroVisible: boolea
       />
       <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-green-50/80 to-green-100/90 dark:from-[#022c22]/95 dark:via-[#064e3b]/95 dark:to-[#065f46]/95 transition-colors duration-500" />
       <Particles />
-
       <div
         className={`relative z-10 max-w-7xl mx-auto px-6 text-center transition-all duration-1000 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
       >
