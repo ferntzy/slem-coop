@@ -79,28 +79,6 @@ class MemberDetailForm
                                 ])
                                 ->columns(2),
 
-                            // ─────────────────────────────────────────────────────────────────
-                            // BUG — WHY ADDRESS DATA WAS LOST ON EDIT:
-                            //
-                            // The original code had TWO separate Section components both using
-                            // ->relationship('profile'): "Basic Information" and "Address".
-                            //
-                            // Filament treats each ->relationship() section as an independent
-                            // save scope. On save, it calls updateOrCreate on the profile record
-                            // TWICE — once per section — but each write only includes the fields
-                            // that section knows about.
-                            //
-                            // The second write (Address) does not know about first_name, email,
-                            // etc., so it does NOT include them → those columns get wiped.
-                            // The first write (Basic Info) does not know about house_no, etc.,
-                            // so address columns get wiped by the second write overriding them.
-                            // The result: whichever section saves last wins, and the other
-                            // section's data is lost.
-                            //
-                            // FIX: Merge ALL profile fields into a SINGLE Section with ONE
-                            // ->relationship('profile') call. Filament then performs a single
-                            // write with every profile field present, so nothing is overwritten.
-                            // ─────────────────────────────────────────────────────────────────
                             Section::make('Basic Information & Address')
                                 ->relationship('profile')
                                 ->schema([
@@ -122,9 +100,20 @@ class MemberDetailForm
 
                                     TextInput::make('mobile_number')
                                         ->label('Mobile Number')
-                                        ->tel()
                                         ->placeholder('09XXXXXXXXX')
-                                        ->maxLength(11),
+                                        ->length(11)
+                                        ->regex('/^09\d{9}$/')
+                                        ->validationMessages([
+                                            'regex' => 'Mobile number must be in PH format (09XXXXXXXXX)',
+                                        ])
+                                        ->extraInputAttributes([
+                                            'inputmode' => 'numeric',
+                                            'pattern' => '09[0-9]{9}',
+                                            'x-on:keypress' => 'if(!/[0-9]/.test($event.key)) $event.preventDefault()',
+                                            'x-on:input' => '$event.target.value = $event.target.value.replace(/[^0-9]/g, "").slice(0, 11)',
+                                            'x-on:paste' => '$event.preventDefault()',
+                                        ])
+                                        ->helperText('Format: 09123456789 (11 digits)'),
 
                                     DatePicker::make('birthdate')
                                         ->label('Birthdate')

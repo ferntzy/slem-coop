@@ -11,23 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('profiles', function (Blueprint $table) {
-        $table->id('profile_id');
+        Schema::create('profiles', function (Blueprint $table) {
+            $table->id('profile_id');
 
-        $table->string('first_name', 100);
-        $table->string('middle_name', 45)->nullable();
-        $table->string('last_name', 45);
-        $table->string('email')->unique(); // ⭐ LOGIN EMAIL HERE
-        $table->string('mobile_number', 45)->nullable();
-        $table->date('birthdate')->nullable();
-        $table->enum('sex', ['Male', 'Female'])->nullable();
-        $table->string('address', 255)->nullable(); 
+            $table->string('first_name', 100);
+            $table->string('middle_name', 45)->nullable();
+            $table->string('last_name', 45);
+            $table->string('email')->unique(); // ⭐ LOGIN EMAIL HERE
+            $table->string('mobile_number', 11)->nullable();
+            $table->date('birthdate')->nullable();
+            $table->enum('sex', ['Male', 'Female'])->nullable();
+            $table->string('address', 255)->nullable();
 
-        $table->foreignId('roles_id')
-            ->constrained('roles');
+            $table->foreignId('roles_id')
+                ->constrained('roles');
 
-        $table->timestamps();
-    });
+            $table->timestamps();
+        });
 
     }
 
@@ -35,8 +35,8 @@ return new class extends Migration
      * Reverse the migrations.
      */
     public function down(): void
-{
-    Schema::dropIfExists('member_details'); // Drop dependent table first
-    Schema::dropIfExists('profiles');
-}
+    {
+        Schema::dropIfExists('member_details'); // Drop dependent table first
+        Schema::dropIfExists('profiles');
+    }
 };
