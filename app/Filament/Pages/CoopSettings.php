@@ -88,6 +88,9 @@ class CoopSettings extends Page
     public bool $membership_require_id_verification = true;
     public int $membership_auto_suspend_on_missed_contributions = 3;
 
+    public int $member_status_delinquent_months_threshold = 3;
+    public bool $member_status_auto_mark_delinquent = true;
+
     public int $payment_allocation_rule_count = 0;
     public bool $payment_apply_to_oldest_loan_first = true;
     public bool $payment_allow_partial_payment = true;
@@ -155,6 +158,9 @@ class CoopSettings extends Page
         $this->membership_require_id_verification = (bool) CoopSetting::get('membership.require_id_verification', true);
         $this->membership_auto_suspend_on_missed_contributions = (int) CoopSetting::get('membership.auto_suspend_on_missed_contributions', 3);
         $this->membership_type_count = MembershipType::count();
+
+        $this->member_status_delinquent_months_threshold = (int) CoopSetting::get('member_status.delinquent_months_threshold', 3);
+        $this->member_status_auto_mark_delinquent = (bool) CoopSetting::get('member_status.auto_mark_delinquent', true);
 
         $this->payment_allocation_rule_count = PaymentAllocationSetting::getSingleton()->allocationRules()->count();
         $this->payment_apply_to_oldest_loan_first = (bool) CoopSetting::get('payment_allocation.apply_to_oldest_loan_first', true);
@@ -373,6 +379,9 @@ class CoopSettings extends Page
         CoopSetting::set('membership.probationary_period_months', $this->membership_probationary_period_months);
         CoopSetting::set('membership.require_id_verification', $this->membership_require_id_verification ? 'true' : 'false');
         CoopSetting::set('membership.auto_suspend_on_missed_contributions', $this->membership_auto_suspend_on_missed_contributions);
+
+        CoopSetting::set('member_status.delinquent_months_threshold', $this->member_status_delinquent_months_threshold);
+        CoopSetting::set('member_status.auto_mark_delinquent', $this->member_status_auto_mark_delinquent ? 'true' : 'false');
 
         CoopSetting::set('payment_allocation.apply_to_oldest_loan_first', $this->payment_apply_to_oldest_loan_first ? 'true' : 'false');
         CoopSetting::set('payment_allocation.allow_partial_payment', $this->payment_allow_partial_payment ? 'true' : 'false');
