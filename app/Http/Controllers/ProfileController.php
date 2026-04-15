@@ -113,10 +113,14 @@ class ProfileController extends Controller
                 );
             }
 
+            $info = [
+                'user' => $user,
+                'profile'   => $user->profile,
+            ];
+
             return response()->json([
                 'success' => 'Profile data was updated successfully!',
-                'data' => $profile,
-                'user' => $user,
+                'data' => $info,
             ], 200);
 
         } catch (Exception $e) {

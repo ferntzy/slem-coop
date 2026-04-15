@@ -97,7 +97,7 @@ Route::post('/cancel-loan-applications', [ControllersLoanApplication::class, 'ca
 
 // member notifications
 Route::post('/member/fetch-notifications', [Notifications::class, 'fetchNotifications']);
-Route::post('member/fetch-unread-notifications', [Notifications::class, 'fetchUnreadNotifications']);
+Route::post('/member/fetch-unread-notifications', [Notifications::class, 'fetchUnreadNotifications']);
 Route::post('/member/delete-notification', [Notifications::class, 'deleteNotification']);
 Route::post('/member/mark-notification-seen', [Notifications::class, 'markAsRead']);
 
