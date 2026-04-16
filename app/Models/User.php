@@ -172,11 +172,14 @@ class User extends Authenticatable implements HasAvatar
     public function isHQStaff(): bool
     {
         return $this->hasAnyRole([
-            'hq',
-            'HQ',
-            'hq_staff',
-            'HQ Staff',
-            'hq staff',
+            'hq_teller',
+            'HQ Teller',
+            'hq_cashier',
+            'HQ Cashier',
+            'hq_loan_officer',
+            'HQ Loan Officer',
+            'hq_account_officer',
+            'HQ Account Officer',
         ]);
     }
 
