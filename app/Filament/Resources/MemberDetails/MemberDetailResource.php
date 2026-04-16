@@ -32,6 +32,10 @@ class MemberDetailResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    protected static ?string $label = 'Member Detail';
+
+    protected static ?string $pluralLabel = 'Member Details';
+
     public static function form(Schema $schema): Schema
     {
         return MemberDetailForm::configure($schema);
