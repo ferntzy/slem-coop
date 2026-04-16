@@ -67,7 +67,7 @@
                 ">
                     {{ now()->format('l, F j, Y') }}
                     &nbsp;&bull;&nbsp;
-                    {{ now()->format('g:i A') }}
+                    {{ now()->timezone(config('app.timezone'))->format('g:i A') }}
                 </p>
             </div>
 
