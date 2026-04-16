@@ -13,7 +13,10 @@ use Filament\Tables\Columns\CheckboxColumn;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\HtmlString;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\Profile;
+use DB;
+
 
 class UsersTable
 {
@@ -48,9 +51,15 @@ class UsersTable
                     ->sortable(),
 
                 TextColumn::make('profile.full_name')
-                    ->label('Profile Name')
-                    ->searchable()
-                    ->sortable(),
+                ->label('Full Name')
+                ->sortable(query: function (Builder $query, string $direction): Builder {
+                    return $query->orderBy(
+                        Profile::select(DB::raw("CONCAT(first_name, ' ', middle_name, ' ', last_name)"))
+                            ->whereColumn('profiles.profile_id', 'users.profile_id')
+                            ->limit(1),
+                        $direction
+                    );
+                }),
 
                 ImageColumn::make('qr_code')
                     ->label('QR Code')
