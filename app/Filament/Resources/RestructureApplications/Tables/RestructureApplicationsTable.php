@@ -68,20 +68,6 @@ class RestructureApplicationsTable
                     ->money('PHP')
                     ->sortable(),
 
-                TextColumn::make('restructure_application_id')
-                    ->label('View')
-                    ->formatStateUsing(fn () => '')
-                    ->icon('heroicon-o-eye')
-                    ->iconColor('info')
-                    ->tooltip('View Details')
-                    ->action(
-                        Action::make('view')
-                            ->modalHeading(fn ($record) => 'Restructure Application — '.($record->loanApplication?->member?->profile?->full_name ?? 'N/A'))
-                            ->modalSubmitAction(false)
-                            ->modalCancelActionLabel('Close')
-                            ->infolist(fn ($record) => RestructureApplicationsInfolist::schema())
-                    ),
-
                 TextColumn::make('term_months')
                     ->label('Term (Months)')
                     ->sortable(),
