@@ -31,7 +31,9 @@ class MembershipApplicationObserver
         if (! empty($uploadedDocuments)) {
             app(NotificationService::class)->notifyAdmins(
                 'Membership Application Documents Uploaded',
-                'New membership application submitted with documents: '.implode(', ', $uploadedDocuments)
+                'New membership application submitted with documents: '.implode(', ', $uploadedDocuments),
+                notifiableType: 'membership_application',
+                notifiableId: $application->id
             );
         }
     }
@@ -73,12 +75,16 @@ class MembershipApplicationObserver
                 app(NotificationService::class)->notifyProfile(
                     $profile->profile_id,
                     'Membership application approved',
-                    'Your membership application has been approved and an account has been created.'
+                    'Your membership application has been approved and an account has been created.',
+                    notifiableType: 'membership_application',
+                    notifiableId: $application->id
                 );
 
                 app(NotificationService::class)->notifyAdmins(
                     'Membership application approved',
-                    "{$profile->full_name} (Profile ID: {$profile->profile_id}) approved."
+                    "{$profile->full_name} (Profile ID: {$profile->profile_id}) approved.",
+                    notifiableType: 'membership_application',
+                    notifiableId: $application->id
                 );
             });
         }
@@ -97,13 +103,17 @@ class MembershipApplicationObserver
             // Notify member of document registration
             app(NotificationService::class)->notifyDocumentUpload(
                 $application->profile_id,
-                implode(', ', $uploadedDocuments)
+                implode(', ', $uploadedDocuments),
+                notifiableType: 'membership_application',
+                notifiableId: $application->id
             );
 
             // Notify admins
             app(NotificationService::class)->notifyAdmins(
                 'Membership Application Documents Updated',
-                "Documents updated for {$application->first_name} {$application->last_name}: ".implode(', ', $uploadedDocuments)
+                "Documents updated for {$application->first_name} {$application->last_name}: ".implode(', ', $uploadedDocuments),
+                notifiableType: 'membership_application',
+                notifiableId: $application->id
             );
         }
     }
