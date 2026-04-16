@@ -258,7 +258,7 @@
                                      1 0 0119 9.414V19a2 2 0 01-2 2z"/>
                         </svg>
                     </div>
-                    <div style="font-weight:800;font-size:1rem;color:#111827;letter-spacing:.05em;">OFFICIAL RECEIPT</div>
+                    <div style="font-weight:800;font-size:1rem;color:#111827;letter-spacing:.05em;">PAYMENT RECEIPT</div>
                     <div style="font-size:.68rem;color:#059669;font-weight:600;margin-top:2px;">Payment Posted Successfully</div>
                     <div style="font-size:.65rem;color:#9ca3af;margin-top:2px;">Cooperative Lending System</div>
                 </div>
