@@ -7,8 +7,7 @@ use App\Models\SavingsAccountTransaction;
 use App\Models\SavingsType;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
@@ -125,6 +124,7 @@ class MemberDetailsTable
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make(),
+                    DeleteAction::make(),
 
                     Action::make('add_savings')
                         ->label('Add Savings')
@@ -691,11 +691,6 @@ class MemberDetailsTable
                         }),
                 ]),
             ])
-            ->recordActionsPosition(RecordActionsPosition::BeforeColumns)
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->recordActionsPosition(RecordActionsPosition::BeforeColumns);
     }
 }
