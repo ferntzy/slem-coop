@@ -241,7 +241,9 @@ class MembershipApplicationController extends Controller
 
                 $this->notificationService->notifyAdmins(
                     'New membership application',
-                    "{$application->first_name} {$application->last_name} submitted a membership application."
+                    "{$application->first_name} {$application->last_name} submitted a membership application.",
+                    notifiableType: 'membership_application',
+                    notifiableId: $application->id
                 );
 
                 // Notify the applicant if they have an existing user account
@@ -251,7 +253,9 @@ class MembershipApplicationController extends Controller
                     $this->notificationService->notifyUser(
                         $user->user_id,
                         'Application received',
-                        'Your membership application has been received and is pending review.'
+                        'Your membership application has been received and is pending review.',
+                        notifiableType: 'membership_application',
+                        notifiableId: $application->id
                     );
                 }
 
