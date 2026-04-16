@@ -10,6 +10,8 @@ class ViewMemberDetail extends ViewRecord
 {
     protected static string $resource = MemberDetailResource::class;
 
+    protected static ?string $title = 'View Member Detail';
+    
     protected function getHeaderActions(): array
     {
         return [
