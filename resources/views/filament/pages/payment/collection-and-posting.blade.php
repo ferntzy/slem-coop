@@ -42,11 +42,11 @@
     .cp-card { background: #052E16; border-radius: 1rem; border: 1px solid #14532D; padding: 1.5rem; box-shadow: 0 1px 6px rgba(0,0,0,0.05); transition: all 0.2s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; min-height: 260px; }
     .cp-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,0.1); transform: translateY(-2px); border-color: rgba(52,211,153,0.55); }
     .cp-card-accent { position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 1rem 1rem 0 0; background: linear-gradient(90deg, var(--cp-green-600), var(--cp-emerald-400)); }
-    .cp-card-accent-warning { background: linear-gradient(90deg, var(--cp-amber-500), var(--cp-amber-400)); }
+    .cp-card-accent-warning { background: linear-gradient(90deg, var(--cp-green-600), var(--cp-emerald-400)); }
     .cp-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.1rem; }
     .cp-card-icon-wrap { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); }
     .cp-card-tag { font-size: 0.62rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; align-self: flex-start; margin-top: 2px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: rgba(236,253,245,0.85); }
-    .cp-card-tag-warning { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.25); color: var(--cp-amber-400); }
+    .cp-card-tag-warning { background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.25); color: var(--cp-emerald-400); }
     .cp-card-body { flex: 1; }
     .cp-card-title { font-size: 1rem; font-weight: 700; color: #ECFDF5; margin-bottom: 0.45rem; }
     .cp-card-desc { font-size: 0.8rem; color: #ECFDF3; line-height: 1.6; }
@@ -60,7 +60,7 @@
     .cp-btn-info    { background: #c2f2d5; color: #000000; }
     .cp-btn-success { background: #10b981; color: #fff; }
     .cp-btn-gray    { background: var(--cp-slate-100); border-color: var(--cp-slate-200); color: var(--cp-slate-900); }
-    .cp-btn-warning { background: #f59e0b; color: #fff; }
+    .cp-btn-warning { background: #10b981; color: #fff; }
     .cp-audit-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.78rem; color: rgba(236,253,245,0.85); }
     .cp-audit-row:last-child { border-bottom: none; }
     .cp-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
@@ -95,7 +95,7 @@
     .cp-receipt-row:last-child { border-bottom: none; }
     .cp-receipt-label { color: #6b7280; }
     .cp-receipt-value { font-weight: 600; color: #111827; }
-    .cp-receipt-or { font-weight: 700; font-family: monospace; font-size: .78rem; background: #fef9c3; padding: 2px 10px; border-radius: 4px; color: #854d0e; letter-spacing: .03em; }
+    .cp-receipt-or { font-weight: 700; font-family: monospace; font-size: .78rem; background: #ecfdf5; padding: 2px 10px; border-radius: 4px; color: #059669; letter-spacing: .03em; }
     .cp-receipt-amount-row { display: flex; justify-content: space-between; align-items: center; padding: .75rem 0; border-bottom: 2px solid #e5e7eb; }
     .cp-receipt-balance-box { display: flex; justify-content: space-between; background: #f0fdf4; border-radius: .5rem; padding: .5rem .75rem; margin-top: .6rem; font-size: .75rem; }
     .cp-receipt-due-box { display: flex; justify-content: space-between; background: var(--cp-emerald-50); border: 1px solid rgba(16,185,129,0.18); border-radius: .5rem; padding: .5rem .75rem; margin-top: .4rem; font-size: .75rem; }
@@ -109,7 +109,7 @@
     .cp-toast-dot { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; flex-shrink: 0; }
     .cp-toast-success .cp-toast-dot { background: #10b981; }
     .cp-toast-danger  .cp-toast-dot { background: #ef4444; }
-    .cp-toast-warning .cp-toast-dot { background: #f59e0b; }
+    .cp-toast-warning .cp-toast-dot { background: #10b981; }
 
     @media (max-width: 640px) {
         .cp-hero { padding: 1.5rem; }
@@ -180,7 +180,7 @@
         <div class="cp-card-accent cp-card-accent-warning"></div>
         <div class="cp-card-top">
             <div class="cp-card-icon-wrap">
-                <svg width="22" height="22" style="color:#b45309;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <svg width="22" height="22" style="color:#10b981;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zM12 15.75h.008v.008H12v-.008z"/>
                 </svg>
             </div>
@@ -192,18 +192,18 @@
             <div class="cp-card-extra">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
                     <div style="font-size:.75rem;color:#9ca3af;">Pending count</div>
-                    <div style="font-weight:800;color:#f59e0b;">{{ $pendingCount ?? 0 }}</div>
+                    <div style="font-weight:800;color:#059669;">{{ $pendingCount ?? 0 }}</div>
                 </div>
 
                 @if(isset($pendingPayments) && $pendingPayments->isNotEmpty())
                     @foreach($pendingPayments->take(2) as $p)
                         <div class="cp-audit-row">
-                            <div class="cp-dot" style="background:#f59e0b;"></div>
+                            <div class="cp-dot" style="background:#10b981;"></div>
                             <span style="flex:1;">
                                 {{ $p->member_name ?? 'Unknown' }}
                                 <span style="opacity:.65;">({{ $p->loan_number ?? 'N/A' }})</span>
                             </span>
-                            <span style="font-weight:800;color:#fbbf24;">₱{{ number_format((float) ($p->amount_paid ?? 0), 2) }}</span>
+                            <span style="font-weight:800;color:#059669;">₱{{ number_format((float) ($p->amount_paid ?? 0), 2) }}</span>
                         </div>
                     @endforeach
                 @else
@@ -426,7 +426,7 @@
                 </div>
                 @foreach($pendingPayments as $p)
                     <div class="cp-ao-row">
-                        <div style="width:34px;height:34px;border-radius:50%;background:#fffbeb;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800;color:#b45309;flex-shrink:0;">
+                        <div style="width:34px;height:34px;border-radius:50%;background:#ecfdf5;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800;color:#059669;flex-shrink:0;">
                             {{ strtoupper(substr((string) ($p->member_name ?? 'U'), 0, 2)) }}
                         </div>
                         <div style="flex:1;">
@@ -496,7 +496,7 @@
             row.style.background = '#fef2f2'; row.style.color = '#dc2626';
             val.textContent = '-₱' + variance.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' Short';
         } else {
-            row.style.background = '#fffbeb'; row.style.color = '#d97706';
+            row.style.background = '#ecfdf5'; row.style.color = '#059669';
             val.textContent = '+₱' + Math.abs(variance).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' Over';
         }
     };
