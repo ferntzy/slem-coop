@@ -113,6 +113,15 @@
     border-color: #1f2937;
   }
 
+  /* ✅ FIXED TITLE VISIBILITY */
+  .dark .cp-audit-title {
+    color: #f9fafb;
+  }
+
+  .dark .cp-audit-subtitle {
+    color: #9ca3af;
+  }
+
   .dark .cp-audit-table thead tr {
     background: #111318;
     border-color: #1f2937;
