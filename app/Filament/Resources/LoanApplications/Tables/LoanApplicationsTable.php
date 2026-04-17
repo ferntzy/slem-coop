@@ -21,6 +21,7 @@ use Filament\Notifications\Notification;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\RecordActionsPosition;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
@@ -141,32 +142,6 @@ class LoanApplicationsTable
                             ])
                     ),
 
-                // ── Eye icon — between Amount Requested and Collateral File ───────
-                // TextColumn::make('loan_application_id')
-                //     ->label('')
-                //     ->formatStateUsing(fn () => '')
-                //     ->icon('heroicon-o-eye')
-                //     ->iconColor('info')
-                //     ->tooltip('View Details')
-                //     ->action(
-                //         Action::make('view')
-                //             ->modalHeading(fn ($record) => 'Loan Application — ' . ($record->member?->profile?->full_name ?? 'N/A'))
-                //             ->modalSubmitAction(false)
-                //             ->modalCancelActionLabel('Close')
-                //             ->modalWidth('5xl')
-                //             ->infolist(fn ($record) => LoanApplicationsInfolist::schema())
-                //             ->extraModalFooterActions(fn ($record) => [
-                //                 Action::make('download_pdf')
-                //                     ->label('Download PDF')
-                //                     ->icon('heroicon-o-document-arrow-down')
-                //                     ->color('success')
-                //                     ->url(fn () => route('loan-applications.pdf', [
-                //                         'loanApplication' => $record->loan_application_id,
-                //                     ]))
-                //                     ->openUrlInNewTab(),
-                //             ])
-                //     ),
-
                 BadgeColumn::make('status')
                     ->label('Loan Status')
                     ->colors([
@@ -188,7 +163,6 @@ class LoanApplicationsTable
                             return $record->loanAccount->release_date->format('F j, Y');
                         }
                     })
-
                     ->extraAttributes(['style' => 'text-align: center;']),
 
                 TextColumn::make('edit_button')
@@ -199,7 +173,7 @@ class LoanApplicationsTable
                     ->url(fn ($record) => url('/coop/loan-applications/'.$record->loan_application_id.'/edit')),
             ])
             ->filters([
-                //
+                TrashedFilter::make(),
             ])
             ->actions([
 
@@ -367,6 +341,7 @@ class LoanApplicationsTable
                                 ->success()
                                 ->send();
                         }),
+
                     Action::make('approve_collateral')
                         ->label('Approve Collateral')
                         ->icon('heroicon-o-check-circle')
@@ -454,6 +429,7 @@ class LoanApplicationsTable
                                 "Collateral for loan application #{$record->loan_application_id} is requested for correction."
                             );
                         }),
+
                     Action::make('setPenaltyRule')
                         ->label('Set Penalty Rule')
                         ->icon('heroicon-o-shield-exclamation')
@@ -674,6 +650,7 @@ class LoanApplicationsTable
                                 'loan_application',
                                 $record->loan_application_id
                             );
+
                             Notification::make()
                                 ->title('Rejected')
                                 ->success()
@@ -773,7 +750,53 @@ class LoanApplicationsTable
                             );
                         }),
 
-                ])->tooltip('Actions'),
+                    // ── DELETE ───────────────────────────────────────────────────
+                    Action::make('delete')
+                        ->label('Delete')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Delete Loan Application')
+                        ->modalDescription('This action cannot be undone.')
+                        ->visible(function ($record): bool {
+                            $user = auth()->user();
+
+                            return in_array($record->status, ['Pending', 'Approved', 'Cancelled', 'Rejected'], true)
+                                && ($user?->isHeadOffice() || $user?->isBranchScoped());
+                        })
+                        ->action(function ($record) {
+                            $record->delete();
+
+                            Notification::make()
+                                ->title('Loan Application Deleted')
+                                ->success()
+                                ->send();
+                        }),
+                ])
+                    ->visible(fn ($record): bool => ! $record->trashed())
+                    ->tooltip('Actions'),
+
+                ActionGroup::make([
+                    Action::make('restore')
+                        ->label('Restore')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function ($record) {
+                            $record->restore();
+
+                            Notification::make()
+                                ->title('Loan Application Restored')
+                                ->success()
+                                ->send();
+                        }),
+                ])
+                    ->visible(function ($record): bool {
+                        $user = auth()->user();
+
+                        return $record->trashed() && ($user?->isHeadOffice() || $user?->isBranchScoped());
+                    })
+                    ->tooltip('Trashed Actions'),
             ])
             ->bulkActions([])
             ->recordActionsPosition(RecordActionsPosition::BeforeColumns)
