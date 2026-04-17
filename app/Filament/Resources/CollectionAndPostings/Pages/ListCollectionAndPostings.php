@@ -92,14 +92,49 @@ class ListCollectionAndPostings extends ListRecords
                             ->icon('heroicon-o-user')
                             ->schema([
 
-                                Placeholder::make('step1_desc')
-                                    ->label('')
-                                    ->content(new HtmlString('
-                                        <div style="padding:.7rem 1rem;background:#f0f9ff;border-left:3px solid #0ea5e9;border-radius:0 .5rem .5rem 0;">
-                                            <div style="font-size:.82rem;font-weight:700;color:#0c4a6e;">Step 1 of 2 — Member &amp; Loan Selection</div>
-                                            <div style="font-size:.75rem;color:#64748b;margin-top:2px;">Search for a member by name or number, then select their active loan from the table below.</div>
-                                        </div>
-                                    '))
+                     Placeholder::make('step1_desc')
+    ->label('')
+    ->content(new HtmlString('
+        <style>
+            .cp-step-box {
+                padding:.7rem 1rem;
+                background:#f0f9ff;
+                border-left:3px solid #0ea5e9;
+                border-radius:0 .5rem .5rem 0;
+            }
+            .cp-step-title {
+                font-size:.82rem;
+                font-weight:700;
+                color:#0c4a6e;
+            }
+            .cp-step-desc {
+                font-size:.75rem;
+                color:#64748b;
+                margin-top:2px;
+            }
+
+            /* DARK MODE → TRUE BLACK */
+            .dark .cp-step-box {
+                background:#000000; /* 🔥 pure black */
+                border-left:3px solid #38bdf8;
+            }
+            .dark .cp-step-title {
+                color:#ffffff;
+            }
+            .dark .cp-step-desc {
+                color:#9ca3af;
+            }
+        </style>
+
+        <div class="cp-step-box">
+            <div class="cp-step-title">
+                Step 1 of 2 — Member &amp; Loan Selection
+            </div>
+            <div class="cp-step-desc">
+                Search for a member by name or number, then select their active loan from the table below.
+            </div>
+        </div>
+    '))
                                     ->columnSpanFull(),
 
                                 Select::make('member_id')
