@@ -37,9 +37,7 @@ class CollectionAndPostingResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        if ($user->isAdminOrSuperAdmin()) {
-            return $query;
-        }
+        if ($user->isAdminOrSuperAdmin() || $user->isHeadOffice()) return $query;
 
         if ($user->hasRole('Member')) {
             return $query->whereHas('loanAccount', function (Builder $q) use ($user) {

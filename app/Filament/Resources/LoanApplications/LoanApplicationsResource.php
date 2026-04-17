@@ -58,10 +58,7 @@ class LoanApplicationsResource extends Resource
         }
         if ($user->isAdminOrSuperAdmin() || $user->isHeadOffice()) return $query; // ← fix
 
-        if ($user->isAdminOrSuperAdmin()) {
-            return $query;
-        }
-
+       
         if ($user->isMember()) {
             $memberId = MemberDetail::where('profile_id', $user->profile_id)
                 ->value('id');

@@ -61,9 +61,7 @@ class RestructureApplicationsResource extends Resource
         }
         if ($user->isAdminOrSuperAdmin() || $user->isHeadOffice()) return $query; // ← fix
 
-        if ($user->isAdminOrSuperAdmin()) {
-            return $query;
-        }
+       
 
         if ($user->isMember()) {
             return $query->whereHas('loanApplication.member', fn (Builder $memberQuery) => $memberQuery->where('profile_id', $user->profile_id)

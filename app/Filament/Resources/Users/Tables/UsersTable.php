@@ -52,6 +52,7 @@ class UsersTable
 
                 TextColumn::make('profile.full_name')
                 ->label('Full Name')
+                ->searchable()
                 ->sortable(query: function (Builder $query, string $direction): Builder {
                     return $query->orderBy(
                         Profile::select(DB::raw("CONCAT(first_name, ' ', middle_name, ' ', last_name)"))
