@@ -92,49 +92,14 @@ class ListCollectionAndPostings extends ListRecords
                             ->icon('heroicon-o-user')
                             ->schema([
 
-                     Placeholder::make('step1_desc')
-    ->label('')
-    ->content(new HtmlString('
-        <style>
-            .cp-step-box {
-                padding:.7rem 1rem;
-                background:#f0f9ff;
-                border-left:3px solid #0ea5e9;
-                border-radius:0 .5rem .5rem 0;
-            }
-            .cp-step-title {
-                font-size:.82rem;
-                font-weight:700;
-                color:#0c4a6e;
-            }
-            .cp-step-desc {
-                font-size:.75rem;
-                color:#64748b;
-                margin-top:2px;
-            }
-
-            /* DARK MODE → TRUE BLACK */
-            .dark .cp-step-box {
-                background:#000000; /* 🔥 pure black */
-                border-left:3px solid #38bdf8;
-            }
-            .dark .cp-step-title {
-                color:#ffffff;
-            }
-            .dark .cp-step-desc {
-                color:#9ca3af;
-            }
-        </style>
-
-        <div class="cp-step-box">
-            <div class="cp-step-title">
-                Step 1 of 2 — Member &amp; Loan Selection
-            </div>
-            <div class="cp-step-desc">
-                Search for a member by name or number, then select their active loan from the table below.
-            </div>
-        </div>
-    '))
+                                Placeholder::make('step1_desc')
+                                    ->label('')
+                                    ->content(new HtmlString('
+                                        <div style="padding:.7rem 1rem;background:#f0f9ff;border-left:3px solid #0ea5e9;border-radius:0 .5rem .5rem 0;">
+                                            <div style="font-size:.82rem;font-weight:700;color:#0c4a6e;">Step 1 of 2 — Member &amp; Loan Selection</div>
+                                            <div style="font-size:.75rem;color:#64748b;margin-top:2px;">Search for a member by name or number, then select their active loan from the table below.</div>
+                                        </div>
+                                    '))
                                     ->columnSpanFull(),
 
                                 Select::make('member_id')
@@ -190,28 +155,33 @@ class ListCollectionAndPostings extends ListRecords
                                             . trim(($m->profile?->first_name ?? '') . ' ' . ($m->profile?->last_name ?? ''));
                                     })
                                     ->columnSpanFull(),
+
                                 Placeholder::make('loan_table')
                                     ->label('Loans')
                                     ->content(function (Get $get) {
-
-                                        $isDark = request()->cookie('theme') === 'dark' || str_contains(request()->header('user-agent'), 'Dark'); // fallback only
-
-                                        $bgMain   = $isDark ? '#020617' : '#ffffff';
-                                        $bgHeader = $isDark ? '#020617' : '#f9fafb';
-                                        $border   = $isDark ? '#111827' : '#e5e7eb';
-                                        $textMain = $isDark ? '#f1f5f9' : '#111827';
-                                        $textSub  = $isDark ? '#94a3b8' : '#6b7280';
-
                                         $memberId   = $get('member_id');
                                         $selectedId = $get('loan_account_id');
 
                                         if (! $memberId) {
-                                            return new HtmlString("
-                                                <div style='text-align:center;padding:2rem;color:{$textSub};
-                                                            background:{$bgMain};border-radius:.75rem;border:1px dashed {$border};'>
+                                            return new HtmlString('
+                                                <div style="text-align:center;padding:2rem;color:#9ca3af;font-size:.85rem;
+                                                            background:#f9fafb;border-radius:.75rem;border:1px dashed #e5e7eb;">
                                                     Search and select a member above to view their loans.
                                                 </div>
-                                            ");
+                                            ');
+                                        }
+
+                                        if ($this->isMemberUser()) {
+                                            $allowedMemberId = $this->getLoggedInMemberId();
+
+                                            if ((int) $memberId !== (int) $allowedMemberId) {
+                                                return new HtmlString('
+                                                    <div style="text-align:center;padding:2rem;color:#ef4444;font-size:.85rem;
+                                                                background:#fef2f2;border-radius:.75rem;border:1px dashed #fca5a5;">
+                                                        You can only view your own loan records.
+                                                    </div>
+                                                ');
+                                            }
                                         }
 
                                         $loans = LoanAccount::whereHas('loanApplication',
@@ -221,13 +191,12 @@ class ListCollectionAndPostings extends ListRecords
                                             ->get();
 
                                         if ($loans->isEmpty()) {
-                                            return new HtmlString("
-                                                <div style='text-align:center;padding:2rem;color:#ef4444;
-                                                            background:" . ($isDark ? '#020617' : '#fef2f2') . ";
-                                                            border-radius:.75rem;border:1px dashed #f87171;'>
+                                            return new HtmlString('
+                                                <div style="text-align:center;padding:2rem;color:#ef4444;font-size:.85rem;
+                                                            background:#fef2f2;border-radius:.75rem;border:1px dashed #fca5a5;">
                                                     No loans found for this member.
                                                 </div>
-                                            ");
+                                            ');
                                         }
 
                                         $rows = '';
@@ -237,99 +206,121 @@ class ListCollectionAndPostings extends ListRecords
                                             $isSelected     = $selectedId == $loan->loan_account_id;
 
                                             $rowBg = $isSelected
-                                                ? ($isDark ? '#111827' : '#eff6ff')
-                                                : ($isRestructured ? ($isDark ? '#020617' : '#fafafa') : $bgMain);
+                                                ? 'background:#eff6ff;'
+                                                : ($isRestructured ? 'background:#fafafa;opacity:.7;' : 'background:#fff;');
 
-                                            $textColor = $isDark ? '#e2e8f0' : '#111827';
+                                            $cursor = $isRestructured ? 'cursor:not-allowed;' : 'cursor:pointer;';
+
+                                            $maturity = $loan->maturity_date
+                                                ? Carbon::parse($loan->maturity_date)->format('M d, Y')
+                                                : '—';
+
+                                            $schedule       = app(LoanScheduleService::class)->build($loan);
+                                            $nextDueRow     = collect($schedule)->first(
+                                                fn ($row) => round((float) ($row['unpaid_amount'] ?? 0), 2) > 0
+                                            );
+
+                                            $currentDueAmt = $nextDueRow
+                                                ? '₱' . number_format((float) $nextDueRow['unpaid_amount'], 2)
+                                                : '₱' . number_format((float) $loan->balance, 2);
+
+                                            $dueTd = "<td style='padding:.7rem .9rem;font-size:.78rem;color:#9ca3af;'>—</td>";
+                                            if ($nextDueRow && ! empty($nextDueRow['due_date'])) {
+                                                $parsedDue = Carbon::parse($nextDueRow['due_date']);
+                                                $dueLabel  = $parsedDue->format('M d, Y');
+                                                if ($parsedDue->isPast()) {
+                                                    $dueColor = '#ef4444';
+                                                } elseif ($parsedDue->diffInDays(now()) <= 7) {
+                                                    $dueColor = '#f59e0b';
+                                                } else {
+                                                    $dueColor = '#059669';
+                                                }
+                                                $dueTd = "<td style='padding:.7rem .9rem;font-size:.78rem;font-weight:600;color:{$dueColor};'>{$dueLabel}</td>";
+                                            }
+
+                                            if ($isRestructured) {
+                                                $statusBadge = "
+                                                    <span title='This loan was restructured and is no longer payable. Only the Active loan can be paid.'
+                                                          style='font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:999px;
+                                                                 background:#fef3c7;color:#d97706;cursor:help;'>
+                                                        Restructured
+                                                    </span>
+                                                ";
+                                            } else {
+                                                $statusBadge = "
+                                                    <span style='font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:999px;
+                                                                 background:#ecfdf5;color:#059669;'>
+                                                        Active
+                                                    </span>
+                                                ";
+                                            }
+
+                                            $clickJs = "
+                                                (function(){
+                                                    var sel = document.querySelector('[wire\\\\:id] select[id*=loan_account_id], select[id*=loan_account_id]');
+                                                    if(!sel) return;
+                                                    sel.value = '{$loan->loan_account_id}';
+                                                    sel.dispatchEvent(new Event('change', {bubbles:true}));
+                                                })();
+                                            ";
 
                                             $rows .= "
-                                                <tr style='border-bottom:1px solid {$border};background:{$rowBg};
-                                                        cursor:" . ($isRestructured ? 'not-allowed' : 'pointer') . ";'>
-                                                    
+                                                <tr style='border-bottom:1px solid #f3f4f6;{$cursor}{$rowBg}transition:background .1s;'
+                                                    onclick=\"" . ($isRestructured ? '' : $clickJs) . "\">
                                                     <td style='padding:.7rem .9rem;'>
-                                                        <input type='radio'
+                                                        <input type='radio' name='cp_loan_radio'
+                                                            value='{$loan->loan_account_id}'
                                                             " . ($isSelected ? 'checked' : '') . "
                                                             " . ($isRestructured ? 'disabled' : '') . "
-                                                            style='width:16px;height:16px;accent-color:#22c55e;'>
+                                                            style='" . ($isRestructured ? 'cursor:not-allowed;opacity:.4;' : 'cursor:pointer;') . "width:16px;height:16px;accent-color:#1e3a5f;'
+                                                            onclick='event.stopPropagation();this.closest(\"tr\").click();'>
                                                     </td>
-
-                                                    <td style='padding:.7rem .9rem;font-size:.78rem;font-weight:700;color:#22c55e;'>
+                                                    <td style='padding:.7rem .9rem;font-size:.78rem;font-weight:700;color:#1e3a5f;'>
                                                         LA-{$loan->loan_account_id}
                                                     </td>
-
-                                                    <td style='padding:.7rem .9rem;font-size:.78rem;color:{$textColor};font-weight:600;'>
+                                                    <td style='padding:.7rem .9rem;font-size:.78rem;color:#111827;font-weight:600;'>
                                                         ₱" . number_format($loan->balance, 2) . "
                                                     </td>
-
-                                                    <td style='padding:.7rem .9rem;font-size:.78rem;color:{$textColor};'>
-                                                        ₱" . number_format($loan->balance, 2) . "
+                                                    <td style='padding:.7rem .9rem;font-size:.78rem;color:#374151;font-weight:600;'>
+                                                        " . ($isRestructured ? '<span style="color:#9ca3af;">—</span>' : $currentDueAmt) . "
                                                     </td>
-
-                                                    <td style='padding:.7rem .9rem;font-size:.78rem;color:{$textSub};'>
-                                                        {$loan->maturity_date}
+                                                    <td style='padding:.7rem .9rem;font-size:.78rem;color:#6b7280;'>
+                                                        {$maturity}
                                                     </td>
-
-                                                    <td style='padding:.7rem .9rem;font-size:.78rem;color:{$textSub};'>
+                                                    <td style='padding:.7rem .9rem;font-size:.78rem;color:#6b7280;'>
                                                         {$loan->term_months} mos.
                                                     </td>
-
-                                                    <td style='padding:.7rem .9rem;font-size:.78rem;color:" . ($isDark ? '#22c55e' : '#059669') . ";font-weight:600;'>
-                                                        —
-                                                    </td>
-
+                                                    " . ($isRestructured ? "<td style='padding:.7rem .9rem;font-size:.78rem;color:#9ca3af;'>—</td>" : $dueTd) . "
                                                     <td style='padding:.7rem .9rem;'>
-                                                        <span style='font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:999px;
-                                                                    background:" . ($isDark ? '#052e16' : '#ecfdf5') . ";
-                                                                    color:#22c55e;'>
-                                                            {$loan->status}
-                                                        </span>
+                                                        {$statusBadge}
                                                     </td>
-
                                                 </tr>
                                             ";
                                         }
 
-                                       return new HtmlString("
-    <div style='
-        background:#020617 !important;
-        border:1px solid #111827;
-        border-radius:.75rem;
-        overflow:hidden;
-        color:#e2e8f0;
-    '>
-
-        <table style='
-            width:100%;
-            border-collapse:collapse;
-            background:#020617 !important;
-            color:#e2e8f0;
-        '>
-
-            <thead>
-                <tr style='background:#020617 !important;'>
-                    <th style='padding:.5rem .9rem;color:#94a3b8;'> </th>
-                    <th style='padding:.5rem .9rem;color:#94a3b8;'>Loan #</th>
-                    <th style='padding:.5rem .9rem;color:#94a3b8;'>Balance</th>
-                    <th style='padding:.5rem .9rem;color:#94a3b8;'>Current Due</th>
-                    <th style='padding:.5rem .9rem;color:#94a3b8;'>Maturity</th>
-                    <th style='padding:.5rem .9rem;color:#94a3b8;'>Term</th>
-                    <th style='padding:.5rem .9rem;color:#94a3b8;'>Due Date</th>
-                    <th style='padding:.5rem .9rem;color:#94a3b8;'>Status</th>
-                </tr>
-            </thead>
-
-            <tbody style='background:#020617 !important;'>
-                {$rows}
-            </tbody>
-
-        </table>
-    </div>
-
-    <div style='margin-top:.5rem;font-size:.72rem;color:#94a3b8;'>
-        ℹ️ Loans marked <strong style='color:#f59e0b;'>Restructured</strong> are reference only.
-        Only <strong style='color:#22c55e;'>Active</strong> loans are payable.
-    </div>
-");
+                                        return new HtmlString("
+                                            <div style='border:1px solid #e5e7eb;border-radius:.75rem;overflow:hidden;'>
+                                                <table style='width:100%;border-collapse:collapse;'>
+                                                    <thead>
+                                                        <tr style='background:#f9fafb;'>
+                                                            <th style='padding:.5rem .9rem;width:36px;'></th>
+                                                            <th style='padding:.5rem .9rem;text-align:left;font-size:.62rem;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.06em;'>Loan #</th>
+                                                            <th style='padding:.5rem .9rem;text-align:left;font-size:.62rem;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.06em;'>Balance</th>
+                                                            <th style='padding:.5rem .9rem;text-align:left;font-size:.62rem;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.06em;'>Current Due</th>
+                                                            <th style='padding:.5rem .9rem;text-align:left;font-size:.62rem;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.06em;'>Maturity</th>
+                                                            <th style='padding:.5rem .9rem;text-align:left;font-size:.62rem;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.06em;'>Term</th>
+                                                            <th style='padding:.5rem .9rem;text-align:left;font-size:.62rem;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.06em;'>Due Date</th>
+                                                            <th style='padding:.5rem .9rem;text-align:left;font-size:.62rem;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.06em;'>Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>{$rows}</tbody>
+                                                </table>
+                                            </div>
+                                            <div style='margin-top:.5rem;font-size:.72rem;color:#9ca3af;'>
+                                                ℹ️ Loans marked <strong style='color:#d97706;'>Restructured</strong> are shown for reference only and cannot be paid.
+                                                Only <strong style='color:#059669;'>Active</strong> loans are payable.
+                                            </div>
+                                        ");
                                     })
                                     ->visible(fn (Get $get) => (bool) $get('member_id'))
                                     ->columnSpanFull(),
@@ -636,7 +627,7 @@ class ListCollectionAndPostings extends ListRecords
                                     ->columnSpanFull(),
 
                                 TextInput::make('document_type')
-                                    ->default('Receipt')
+                                    ->default('Official Receipt')
                                     ->hidden(),
 
                             ])
