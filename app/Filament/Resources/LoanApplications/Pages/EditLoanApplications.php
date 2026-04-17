@@ -5,6 +5,7 @@ namespace App\Filament\Resources\LoanApplications\Pages;
 use App\Filament\Resources\LoanApplications\LoanApplicationsResource;
 use App\Services\CoopFeeCalculatorService;
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 
 class EditLoanApplications extends EditRecord
@@ -13,7 +14,7 @@ class EditLoanApplications extends EditRecord
 
     public function getTitle(): string
     {
-        return 'Edit ' . $this->record->member?->profile?->first_name;
+        return 'Edit '.$this->record->member?->profile?->first_name;
     }
 
     protected function getHeaderActions(): array
@@ -27,7 +28,8 @@ class EditLoanApplications extends EditRecord
                 ->visible(fn (): bool => auth()->user()?->hasAnyRole(['super_admin', 'Admin', 'Manager', 'Account Officer', 'Loan Officer']) && in_array($this->record->status, ['Pending', 'Under Review']))
                 ->action(function (): void {
                     $this->record->update(['status' => 'Approved']);
-                    $this->notification()->success()
+                    Notification::make()
+                        ->success()
                         ->title('Loan Approved')
                         ->send();
                 }),
@@ -40,7 +42,8 @@ class EditLoanApplications extends EditRecord
                 ->visible(fn (): bool => auth()->user()?->hasAnyRole(['super_admin', 'Admin', 'Manager', 'Account Officer', 'Loan Officer']) && in_array($this->record->status, ['Pending', 'Under Review']))
                 ->action(function (): void {
                     $this->record->update(['status' => 'Rejected']);
-                    $this->notification()->danger()
+                    Notification::make()
+                        ->danger()
                         ->title('Loan Rejected')
                         ->send();
                 }),
@@ -62,7 +65,7 @@ class EditLoanApplications extends EditRecord
         $data['other_expenses'] = $record->getCashflowAmount('other_expenses', 'expense');
 
         $data['interest_rate_display'] = filled($record->type?->max_interest_rate)
-            ? rtrim(rtrim((string) $record->type->max_interest_rate, '0'), '.') . '%'
+            ? rtrim(rtrim((string) $record->type->max_interest_rate, '0'), '.').'%'
             : null;
 
         return $data;

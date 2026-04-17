@@ -3,14 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\PenaltyRule;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class LoanApplication extends Model
 {
+    use SoftDeletes;
+
     protected $primaryKey = 'loan_application_id';
-    
 
     protected $fillable = [
         'collateral_status',
@@ -55,10 +55,12 @@ class LoanApplication extends Model
             }
         });
     }
+
     public function penaltyRule(): BelongsTo
     {
         return $this->belongsTo(PenaltyRule::class, 'penalty_rule_id', 'id');
     }
+
     public function type()
     {
         return $this->belongsTo(LoanType::class, 'loan_type_id', 'loan_type_id');
@@ -81,11 +83,10 @@ class LoanApplication extends Model
 
     public function member()
     {
-        
-        return $this->belongsTo(\App\Models\MemberDetail::class, 'member_id', 'id');
-        
+
+        return $this->belongsTo(MemberDetail::class, 'member_id', 'id');
+
     }
-    
 
     public function product()
     {
@@ -104,7 +105,7 @@ class LoanApplication extends Model
 
     public function statusLogs()
     {
-        return $this->hasMany(\App\Models\LoanApplicationStatusLog::class, 'loan_application_id', 'loan_application_id')
+        return $this->hasMany(LoanApplicationStatusLog::class, 'loan_application_id', 'loan_application_id')
             ->orderByDesc('changed_at');
     }
 
@@ -149,15 +150,14 @@ class LoanApplication extends Model
             }
         }
     }
+
     public function previousLoan()
-{
-    return $this->belongsTo(\App\Models\LoanAccount::class, 'reloan_from_loan_account_id', 'loan_account_id');
-}
+    {
+        return $this->belongsTo(LoanAccount::class, 'reloan_from_loan_account_id', 'loan_account_id');
+    }
 
-public function loanType(): \Illuminate\Database\Eloquent\Relations\BelongsTo
-{
-    return $this->belongsTo(\App\Models\LoanType::class);
+    public function loanType(): BelongsTo
+    {
+        return $this->belongsTo(LoanType::class);
+    }
 }
-
-}
-
