@@ -101,19 +101,17 @@ class MemberDetailForm
                                     TextInput::make('mobile_number')
                                         ->label('Mobile Number')
                                         ->placeholder('09XXXXXXXXX')
-                                        ->length(11)
-                                        ->regex('/^09\d{9}$/')
+                                        ->required()
+                                        ->rules(['digits:11', 'regex:/^09\d{9}$/'])
                                         ->validationMessages([
-                                            'regex' => 'Mobile number must be in PH format (09XXXXXXXXX)',
+                                            'digits' => 'Must be exactly 11 digits.',
+                                            'regex' => 'Must start with 09 and be 11 digits.',
                                         ])
                                         ->extraInputAttributes([
                                             'inputmode' => 'numeric',
-                                            'pattern' => '09[0-9]{9}',
-                                            'x-on:keypress' => 'if(!/[0-9]/.test($event.key)) $event.preventDefault()',
-                                            'x-on:input' => '$event.target.value = $event.target.value.replace(/[^0-9]/g, "").slice(0, 11)',
-                                            'x-on:paste' => '$event.preventDefault()',
-                                        ])
-                                        ->helperText('Format: 09123456789 (11 digits)'),
+                                            'maxlength' => '11',
+                                            'oninput' => "this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11)",
+                                        ]),
 
                                     DatePicker::make('birthdate')
                                         ->label('Birthdate')
