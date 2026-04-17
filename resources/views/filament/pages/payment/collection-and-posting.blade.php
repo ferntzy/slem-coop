@@ -141,7 +141,7 @@
 
 /* Close button */
 .dark .cp-modal-close {
-    background: #0f172a;
+    background: #000207;
     color: #94a3b8;
 }
 .dark .cp-modal-close:hover {

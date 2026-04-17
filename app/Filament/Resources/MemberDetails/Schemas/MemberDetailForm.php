@@ -117,7 +117,9 @@ class MemberDetailForm
 
                                     DatePicker::make('birthdate')
                                         ->label('Birthdate')
-                                        ->required(),
+                                        ->required()
+                                        ->maxDate(now()->subYears(18))
+                                        ->rule('before_or_equal:' . now()->subYears(18)->toDateString()),
 
                                     Select::make('sex')
                                         ->label('Sex')
