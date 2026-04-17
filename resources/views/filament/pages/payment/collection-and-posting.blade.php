@@ -245,6 +245,38 @@
     color: #f8fafc;
 }
 
+/* LIGHT MODE */
+.cp-receipt-balance-box span:first-child,
+.cp-receipt-due-box span:first-child {
+    color: #6b7280;
+}
+
+.cp-receipt-balance-box span:last-child,
+.cp-receipt-due-box span:last-child {
+    color: #111827;
+    font-weight: 700;
+}
+
+/* DARK MODE FIX */
+.dark .cp-receipt-balance-box {
+    background: #052e16;
+}
+
+.dark .cp-receipt-due-box {
+    background: #022c22;
+}
+
+.dark .cp-receipt-balance-box span:first-child,
+.dark .cp-receipt-due-box span:first-child {
+    color: #94a3b8; /* softer label */
+}
+
+.dark .cp-receipt-balance-box span:last-child,
+.dark .cp-receipt-due-box span:last-child {
+    color: #f8fafc; /* strong readable value */
+    font-weight: 700;
+}
+
     @media (max-width: 640px) {
         .cp-hero { padding: 1.5rem; }
         .cp-hero-title { font-size: 1.3rem; }
@@ -414,13 +446,13 @@
                         <span style="font-weight:800;font-size:.95rem;color:#111827;">Amount Paid</span>
                         <span style="font-weight:800;font-size:.95rem;color:#059669;" id="rcpt-amount">—</span>
                     </div>
-                    <div class="cp-receipt-balance-box">
-                        <span style="color:#6b7280;">Remaining Balance</span>
-                        <span style="color:#111827;font-weight:700;" id="rcpt-balance">—</span>
+                  <div class="cp-receipt-balance-box">
+                        <span>Remaining Balance</span>
+                        <span id="rcpt-balance">—</span>
                     </div>
-                    <div class="cp-receipt-due-box">
-                        <span style="color:#065f46;">Next Due Date</span>
-                        <span style="color:#1e3a5f;font-weight:700;" id="rcpt-next-due">—</span>
+                   <div class="cp-receipt-due-box">
+                        <span>Next Due Date</span>
+                        <span id="rcpt-next-due">—</span>
                     </div>
                 </div>
 
