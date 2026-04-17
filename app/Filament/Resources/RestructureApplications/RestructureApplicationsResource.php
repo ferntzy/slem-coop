@@ -59,6 +59,7 @@ class RestructureApplicationsResource extends Resource
         if (! $user) {
             return $query->whereRaw('1 = 0');
         }
+        if ($user->isAdminOrSuperAdmin() || $user->isHeadOffice()) return $query; // ← fix
 
         if ($user->isAdminOrSuperAdmin()) {
             return $query;
