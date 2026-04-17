@@ -35,18 +35,16 @@
 
     /* ── Section label ── */
     .cp-section-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--cp-slate-500); margin: 0 0 0.5rem; padding-left: 2px; }
-    .cp-section-label-table { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--cp-slate-500); margin: 0 0 0.5rem; padding-left: 2px; }
 
     /* ── Feature cards grid ── */
     .cp-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; margin-bottom: 1rem; }
     .cp-card { background: #052E16; border-radius: 1rem; border: 1px solid #14532D; padding: 1.5rem; box-shadow: 0 1px 6px rgba(0,0,0,0.05); transition: all 0.2s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; min-height: 260px; }
     .cp-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,0.1); transform: translateY(-2px); border-color: rgba(52,211,153,0.55); }
     .cp-card-accent { position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 1rem 1rem 0 0; background: linear-gradient(90deg, var(--cp-green-600), var(--cp-emerald-400)); }
-    .cp-card-accent-warning { background: linear-gradient(90deg, var(--cp-green-600), var(--cp-emerald-400)); }
     .cp-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.1rem; }
     .cp-card-icon-wrap { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); }
     .cp-card-tag { font-size: 0.62rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; align-self: flex-start; margin-top: 2px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: rgba(236,253,245,0.85); }
-    .cp-card-tag-warning { background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.25); color: var(--cp-emerald-400); }
+    .cp-card-tag-warning { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.25); color: var(--cp-emerald-400); }
     .cp-card-body { flex: 1; }
     .cp-card-title { font-size: 1rem; font-weight: 700; color: #ECFDF5; margin-bottom: 0.45rem; }
     .cp-card-desc { font-size: 0.8rem; color: #ECFDF3; line-height: 1.6; }
@@ -59,49 +57,51 @@
     .cp-btn-primary { background: #c2f2d5; color: #000000; }
     .cp-btn-info    { background: #c2f2d5; color: #000000; }
     .cp-btn-success { background: #10b981; color: #fff; }
-    .cp-btn-gray    { background: var(--cp-slate-100); border-color: var(--cp-slate-200); color: var(--cp-slate-900); }
     .cp-btn-warning { background: #10b981; color: #fff; }
+    .cp-btn-gray    { background: #f3f4f6; border-color: #e5e7eb; color: #111827; }
+    .cp-btn-gray:hover { background: #e5e7eb; }
+
     .cp-audit-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.78rem; color: rgba(236,253,245,0.85); }
     .cp-audit-row:last-child { border-bottom: none; }
     .cp-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 
-    /* ── Modals (shared base) ── */
+    /* ── Modals ── */
     .cp-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; padding: 1rem; }
     .cp-modal-overlay.cp-open { display: flex; }
-    .cp-modal { background: #fff; border-radius: 1rem; width: 100%; max-width: 540px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); overflow: hidden; max-height: 92vh; display: flex; flex-direction: column; }
-    .cp-modal-header { padding: 1.25rem 1.5rem 1rem; border-bottom: 1px solid #f3f4f6; display: flex; align-items: flex-start; justify-content: space-between; flex-shrink: 0; }
+    .cp-modal { background: #ffffff; border-radius: 1rem; width: 100%; max-width: 540px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); overflow: hidden; max-height: 92vh; display: flex; flex-direction: column; }
+    .cp-modal-header { padding: 1.25rem 1.5rem 1rem; border-bottom: 1px solid #f3f4f6; display: flex; align-items: flex-start; justify-content: space-between; flex-shrink: 0; background: #ffffff; }
     .cp-modal-title { font-size: 0.95rem; font-weight: 800; color: #111827; }
     .cp-modal-sub { font-size: 0.72rem; color: #6b7280; margin-top: 2px; }
     .cp-modal-close { width: 28px; height: 28px; border-radius: 7px; border: none; background: #f3f4f6; cursor: pointer; font-size: 1rem; color: #6b7280; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .cp-modal-close:hover { background: #e5e7eb; }
-    .cp-modal-body { padding: 1.5rem; overflow-y: auto; flex: 1; }
-    .cp-modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #f3f4f6; display: flex; gap: 0.5rem; justify-content: flex-end; flex-shrink: 0; }
+    .cp-modal-body { padding: 1.5rem; overflow-y: auto; flex: 1; background: #ffffff; }
+    .cp-modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #f3f4f6; display: flex; gap: 0.5rem; justify-content: flex-end; flex-shrink: 0; background: #ffffff; }
+
     .cp-form-group { margin-bottom: 1rem; }
     .cp-form-label { display: block; font-size: 0.73rem; font-weight: 700; color: #374151; margin-bottom: 0.35rem; }
-    .cp-form-input, .cp-form-textarea { width: 100%; padding: 0.55rem 0.8rem; border: 1.5px solid #e5e7eb; border-radius: 0.5rem; font-size: 0.82rem; color: #111827; background: #fff; transition: border-color 0.15s; font-family: inherit; box-sizing: border-box; }
+    .cp-form-input, .cp-form-textarea { width: 100%; padding: 0.55rem 0.8rem; border: 1.5px solid #e5e7eb; border-radius: 0.5rem; font-size: 0.82rem; color: #111827; background: #ffffff; transition: border-color 0.15s; font-family: inherit; box-sizing: border-box; }
     .cp-form-input:focus, .cp-form-textarea:focus { outline: none; border-color: #1e3a5f; box-shadow: 0 0 0 3px rgba(30,58,95,0.08); }
     .cp-form-textarea { resize: vertical; min-height: 60px; }
+
     .cp-ao-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6; font-size: 0.78rem; }
     .cp-ao-row:last-child { border-bottom: none; }
+
     .cp-summary-grid { background: #f9fafb; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 0.75rem; text-align: center; }
     .cp-summary-val { font-size: 1.1rem; font-weight: 800; }
     .cp-summary-lbl { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; margin-top: 2px; }
     .cp-variance-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.8rem; border-radius: 0.5rem; font-size: 0.82rem; font-weight: 700; margin-top: 0.75rem; }
-    .cp-empty { text-align: center; padding: 2rem 1rem; color: #9ca3af; font-size: 0.8rem; }
-    .cp-empty svg { margin: 0 auto 0.5rem; display: block; opacity: 0.35; }
 
-    /* ── Receipt Modal specific ── */
+    .cp-empty { text-align: center; padding: 2rem 1rem; color: #9ca3af; font-size: 0.8rem; }
+    .cp-empty svg { margin: 0 auto 0.5rem; display: block; opacity: 0.35; color: #9ca3af; }
+
+    /* ── Receipt ── */
     .cp-receipt-row { display: flex; justify-content: space-between; align-items: center; padding: .45rem 0; border-bottom: 1px solid #f3f4f6; font-size: .82rem; }
     .cp-receipt-row:last-child { border-bottom: none; }
     .cp-receipt-label { color: #6b7280; }
     .cp-receipt-value { font-weight: 600; color: #111827; }
-    .cp-receipt-or { font-weight: 700; font-family: monospace; font-size: .78rem; background: #ecfdf5; padding: 2px 10px; border-radius: 4px; color: #059669; letter-spacing: .03em; }
     .cp-receipt-amount-row { display: flex; justify-content: space-between; align-items: center; padding: .75rem 0; border-bottom: 2px solid #e5e7eb; }
     .cp-receipt-balance-box { display: flex; justify-content: space-between; background: #f0fdf4; border-radius: .5rem; padding: .5rem .75rem; margin-top: .6rem; font-size: .75rem; }
-    .cp-receipt-due-box { display: flex; justify-content: space-between; background: var(--cp-emerald-50); border: 1px solid rgba(16,185,129,0.18); border-radius: .5rem; padding: .5rem .75rem; margin-top: .4rem; font-size: .75rem; }
-
-    .cp-link { color: var(--cp-green-600); font-weight: 700; text-decoration: none; }
-    .cp-link:hover { text-decoration: underline; }
+    .cp-receipt-due-box { display: flex; justify-content: space-between; background: #ecfdf5; border: 1px solid rgba(16,185,129,0.18); border-radius: .5rem; padding: .5rem .75rem; margin-top: .4rem; font-size: .75rem; }
 
     /* ── Toast ── */
     .cp-toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #111827; color: #fff; padding: 0.7rem 1.2rem; border-radius: 0.75rem; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; z-index: 99999; transform: translateY(80px); opacity: 0; transition: all 0.3s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.2); pointer-events: none; }
@@ -109,7 +109,141 @@
     .cp-toast-dot { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; flex-shrink: 0; }
     .cp-toast-success .cp-toast-dot { background: #10b981; }
     .cp-toast-danger  .cp-toast-dot { background: #ef4444; }
-    .cp-toast-warning .cp-toast-dot { background: #10b981; }
+    .cp-toast-warning .cp-toast-dot { background: #f59e0b; }
+
+ /* ══════════════════════════════════════
+   DARK MODE OVERRIDES (FIXED)
+══════════════════════════════════════ */
+
+/* Modal container */
+.dark .cp-modal {
+    background: #000000;
+}
+
+/* Header / Body / Footer */
+.dark .cp-modal-header,
+.dark .cp-modal-body,
+.dark .cp-modal-footer {
+    background: #000000;
+}
+
+/* Borders */
+.dark .cp-modal-header {
+    border-bottom-color: #0f172a;
+}
+.dark .cp-modal-footer {
+    border-top-color: #0f172a;
+}
+
+/* Title + subtitle */
+.dark .cp-modal-title { color: #f8fafc; }
+.dark .cp-modal-sub   { color: #94a3b8; }
+
+/* Close button */
+.dark .cp-modal-close {
+    background: #0f172a;
+    color: #94a3b8;
+}
+.dark .cp-modal-close:hover {
+    background: #1e293b;
+    color: #e2e8f0;
+}
+
+/* ❗ FIX: remove white/gray box inside modal */
+.dark .cp-modal-body > div {
+    background: transparent !important;
+    border-color: #0f172a !important;
+}
+
+/* ❗ FIX: empty state (your screenshot issue) */
+.dark .cp-empty {
+    background: #020617;
+    color: #64748b;
+}
+.dark .cp-empty svg {
+    color: #334155;
+}
+
+/* Buttons */
+.dark .cp-btn-gray {
+    background: #0f172a;
+    border-color: #1e293b;
+    color: #e2e8f0;
+}
+.dark .cp-btn-gray:hover {
+    background: #1e293b;
+}
+
+/* Rows */
+.dark .cp-ao-row {
+    border-bottom-color: #0f172a;
+    color: #cbd5e1;
+}
+
+/* Inputs */
+.dark .cp-form-label { color: #cbd5e1; }
+
+.dark .cp-form-input,
+.dark .cp-form-textarea {
+    background: #020617;
+    border-color: #0f172a;
+    color: #f8fafc;
+}
+
+.dark .cp-form-input::placeholder,
+.dark .cp-form-textarea::placeholder {
+    color: #475569;
+}
+
+.dark .cp-form-input:focus,
+.dark .cp-form-textarea:focus {
+    border-color: #34d399;
+    box-shadow: 0 0 0 3px rgba(52,211,153,0.12);
+}
+
+/* Receipt */
+.dark #cp-receipt-printable {
+    background: #020617;
+    border-color: #0f172a;
+}
+
+.dark .cp-receipt-row {
+    border-bottom-color: #0f172a;
+}
+
+.dark .cp-receipt-label { color: #94a3b8; }
+.dark .cp-receipt-value { color: #f8fafc; }
+
+.dark .cp-receipt-amount-row {
+    border-bottom-color: #0f172a;
+}
+
+.dark .cp-receipt-balance-box,
+.dark .cp-receipt-due-box {
+    background: #052e16;
+    border-color: rgba(52,211,153,0.2);
+}
+
+/* Receipt header text */
+.dark #cp-receipt-printable .receipt-org-name {
+    color: #f8fafc !important;
+}
+.dark #cp-receipt-printable .receipt-footer-txt {
+    color: #64748b !important;
+}
+
+/* Summary */
+.dark .cp-summary-grid {
+    background: #020617;
+}
+.dark .cp-summary-lbl {
+    color: #64748b;
+}
+
+/* Variance */
+.dark .cp-variance-row {
+    color: #f8fafc;
+}
 
     @media (max-width: 640px) {
         .cp-hero { padding: 1.5rem; }
@@ -194,7 +328,6 @@
                     <div style="font-size:.75rem;color:#9ca3af;">Pending count</div>
                     <div style="font-weight:800;color:#059669;">{{ $pendingCount ?? 0 }}</div>
                 </div>
-
                 @if(isset($pendingPayments) && $pendingPayments->isNotEmpty())
                     @foreach($pendingPayments->take(2) as $p)
                         <div class="cp-audit-row">
@@ -203,7 +336,7 @@
                                 {{ $p->member_name ?? 'Unknown' }}
                                 <span style="opacity:.65;">({{ $p->loan_number ?? 'N/A' }})</span>
                             </span>
-                            <span style="font-weight:800;color:#059669;">₱{{ number_format((float) ($p->amount_paid ?? 0), 2) }}</span>
+                            <span style="font-weight:800;color:#059669;">₱{{ number_format((float)($p->amount_paid ?? 0), 2) }}</span>
                         </div>
                     @endforeach
                 @else
@@ -229,14 +362,11 @@
 ══════════════════════════════════════════════════════════════════ --}}
 <div class="cp-modal-overlay" id="cp-modal-receipt" onclick="window.cpBgClose(event,'cp-modal-receipt')">
     <div class="cp-modal" style="max-width:500px;">
-
         <div class="cp-modal-header">
             <div>
                 <div class="cp-modal-title" style="display:flex;align-items:center;gap:.4rem;">
-                    <svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;color:#059669;flex-shrink:0;"
-                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <svg style="width:18px;height:18px;color:#059669;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                     Payment Receipt
                 </div>
@@ -250,17 +380,13 @@
 
                 <div style="text-align:center;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px dashed #e5e7eb;">
                     <div style="display:flex;justify-content:center;margin-bottom:.4rem;">
-                        <svg xmlns="http://www.w3.org/2000/svg" style="width:34px;height:34px;color:#059669;"
-                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0
-                                     012-2h5.586a1 1 0 01.707.293l5.414 5.414A1
-                                     1 0 0119 9.414V19a2 2 0 01-2 2z"/>
+                        <svg style="width:34px;height:34px;color:#059669;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
                         </svg>
                     </div>
-                    <div style="font-weight:800;font-size:1rem;color:#111827;letter-spacing:.05em;">PAYMENT RECEIPT</div>
+                    <div class="receipt-org-name" style="font-weight:800;font-size:1rem;color:#111827;letter-spacing:.05em;">PAYMENT RECEIPT</div>
                     <div style="font-size:.68rem;color:#059669;font-weight:600;margin-top:2px;">Payment Posted Successfully</div>
-                    <div style="font-size:.65rem;color:#9ca3af;margin-top:2px;">Cooperative Lending System</div>
+                    <div class="receipt-footer-txt" style="font-size:.65rem;color:#9ca3af;margin-top:2px;">Cooperative Lending System</div>
                 </div>
 
                 <div>
@@ -271,9 +397,6 @@
                     <div class="cp-receipt-row">
                         <span class="cp-receipt-label">Loan #</span>
                         <span class="cp-receipt-value" id="rcpt-loan">—</span>
-                    </div>
-                    <div class="cp-receipt-row">
-                        
                     </div>
                     <div class="cp-receipt-row">
                         <span class="cp-receipt-label">Payment Date</span>
@@ -291,20 +414,17 @@
                         <span style="font-weight:800;font-size:.95rem;color:#111827;">Amount Paid</span>
                         <span style="font-weight:800;font-size:.95rem;color:#059669;" id="rcpt-amount">—</span>
                     </div>
-                    {{-- Remaining balance --}}
                     <div class="cp-receipt-balance-box">
                         <span style="color:#6b7280;">Remaining Balance</span>
                         <span style="color:#111827;font-weight:700;" id="rcpt-balance">—</span>
                     </div>
-                    {{-- ✅ Next due date box --}}
                     <div class="cp-receipt-due-box">
                         <span style="color:#065f46;">Next Due Date</span>
                         <span style="color:#1e3a5f;font-weight:700;" id="rcpt-next-due">—</span>
                     </div>
                 </div>
 
-                <div style="text-align:center;margin-top:1rem;padding-top:.75rem;
-                            border-top:1px dashed #e5e7eb;font-size:.65rem;color:#9ca3af;">
+                <div class="receipt-footer-txt" style="text-align:center;margin-top:1rem;padding-top:.75rem;border-top:1px dashed #e5e7eb;font-size:.65rem;color:#9ca3af;">
                     <span id="rcpt-generated">—</span>
                     &nbsp;·&nbsp;
                     Status: <span style="color:#059669;font-weight:700;">POSTED</span>
@@ -314,24 +434,14 @@
         </div>
 
         <div class="cp-modal-footer">
-            <button class="cp-btn-full cp-btn-gray"
-                    style="width:auto;padding:8px 20px;"
-                    onclick="window.cpCloseModal('cp-modal-receipt')">
-                Close
-            </button>
-            <button class="cp-btn-full cp-btn-success"
-                    id="cp-btn-download"
-                    style="width:auto;padding:8px 20px;"
-                    onclick="window.cpDownloadReceipt()">
-                <svg width="13" height="13" fill="none" viewBox="0 0 24 24"
-                     stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/>
+            <button class="cp-btn-full cp-btn-gray" style="width:auto;padding:8px 20px;" onclick="window.cpCloseModal('cp-modal-receipt')">Close</button>
+            <button class="cp-btn-full cp-btn-success" id="cp-btn-download" style="width:auto;padding:8px 20px;" onclick="window.cpDownloadReceipt()">
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/>
                 </svg>
                 Download PNG
             </button>
         </div>
-
     </div>
 </div>
 
@@ -380,7 +490,7 @@
                     No collections posted today yet.
                 </div>
             @endif
-            <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid #f3f4f6;">
+            <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid #334155;">
                 <div style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem;">Submit Your Cash on Hand</div>
                 <div class="cp-form-group">
                     <label class="cp-form-label">Cash on Hand (₱)</label>
@@ -408,8 +518,7 @@
     </div>
 </div>
 
-{{-- ── Toast ── --}}
-{{-- Pending Payments Modal --}}
+{{-- ── Pending Payments Modal ── --}}
 <div class="cp-modal-overlay" id="cp-modal-pending" onclick="window.cpBgClose(event,'cp-modal-pending')">
     <div class="cp-modal" style="max-width:720px;">
         <div class="cp-modal-header">
@@ -427,7 +536,7 @@
                 @foreach($pendingPayments as $p)
                     <div class="cp-ao-row">
                         <div style="width:34px;height:34px;border-radius:50%;background:#ecfdf5;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800;color:#059669;flex-shrink:0;">
-                            {{ strtoupper(substr((string) ($p->member_name ?? 'U'), 0, 2)) }}
+                            {{ strtoupper(substr((string)($p->member_name ?? 'U'), 0, 2)) }}
                         </div>
                         <div style="flex:1;">
                             <div style="font-size:0.82rem;font-weight:700;">
@@ -435,16 +544,13 @@
                                 <span style="font-weight:600;color:#9ca3af;">— {{ $p->loan_number ?? 'N/A' }}</span>
                             </div>
                             <div style="font-size:0.7rem;color:#9ca3af;">
-                                <!-- OR: {{ $p->reference_number ?? '—' }} -->
                                 {{ optional($p->payment_date)->format('M d, Y') ?? '—' }}
                             </div>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-weight:800;color:#059669;">₱{{ number_format((float) ($p->amount_paid ?? 0), 2) }}</div>
-                            <a
-                                href="{{ \App\Filament\Resources\CollectionAndPostings\CollectionAndPostingResource::getUrl('view', ['record' => $p]) }}"
-                                style="display:inline-block;margin-top:4px;font-size:.72rem;font-weight:700;color:#2563eb;text-decoration:none;"
-                            >
+                            <div style="font-weight:800;color:#059669;">₱{{ number_format((float)($p->amount_paid ?? 0), 2) }}</div>
+                            <a href="{{ \App\Filament\Resources\CollectionAndPostings\CollectionAndPostingResource::getUrl('view', ['record' => $p]) }}"
+                               style="display:inline-block;margin-top:4px;font-size:.72rem;font-weight:700;color:#2563eb;text-decoration:none;">
                                 Open
                             </a>
                         </div>
@@ -452,7 +558,9 @@
                 @endforeach
             @else
                 <div class="cp-empty">
-                    <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
                     No pending payments right now.
                 </div>
             @endif
@@ -463,6 +571,7 @@
     </div>
 </div>
 
+{{-- ── Toast ── --}}
 <div class="cp-toast" id="cp-toast">
     <div class="cp-toast-dot" id="cp-toast-dot">✓</div>
     <span id="cp-toast-msg"></span>
@@ -494,10 +603,10 @@
             val.textContent = '₱0.00 — Balanced';
         } else if (variance > 0) {
             row.style.background = '#fef2f2'; row.style.color = '#dc2626';
-            val.textContent = '-₱' + variance.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' Short';
+            val.textContent = '-₱' + variance.toLocaleString('en-PH', {minimumFractionDigits:2,maximumFractionDigits:2}) + ' Short';
         } else {
             row.style.background = '#ecfdf5'; row.style.color = '#059669';
-            val.textContent = '+₱' + Math.abs(variance).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' Over';
+            val.textContent = '+₱' + Math.abs(variance).toLocaleString('en-PH', {minimumFractionDigits:2,maximumFractionDigits:2}) + ' Over';
         }
     };
 
@@ -535,8 +644,7 @@
         window.html2canvas(document.getElementById('cp-receipt-printable'), {
             scale: 2, useCORS: true, backgroundColor: '#f9fafb', logging: false,
         }).then(function (canvas) {
-            var orNo     = (document.getElementById('rcpt-or').textContent || '').trim() || 'receipt';
-            var filename = 'Receipt-' + orNo + '.png';
+            var filename = 'Receipt-' + Date.now() + '.png';
             var link     = document.createElement('a');
             link.href    = canvas.toDataURL('image/png');
             link.download = filename;
@@ -557,13 +665,12 @@
                 var d = Array.isArray(payload) ? payload[0] : payload;
                 document.getElementById('rcpt-member').textContent    = d.member        || '—';
                 document.getElementById('rcpt-loan').textContent      = d.loan          || '—';
-                // document.getElementById('rcpt-or').textContent        = d.or_number     || '—'; // OR Number removed
                 document.getElementById('rcpt-date').textContent      = d.date          || '—';
                 document.getElementById('rcpt-method').textContent    = d.method        || 'Cash';
                 document.getElementById('rcpt-posted-by').textContent = d.posted_by     || '—';
                 document.getElementById('rcpt-amount').textContent    = d.amount        || '—';
                 document.getElementById('rcpt-balance').textContent   = d.balance       || '—';
-                document.getElementById('rcpt-next-due').textContent  = d.next_due_date || '—'; // ✅
+                document.getElementById('rcpt-next-due').textContent  = d.next_due_date || '—';
                 document.getElementById('rcpt-generated').textContent = 'Generated on ' + (d.generated_at || '—');
                 window.cpOpenModal('cp-modal-receipt');
             });
@@ -574,7 +681,9 @@
     attachReceiptListener();
 
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') window.cpCloseModal('cp-modal-receipt');
+        if (e.key === 'Escape') {
+            ['cp-modal-receipt','cp-modal-daily','cp-modal-pending'].forEach(window.cpCloseModal);
+        }
     });
 
     var st = document.createElement('style');
