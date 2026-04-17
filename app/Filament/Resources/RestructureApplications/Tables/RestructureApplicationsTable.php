@@ -85,8 +85,16 @@ class RestructureApplicationsTable
             ->filters([
                 //
             ])
-            ->actions([
+            ->recordActions([
                 ActionGroup::make([
+                    Action::make('view')
+                        ->label('View')
+                        ->icon('heroicon-o-eye')
+                        ->modalHeading(fn ($record) => 'Restructure Application #'.$record->restructure_application_id)
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Close')
+                        ->modalWidth('5xl')
+                        ->infolist(fn () => RestructureApplicationsInfolist::schema()),
 
                     Action::make('underReview')
                         ->label('Mark Under Review')
@@ -235,12 +243,13 @@ class RestructureApplicationsTable
                                 ->send();
                         }),
 
-                ])->tooltip('Actions'),
-            ])
+                ])
+                    ->iconButton()
+                    ->tooltip('Actions'),
+            ], position: RecordActionsPosition::BeforeColumns)
             ->bulkActions([
                 //
             ])
-            ->recordActionsPosition(RecordActionsPosition::BeforeColumns)
             ->defaultSort('created_at', 'desc');
     }
 }
