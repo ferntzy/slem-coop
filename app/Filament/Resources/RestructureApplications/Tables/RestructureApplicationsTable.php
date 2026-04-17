@@ -37,7 +37,7 @@ class RestructureApplicationsTable
             ->columns([
 
                 TextColumn::make('loanApplication.member.profile.full_name')
-                    ->label('Borrower')
+                    ->label('Member Name')
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query->whereHas('loanApplication.member.profile', function (Builder $q) use ($search) {
                             $q->where('first_name', 'like', "%{$search}%")
