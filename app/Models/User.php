@@ -199,6 +199,7 @@ class User extends Authenticatable implements HasAvatar
     {
         return ! $this->isMember()
             && ! $this->isAdminOrSuperAdmin()
+            && ! $this->isHeadOffice()
             && ! $this->hasAnyRole(['Librarian', 'librarian'])
             && $this->branchId() !== null;
     }
