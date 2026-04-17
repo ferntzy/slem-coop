@@ -260,60 +260,65 @@ class MemberDetailInfolist
                                     ->contained(),
                             ]),
                         Tab::make('Savings')
-                            ->icon('heroicon-o-building-library')
-                            ->schema([
-                                Section::make('Savings')
+                                    ->icon('heroicon-o-building-library')
                                     ->schema([
-                                        TextEntry::make('profile.full_name')
-                                            ->label('Member Name')
-                                            ->weight('bold')
-                                            ->color('success'),
+                                        Section::make('Savings')
+                                            ->schema([
+                                                TextEntry::make('profile.full_name')
+                                                    ->label('Member Name')
+                                                    ->weight('bold')
+                                                    ->color('success'),
 
-                                        TextEntry::make('amount')
-                                            ->label('Balance')
-                                            ->money('PHP')
-                                            ->weight('bold')
-                                            ->color('success'),
+                                                TextEntry::make('amount')
+                                                    ->label('Balance')
+                                                    ->money('PHP')
+                                                    ->weight('bold')
+                                                    ->color('success'),
 
-                                        TextEntry::make('status')
-                                            ->badge()
-                                            ->color(fn (string $state): string => match ($state) {
-                                                'Approved' => 'success',
-                                                'Pending' => 'warning',
-                                                'Rejected' => 'danger',
-                                                default => 'gray',
-                                            }),
+                                                TextEntry::make('status')
+                                                    ->badge()
+                                                    ->color(fn (string $state): string => match ($state) {
+                                                        'Approved' => 'success',
+                                                        'Active' => 'success', // 🔥 FIXED
+                                                        'Pending' => 'warning',
+                                                        'Rejected' => 'danger',
+                                                        default => 'gray',
+                                                    }),
 
-                                        TextEntry::make('profile.created_at')
-                                            ->label('Created')
-                                            ->dateTime('M d, Y h:i A'),
-                                    ])->columns(2),
-                                Section::make('Time Deposits')
-                                    ->schema([
-                                        TextEntry::make('profile.full_name')
-                                            ->label('Member Name')
-                                            ->weight('bold')
-                                            ->color('success'),
+                                                TextEntry::make('profile.created_at')
+                                                    ->label('Created')
+                                                    ->dateTime('M d, Y h:i A'),
+                                            ])
+                                            ->columns(2),
 
-                                        TextEntry::make('amount')
-                                            ->label('Balance')
-                                            ->money('PHP')
-                                            ->weight('bold')
-                                            ->color('success'),
+                                        Section::make('Time Deposits')
+                                            ->schema([
+                                                TextEntry::make('profile.full_name')
+                                                    ->label('Member Name')
+                                                    ->weight('bold')
+                                                    ->color('success'),
 
-                                        TextEntry::make('status')
-                                            ->badge()
-                                            ->color(fn (string $state): string => match ($state) {
-                                                'Approved' => 'success',
-                                                'Pending' => 'warning',
-                                                'Rejected' => 'danger',
-                                                default => 'gray',
-                                            }),
+                                                TextEntry::make('amount')
+                                                    ->label('Balance')
+                                                    ->money('PHP')
+                                                    ->weight('bold')
+                                                    ->color('success'),
 
-                                        TextEntry::make('created_at')
-                                            ->label('Created')
-                                            ->dateTime('M d, Y h:i A'),
-                                    ])->columns(2),
+                                                TextEntry::make('status')
+                                                    ->badge()
+                                                    ->color(fn (string $state): string => match ($state) {
+                                                        'Approved' => 'success',
+                                                        'Active' => 'success', // 🔥 FIXED HERE TOO
+                                                        'Pending' => 'warning',
+                                                        'Rejected' => 'danger',
+                                                        default => 'gray',
+                                                    }),
+
+                                                TextEntry::make('created_at')
+                                                    ->label('Created')
+                                                    ->dateTime('M d, Y h:i A'),
+                                            ])
+                                            ->columns(2),
 
                             ]),
                     ])
