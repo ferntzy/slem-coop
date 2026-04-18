@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Profiles\Schemas;
 
 use App\Models\Branch;
 use App\Models\Role;
+use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -32,20 +33,46 @@ class ProfileForm
                     ->required()
                     ->unique(ignoreRecord: true),
 
-                TextInput::make('mobile_number')
+              TextInput::make('mobile_number')
+                    ->label('Mobile Number')
+                    ->placeholder('09XXXXXXXXX')
                     ->maxLength(11)
-                    ->rules(['regex:/^[0-9]{1,11}$/'])
+                    ->rules(['nullable', 'regex:/^09[0-9]{9}$/'])
                     ->validationMessages([
-                        'regex' => 'Mobile number must contain only numbers and must not exceed 11 digits.',
-                    ])
+                        'regex' => 'Mobile number must be a valid PH number starting with 09 and exactly 11 digits (e.g. 09123456789).',
+                                    ])
                     ->extraInputAttributes([
-                        'inputmode' => 'numeric',
-                        'pattern'   => '[0-9]*',
-                        'oninput'   => 'this.value = this.value.replace(/[^0-9]/g, "").slice(0, 11)',
-            ]),
+                        'inputmode'     => 'numeric',
+                        'pattern'       => '09[0-9]{9}',
+                        'x-on:keypress' => 'if(!/[0-9]/.test($event.key)) $event.preventDefault()',
+                        'x-on:input'    => '$event.target.value = $event.target.value.replace(/[^0-9]/g, "").slice(0, 11)',
+                        'x-on:paste'    => '$event.preventDefault()',
+                    ]),
+
                 DatePicker::make('birthdate')
-                    ->before(today())
-                    ->required(),
+                    ->required()
+                    ->maxDate(today()->subYears(18))
+                    ->rules([
+                        function () {
+                            return function (string $attribute, mixed $value, \Closure $fail) {
+                                if (!$value) {
+                                    return;
+                                }
+
+                                $birthdate = Carbon::parse($value);
+
+                                if ($birthdate->isToday() || $birthdate->isFuture()) {
+                                    $fail('Birthdate cannot be today or a future date.');
+                                    return;
+                                }
+
+                                $age = $birthdate->age;
+                                if ($age < 18) {
+                                    $fail("You must be at least 18 years old. Current age: {$age} years.");
+                                }
+                            };
+                        },
+                    ]),
 
                 Select::make('sex')
                     ->options([
@@ -87,7 +114,6 @@ class ProfileForm
                 TextColumn::make('system_roles')
                     ->label('System Role')
                     ->badge(),
-
             ]);
     }
 

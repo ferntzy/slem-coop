@@ -11,6 +11,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class LoanApplicationsResource extends Resource
 {
@@ -50,14 +51,15 @@ class LoanApplicationsResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()->withoutGlobalScopes([
+            SoftDeletingScope::class,
+        ]);
         $user = auth()->user();
 
         if (! $user) {
             return $query->whereRaw('1 = 0');
         }
-
-        if ($user->isAdminOrSuperAdmin()) {
+        if ($user->isAdminOrSuperAdmin() || $user->isHeadOffice()) {
             return $query;
         }
 

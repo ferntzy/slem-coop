@@ -2,19 +2,20 @@
 
 namespace App\Filament\Resources\RestructureApplications\Tables;
 
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
+use App\Filament\Resources\RestructureApplications\Schemas\RestructureApplicationsInfolist;
+use App\Models\LoanAccount;
+use App\Models\RestructureApplicationStatusLog;
+use App\Services\CoopFeeCalculatorService;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
-use Filament\Notifications\Notification;
 use Filament\Forms\Components\Textarea;
-use App\Filament\Resources\RestructureApplications\Schemas\RestructureApplicationsInfolist;
-use App\Models\RestructureApplicationStatusLog;
-use App\Models\LoanAccount;
+use Filament\Notifications\Notification;
+use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\RecordActionsPosition;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
-
 
 class RestructureApplicationsTable
 {
@@ -36,9 +37,23 @@ class RestructureApplicationsTable
             ->columns([
 
                 TextColumn::make('loanApplication.member.profile.full_name')
-                    ->label('Borrower')
-                    ->searchable()
-                    ->sortable(),
+                    ->label('Member Name')
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('loanApplication.member.profile', function (Builder $q) use ($search) {
+                            $q->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('middle_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        });
+                    })
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query
+                            ->leftJoin('loan_applications', 'restructure_applications.loan_application_id', '=', 'loan_applications.loan_application_id')
+                            ->leftJoin('member_details', 'loan_applications.member_id', '=', 'member_details.id')
+                            ->leftJoin('profiles', 'member_details.profile_id', '=', 'profiles.profile_id')
+                            ->orderBy('profiles.first_name', $direction)
+                            ->orderBy('profiles.last_name', $direction)
+                            ->select('restructure_applications.*');
+                    }),
 
                 TextColumn::make('loan_application_id')
                     ->label('Loan #')
@@ -53,20 +68,6 @@ class RestructureApplicationsTable
                     ->money('PHP')
                     ->sortable(),
 
-                TextColumn::make('restructure_application_id')
-                    ->label('View')
-                    ->formatStateUsing(fn () => '')
-                    ->icon('heroicon-o-eye')
-                    ->iconColor('info')
-                    ->tooltip('View Details')
-                    ->action(
-                        Action::make('view')
-                            ->modalHeading(fn ($record) => 'Restructure Application — ' . ($record->loanApplication?->member?->profile?->full_name ?? 'N/A'))
-                            ->modalSubmitAction(false)
-                            ->modalCancelActionLabel('Close')
-                            ->infolist(fn ($record) => RestructureApplicationsInfolist::schema())
-                    ),
-
                 TextColumn::make('term_months')
                     ->label('Term (Months)')
                     ->sortable(),
@@ -74,18 +75,26 @@ class RestructureApplicationsTable
                 BadgeColumn::make('status')
                     ->colors([
                         'warning' => 'Pending',
-                        'info'    => 'Under Review',
+                        'info' => 'Under Review',
                         'success' => 'Approved',
-                        'danger'  => 'Rejected',
-                        'gray'    => 'Cancelled',
+                        'danger' => 'Rejected',
+                        'gray' => 'Cancelled',
                     ]),
 
             ])
             ->filters([
                 //
             ])
-            ->actions([
+            ->recordActions([
                 ActionGroup::make([
+                    Action::make('view')
+                        ->label('View')
+                        ->icon('heroicon-o-eye')
+                        ->modalHeading(fn ($record) => 'Restructure Application #'.$record->restructure_application_id)
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Close')
+                        ->modalWidth('5xl')
+                        ->infolist(fn () => RestructureApplicationsInfolist::schema()),
 
                     Action::make('underReview')
                         ->label('Mark Under Review')
@@ -98,10 +107,10 @@ class RestructureApplicationsTable
 
                             RestructureApplicationStatusLog::create([
                                 'restructure_application_id' => $record->restructure_application_id,
-                                'from_status'                => $from,
-                                'to_status'                  => 'Under Review',
-                                'changed_by_user_id'         => auth()->id(),
-                                'changed_at'                 => now(),
+                                'from_status' => $from,
+                                'to_status' => 'Under Review',
+                                'changed_by_user_id' => auth()->id(),
+                                'changed_at' => now(),
                             ]);
 
                             Notification::make()
@@ -128,50 +137,50 @@ class RestructureApplicationsTable
                                 return;
                             }
 
-                            $principal    = (float) $record->new_principal;
+                            $principal = (float) $record->new_principal;
                             $interestRate = (float) $record->new_interest;
-                            $term         = (int) $record->term_months;
-                            $release      = now()->toDateString();
+                            $term = (int) $record->term_months;
+                            $release = now()->toDateString();
 
-                            $monthlyPrincipal   = $term > 0 ? ($principal / $term) : $principal;
+                            $monthlyPrincipal = $term > 0 ? ($principal / $term) : $principal;
                             $firstMonthInterest = $principal * ($interestRate / 100) / 12;
-                            $monthlyAmort       = $monthlyPrincipal + $firstMonthInterest;
+                            $monthlyAmort = $monthlyPrincipal + $firstMonthInterest;
 
-                            $fees = app(\App\Services\CoopFeeCalculatorService::class)
+                            $fees = app(CoopFeeCalculatorService::class)
                                 ->calculate('restructure', $principal);
 
                             $record->update([
                                 'shared_capital_fee' => $fees['shared_capital_fee'] ?? 0,
-                                'insurance_fee'      => $fees['insurance_fee'] ?? 0,
-                                'processing_fee'     => $fees['processing_fee'] ?? 0,
-                                'coop_fee_total'     => $fees['coop_fee_total'] ?? 0,
+                                'insurance_fee' => $fees['insurance_fee'] ?? 0,
+                                'processing_fee' => $fees['processing_fee'] ?? 0,
+                                'coop_fee_total' => $fees['coop_fee_total'] ?? 0,
                                 'net_release_amount' => $fees['net_release_amount'] ?? 0,
-                                'status'             => 'Approved',
+                                'status' => 'Approved',
                             ]);
 
                             DB::transaction(function () use ($record, $oldLoanAccount, $principal, $interestRate, $term, $release, $monthlyAmort, $fees) {
 
                                 $oldLoanAccount->update([
-                                    'status'          => 'Restructured',
+                                    'status' => 'Restructured',
                                     'restructured_at' => now(),
                                 ]);
 
                                 $newLoan = LoanAccount::create([
                                     'loan_application_id' => $record->loan_application_id,
-                                    'profile_id'          => $record->loanApplication?->member?->profile_id,
-                                    'principal_amount'     => $principal,
-                                    'shared_capital_fee'   => $fees['shared_capital_fee'] ?? 0,
-                                    'insurance_fee'        => $fees['insurance_fee'] ?? 0,
-                                    'processing_fee'       => $fees['processing_fee'] ?? 0,
-                                    'coop_fee_total'       => $fees['coop_fee_total'] ?? 0,
-                                    'net_release_amount'   => $fees['net_release_amount'] ?? 0,
-                                    'interest_rate'        => $interestRate,
-                                    'term_months'          => $term,
-                                    'release_date'         => $release,
-                                    'maturity_date'        => now()->addMonths($term)->toDateString(),
+                                    'profile_id' => $record->loanApplication?->member?->profile_id,
+                                    'principal_amount' => $principal,
+                                    'shared_capital_fee' => $fees['shared_capital_fee'] ?? 0,
+                                    'insurance_fee' => $fees['insurance_fee'] ?? 0,
+                                    'processing_fee' => $fees['processing_fee'] ?? 0,
+                                    'coop_fee_total' => $fees['coop_fee_total'] ?? 0,
+                                    'net_release_amount' => $fees['net_release_amount'] ?? 0,
+                                    'interest_rate' => $interestRate,
+                                    'term_months' => $term,
+                                    'release_date' => $release,
+                                    'maturity_date' => now()->addMonths($term)->toDateString(),
                                     'monthly_amortization' => $monthlyAmort,
-                                    'balance'              => $principal,
-                                    'status'               => 'Active', // ✅ This is the payable loan
+                                    'balance' => $principal,
+                                    'status' => 'Active', // ✅ This is the payable loan
                                 ]);
 
                                 $oldLoanAccount->update([
@@ -198,10 +207,10 @@ class RestructureApplicationsTable
 
                             RestructureApplicationStatusLog::create([
                                 'restructure_application_id' => $record->restructure_application_id,
-                                'from_status'                => $from,
-                                'to_status'                  => 'Rejected',
-                                'changed_by_user_id'         => auth()->id(),
-                                'changed_at'                 => now(),
+                                'from_status' => $from,
+                                'to_status' => 'Rejected',
+                                'changed_by_user_id' => auth()->id(),
+                                'changed_at' => now(),
                             ]);
 
                             Notification::make()
@@ -222,10 +231,10 @@ class RestructureApplicationsTable
 
                             RestructureApplicationStatusLog::create([
                                 'restructure_application_id' => $record->restructure_application_id,
-                                'from_status'                => $from,
-                                'to_status'                  => 'Cancelled',
-                                'changed_by_user_id'         => auth()->id(),
-                                'changed_at'                 => now(),
+                                'from_status' => $from,
+                                'to_status' => 'Cancelled',
+                                'changed_by_user_id' => auth()->id(),
+                                'changed_at' => now(),
                             ]);
 
                             Notification::make()
@@ -234,12 +243,13 @@ class RestructureApplicationsTable
                                 ->send();
                         }),
 
-                ])->tooltip('Actions'),
-            ])
+                ])
+                    ->iconButton()
+                    ->tooltip('Actions'),
+            ], position: RecordActionsPosition::BeforeColumns)
             ->bulkActions([
                 //
             ])
-            ->recordActionsPosition(\Filament\Tables\Enums\RecordActionsPosition::BeforeColumns)
             ->defaultSort('created_at', 'desc');
     }
 }

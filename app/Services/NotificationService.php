@@ -12,18 +12,33 @@ use Illuminate\Support\Str;
 
 class NotificationService
 {
-    public function notifyUser(int $userId, string $title, string $description, bool $isRead = false): Notification
-    {
+    public function notifyUser(
+        int $userId,
+        string $title,
+        string $description,
+        bool $isRead = false,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): Notification {
         return Notification::create([
             'user_id' => $userId,
             'title' => $title,
             'description' => $description,
             'status' => $isRead ? 'seen' : 'unseen',
+            'is_read' => $isRead,
+            'notifiable_type' => $notifiableType,
+            'notifiable_id' => $notifiableId,
         ]);
     }
 
-    public function notifyProfile(string|int $profileId, string $title, string $description, bool $isRead = false): ?Notification
-    {
+    public function notifyProfile(
+        string|int $profileId,
+        string $title,
+        string $description,
+        bool $isRead = false,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): ?Notification {
         $user = User::where('profile_id', $profileId)->first();
 
         if (! $user) {
@@ -32,22 +47,34 @@ class NotificationService
             return null;
         }
 
-        return $this->notifyUser($user->user_id, $title, $description, $isRead);
+        return $this->notifyUser($user->user_id, $title, $description, $isRead, $notifiableType, $notifiableId);
     }
 
-    public function notifyRoles(array|string $roles, string $title, string $description, bool $isRead = false): void
-    {
+    public function notifyRoles(
+        array|string $roles,
+        string $title,
+        string $description,
+        bool $isRead = false,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): void {
         $roleUsers = User::role($roles)->get();
 
         foreach ($roleUsers as $user) {
-            $this->notifyUser($user->user_id, $title, $description, $isRead);
+            $this->notifyUser($user->user_id, $title, $description, $isRead, $notifiableType, $notifiableId);
         }
     }
 
-    public function notifyAdmins(string $title, string $description, bool $isRead = false): void
-    {
-        $this->notifyRoles(['Admin', 'super_admin'], $title, $description, $isRead);
+    public function notifyAdmins(
+        string $title,
+        string $description,
+        bool $isRead = false,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): void {
+        $this->notifyRoles(['Admin', 'super_admin'], $title, $description, $isRead, $notifiableType, $notifiableId);
     }
+
     public function createUserWithAutoPassword(Profile $profile): ?User
     {
         $existing = User::where('profile_id', $profile->profile_id)->first();
@@ -104,77 +131,116 @@ class NotificationService
         return $this->notifyProfile($profileId, $title, $description);
     }
 
-    public function notifyDocumentUpload(int|string $profileId, string $documentType): ?Notification
-    {
+    public function notifyDocumentUpload(
+        int|string $profileId,
+        string $documentType,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): ?Notification {
         $title = 'Document Uploaded';
         $description = "Your {$documentType} has been received and is being reviewed.";
 
-        return $this->notifyProfile($profileId, $title, $description);
+        return $this->notifyProfile($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
     }
 
-    public function notifyDocumentMissing(int|string $profileId, string $documentType): ?Notification
-    {
+    public function notifyDocumentMissing(
+        int|string $profileId,
+        string $documentType,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): ?Notification {
         $title = 'Missing Document Required';
         $description = "Please upload the required {$documentType} to proceed with your application.";
 
-        return $this->notifyProfile($profileId, $title, $description);
+        return $this->notifyProfile($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
     }
 
-    public function notifyPaymentPosted(int|string $profileId, float $amount, string $status = 'posted'): ?Notification
-    {
+    public function notifyPaymentPosted(
+        int|string $profileId,
+        float $amount,
+        string $status = 'posted',
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): ?Notification {
         $title = 'Payment '.ucfirst($status);
         $description = 'Your payment of ₱'.number_format($amount, 2)." has been {$status}.";
 
-        return $this->notifyProfile($profileId, $title, $description);
+        return $this->notifyProfile($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
     }
 
-    public function notifyPaymentEdited(int|string $profileId, float $oldAmount, float $newAmount): ?Notification
-    {
+    public function notifyPaymentEdited(
+        int|string $profileId,
+        float $oldAmount,
+        float $newAmount,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): ?Notification {
         $title = 'Payment Edited';
         $description = 'Your payment was edited from ₱'.number_format($oldAmount, 2).' to ₱'.number_format($newAmount, 2).'.';
 
-        return $this->notifyProfile($profileId, $title, $description);
+        return $this->notifyProfile($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
     }
 
-    public function notifyPaymentVoided(int|string $profileId, float $amount, string $reason = ''): ?Notification
-    {
+    public function notifyPaymentVoided(
+        int|string $profileId,
+        float $amount,
+        string $reason = '',
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): ?Notification {
         $title = 'Payment Voided';
         $description = 'Your payment of ₱'.number_format($amount, 2).' has been voided.';
         if ($reason) {
             $description .= " Reason: {$reason}";
         }
 
-        return $this->notifyProfile($profileId, $title, $description);
+        return $this->notifyProfile($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
     }
 
-    public function notifyDueDateReminder(int|string $profileId, float $amount, string $dueDate, ?int $daysUntilDue = null): ?Notification
-    {
+    public function notifyDueDateReminder(
+        int|string $profileId,
+        float $amount,
+        string $dueDate,
+        ?int $daysUntilDue = null,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): ?Notification {
         $title = $daysUntilDue === 0 ? 'Payment Due Today' : "Payment Due in {$daysUntilDue} Days";
         $description = 'Your loan payment of ₱'.number_format($amount, 2).' is due on '.$dueDate.'.';
 
-        $notification = $this->notifyProfile($profileId, $title, $description);
+        $notification = $this->notifyProfile($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
         $this->sendEmailNotification($profileId, $title, $description);
 
         return $notification;
     }
 
-    public function notifyOverdueNotice(int|string $profileId, float $amount, string $dueDate, int $daysOverdue): ?Notification
-    {
+    public function notifyOverdueNotice(
+        int|string $profileId,
+        float $amount,
+        string $dueDate,
+        int $daysOverdue,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): ?Notification {
         $title = "Overdue Payment Notice ({$daysOverdue} days)";
         $description = 'Your loan payment of ₱'.number_format($amount, 2).' was due on '.$dueDate.'. Please make payment to avoid penalties.';
 
-        $notification = $this->notifyProfile($profileId, $title, $description);
+        $notification = $this->notifyProfile($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
         $this->sendEmailNotification($profileId, $title, $description);
 
         return $notification;
     }
 
-    public function notifyReloanEligibility(int|string $profileId, string $loanNumber): ?Notification
-    {
+    public function notifyReloanEligibility(
+        int|string $profileId,
+        string $loanNumber,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): ?Notification {
         $title = 'Now eligible for reloan';
         $description = "Your loan {$loanNumber} is now eligible for reloan. Please submit your request when ready.";
 
-        return $this->notifyProfile($profileId, $title, $description);
+        return $this->notifyProfile($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
     }
 
     public function notifyOrientationStarted(int|string $profileId, string $orientationTitle): ?Notification

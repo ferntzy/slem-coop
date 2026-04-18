@@ -23,7 +23,7 @@ return new class extends Migration
 
             // Emergency contact
             $table->string('emergency_full_name', 150)->nullable()->after('id_number');
-            $table->string('emergency_phone', 50)->nullable()->after('emergency_full_name');
+            $table->string('emergency_phone', 11)->nullable()->after('emergency_full_name');
             $table->string('emergency_relationship', 50)->nullable()->after('emergency_phone');
 
             // Signature (store file path)

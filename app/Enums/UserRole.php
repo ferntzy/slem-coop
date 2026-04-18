@@ -9,4 +9,9 @@ enum UserRole: string
     case Librarian  = 'librarian';
     case Employee   = 'employee';
     case Member     = 'member';
+    case HQManager  = 'hq_manager';
+    case HQTeller   = 'hq_teller';
+    case HQCashier  = 'hq_cashier';
+    case HQLoanOfficer = 'hq_loan_officer';
+    case HQAccountOfficer = 'hq_account_officer';
 }

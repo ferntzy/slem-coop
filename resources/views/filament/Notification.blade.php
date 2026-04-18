@@ -328,7 +328,7 @@
                 </template>
 
                 <template x-for="notification in notifications" :key="notification.id">
-                    <div class="notif-item" @click="markAsRead(notification.id)">
+                    <div class="notif-item" @click="handleNotificationClick(notification)">
                         <span class="notif-dot" :class="{ read: notification.is_read }"></span>
 
                         <div class="notif-item-body">
@@ -400,6 +400,19 @@ function notificationsWidget() {
                 notif.is_read = false;
                 this._syncUnreadCount();
                 console.error('[Notifications] Mark read failed:', e);
+            }
+        },
+
+        async handleNotificationClick(notification) {
+            // Mark as read
+            await this.markAsRead(notification.id);
+
+            // Redirect if URL is available
+            if (notification.redirect_url) {
+                // Small delay to ensure mark-as-read completes
+                setTimeout(() => {
+                    window.location.href = notification.redirect_url;
+                }, 100);
             }
         },
 

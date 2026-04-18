@@ -21,13 +21,14 @@ use Filament\Notifications\Notification;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\RecordActionsPosition;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
 
 class LoanApplicationsTable
 {
-    private static function createUserNotification($record, $title, $description): void
+    private static function createUserNotification($record, $title, $description, $notifiableType = null, $notifiableId = null): void
     {
         $userId = $record->member?->profile?->user?->user_id;
 
@@ -36,6 +37,8 @@ class LoanApplicationsTable
                 'user_id' => $userId,
                 'title' => $title,
                 'description' => $description,
+                'notifiable_type' => $notifiableType,
+                'notifiable_id' => $notifiableId,
             ]);
         }
     }
@@ -139,32 +142,6 @@ class LoanApplicationsTable
                             ])
                     ),
 
-                // ── Eye icon — between Amount Requested and Collateral File ───────
-                // TextColumn::make('loan_application_id')
-                //     ->label('')
-                //     ->formatStateUsing(fn () => '')
-                //     ->icon('heroicon-o-eye')
-                //     ->iconColor('info')
-                //     ->tooltip('View Details')
-                //     ->action(
-                //         Action::make('view')
-                //             ->modalHeading(fn ($record) => 'Loan Application — ' . ($record->member?->profile?->full_name ?? 'N/A'))
-                //             ->modalSubmitAction(false)
-                //             ->modalCancelActionLabel('Close')
-                //             ->modalWidth('5xl')
-                //             ->infolist(fn ($record) => LoanApplicationsInfolist::schema())
-                //             ->extraModalFooterActions(fn ($record) => [
-                //                 Action::make('download_pdf')
-                //                     ->label('Download PDF')
-                //                     ->icon('heroicon-o-document-arrow-down')
-                //                     ->color('success')
-                //                     ->url(fn () => route('loan-applications.pdf', [
-                //                         'loanApplication' => $record->loan_application_id,
-                //                     ]))
-                //                     ->openUrlInNewTab(),
-                //             ])
-                //     ),
-
                 BadgeColumn::make('status')
                     ->label('Loan Status')
                     ->colors([
@@ -186,7 +163,6 @@ class LoanApplicationsTable
                             return $record->loanAccount->release_date->format('F j, Y');
                         }
                     })
-
                     ->extraAttributes(['style' => 'text-align: center;']),
 
                 TextColumn::make('edit_button')
@@ -197,7 +173,7 @@ class LoanApplicationsTable
                     ->url(fn ($record) => url('/coop/loan-applications/'.$record->loan_application_id.'/edit')),
             ])
             ->filters([
-                //
+                TrashedFilter::make(),
             ])
             ->actions([
 
@@ -365,6 +341,7 @@ class LoanApplicationsTable
                                 ->success()
                                 ->send();
                         }),
+
                     Action::make('approve_collateral')
                         ->label('Approve Collateral')
                         ->icon('heroicon-o-check-circle')
@@ -452,6 +429,7 @@ class LoanApplicationsTable
                                 "Collateral for loan application #{$record->loan_application_id} is requested for correction."
                             );
                         }),
+
                     Action::make('setPenaltyRule')
                         ->label('Set Penalty Rule')
                         ->icon('heroicon-o-shield-exclamation')
@@ -601,7 +579,9 @@ class LoanApplicationsTable
                             self::createUserNotification(
                                 $record,
                                 'Loan Application',
-                                'Your loan application has been approved! waiting for release date.'
+                                'Your loan application has been approved! waiting for release date.',
+                                'loan_application',
+                                $record->loan_application_id
                             );
 
                             Notification::make()
@@ -614,13 +594,17 @@ class LoanApplicationsTable
                                 app(NotificationService::class)->notifyProfile(
                                     $profileId,
                                     'Loan application approved',
-                                    "Your loan application #{$record->loan_application_id} has been approved."
+                                    "Your loan application #{$record->loan_application_id} has been approved.",
+                                    notifiableType: 'loan_application',
+                                    notifiableId: $record->loan_application_id
                                 );
                             }
 
                             app(NotificationService::class)->notifyAdmins(
                                 'Loan application approved',
-                                "Loan application #{$record->loan_application_id} has been approved."
+                                "Loan application #{$record->loan_application_id} has been approved.",
+                                notifiableType: 'loan_application',
+                                notifiableId: $record->loan_application_id
                             );
                         }),
 
@@ -662,8 +646,11 @@ class LoanApplicationsTable
                             self::createUserNotification(
                                 $record,
                                 'Loan application was rejected',
-                                $data['reason']
+                                $data['reason'],
+                                'loan_application',
+                                $record->loan_application_id
                             );
+
                             Notification::make()
                                 ->title('Rejected')
                                 ->success()
@@ -673,13 +660,17 @@ class LoanApplicationsTable
                                 app(NotificationService::class)->notifyProfile(
                                     $profileId,
                                     'Loan application rejected',
-                                    "Your loan application #{$record->loan_application_id} has been rejected. Reason: {$data['reason']}"
+                                    "Your loan application #{$record->loan_application_id} has been rejected. Reason: {$data['reason']}",
+                                    notifiableType: 'loan_application',
+                                    notifiableId: $record->loan_application_id
                                 );
                             }
 
                             app(NotificationService::class)->notifyAdmins(
                                 'Loan application rejected',
-                                "Loan application #{$record->loan_application_id} has been rejected. Reason: {$data['reason']}"
+                                "Loan application #{$record->loan_application_id} has been rejected. Reason: {$data['reason']}",
+                                notifiableType: 'loan_application',
+                                notifiableId: $record->loan_application_id
                             );
                         }),
 
@@ -731,7 +722,9 @@ class LoanApplicationsTable
                             self::createUserNotification(
                                 $record,
                                 'Loan Application',
-                                'Your loan application was successfully cancelled!'
+                                'Your loan application was successfully cancelled!',
+                                'loan_application',
+                                $record->loan_application_id
                             );
 
                             Notification::make()
@@ -743,17 +736,67 @@ class LoanApplicationsTable
                                 app(NotificationService::class)->notifyProfile(
                                     $profileId,
                                     'Loan application cancelled',
-                                    "Your loan application #{$record->loan_application_id} has been cancelled."
+                                    "Your loan application #{$record->loan_application_id} has been cancelled.",
+                                    notifiableType: 'loan_application',
+                                    notifiableId: $record->loan_application_id
                                 );
                             }
 
                             app(NotificationService::class)->notifyAdmins(
                                 'Loan application cancelled',
-                                "Loan application #{$record->loan_application_id} is cancelled."
+                                "Loan application #{$record->loan_application_id} is cancelled.",
+                                notifiableType: 'loan_application',
+                                notifiableId: $record->loan_application_id
                             );
                         }),
 
-                ])->tooltip('Actions'),
+                    // ── DELETE ───────────────────────────────────────────────────
+                    Action::make('delete')
+                        ->label('Delete')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Delete Loan Application')
+                        ->modalDescription('This action cannot be undone.')
+                        ->visible(function ($record): bool {
+                            $user = auth()->user();
+
+                            return in_array($record->status, ['Pending', 'Approved', 'Cancelled', 'Rejected'], true)
+                                && ($user?->isHeadOffice() || $user?->isBranchScoped());
+                        })
+                        ->action(function ($record) {
+                            $record->delete();
+
+                            Notification::make()
+                                ->title('Loan Application Deleted')
+                                ->success()
+                                ->send();
+                        }),
+                ])
+                    ->visible(fn ($record): bool => ! $record->trashed())
+                    ->tooltip('Actions'),
+
+                ActionGroup::make([
+                    Action::make('restore')
+                        ->label('Restore')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function ($record) {
+                            $record->restore();
+
+                            Notification::make()
+                                ->title('Loan Application Restored')
+                                ->success()
+                                ->send();
+                        }),
+                ])
+                    ->visible(function ($record): bool {
+                        $user = auth()->user();
+
+                        return $record->trashed() && ($user?->isHeadOffice() || $user?->isBranchScoped());
+                    })
+                    ->tooltip('Trashed Actions'),
             ])
             ->bulkActions([])
             ->recordActionsPosition(RecordActionsPosition::BeforeColumns)

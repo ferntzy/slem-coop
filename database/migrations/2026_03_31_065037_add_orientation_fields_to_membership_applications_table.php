@@ -28,7 +28,7 @@ return new class extends Migration
             $table->integer('years_in_business')->nullable()->after('monthly_income');
 
             $table->string('emergency_full_name')->nullable()->after('years_in_business');
-            $table->string('emergency_phone')->nullable()->after('emergency_full_name');
+            $table->string('emergency_phone', 11)->nullable()->after('emergency_full_name');
             $table->string('emergency_relationship')->nullable()->after('emergency_phone');
 
             $table->integer('dependents_count')->nullable()->after('emergency_relationship');

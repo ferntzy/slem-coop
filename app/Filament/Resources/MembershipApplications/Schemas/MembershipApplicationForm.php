@@ -49,8 +49,21 @@ class MembershipApplicationForm
 
                                         TextInput::make('mobile_number')
                                             ->label('Mobile Number')
-                                            ->required()
-                                            ->maxLength(45),
+                                            ->placeholder('09XXXXXXXXX')
+                                            ->length(11)
+                                            ->regex('/^09\d{9}$/')
+                                            ->validationMessages([
+                                                'regex' => 'Mobile number must be in PH format (09XXXXXXXXX)',
+                                            ])
+                                            ->extraInputAttributes([
+                                                'inputmode' => 'numeric',
+                                                'pattern' => '09[0-9]{9}',
+                                                'x-on:keypress' => 'if(!/[0-9]/.test($event.key)) $event.preventDefault()',
+                                                'x-on:input' => '$event.target.value = $event.target.value.replace(/[^0-9]/g, "").slice(0, 11)',
+                                                'x-on:paste' => '$event.preventDefault()',
+                                            ])
+                                            ->helperText('Format: 09123456789 (11 digits)')
+                                            ->required(),
 
                                         DatePicker::make('birthdate')
                                             ->label('Birthdate')
