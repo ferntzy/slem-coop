@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('loans_applications', function (Blueprint $table) {
+        Schema::table('loan_applications', function (Blueprint $table) {
             $table->softDeletes(); // adds deleted_at column
         });
     }
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('loans_applications', function (Blueprint $table) {
+        Schema::table('loan_applications', function (Blueprint $table) {
             $table->dropSoftDeletes(); // removes deleted_at column
         });
     }
