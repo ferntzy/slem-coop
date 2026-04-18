@@ -58,9 +58,7 @@ class LoanApplicationController extends Controller
     public function index(Request $request):JsonResponse
     {
         //pagination for mobile
-        $loanApplications = LoanApplication::query()
-            ->with(['member.profile', 'type', 'documents', 'cashflows', 'loanAccount'])
-            ->paginate($request->query('per_page', 15));
+        $loanApplications = LoanApplication::get();
 
         return response()->json($loanApplications);
     }

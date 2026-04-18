@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AccountOfficerController;
 use App\Http\Controllers\Api\ContactPageController;
 use App\Http\Controllers\Api\LoanApplicationController as LoanOfficerApplicationController;
 use App\Http\Controllers\Api\LoanOfficerProfileController;
+use App\Http\Controllers\Api\Loans;
 use App\Http\Controllers\HeroNewsEventController;
 use App\Http\Controllers\LoanApplication as ControllersLoanApplication;
 use App\Http\Controllers\MembershipApplicationController;
@@ -39,11 +40,15 @@ Route::post('/membership-application', [MembershipApplicationController::class, 
 // edit profile
 Route::post('/edit-profile', [ProfileController::class, 'editProfile']);
 
+
+//loan officer
+Route::get('/approved-loans', [Loans::class, 'getApprovedLoans']);
+
 // loan mobile routes
 Route::put('/loan-officer/profile/{profileId}', [LoanOfficerProfileController::class, 'update']);
 Route::get('/loan-officer/profile/{profileId}', [LoanOfficerProfileController::class, 'show']);
 // loan applications
-Route::get('/loan-applications', [LoanOfficerApplicationController::class, 'index']);
+Route::get('/loan-applications-list', [LoanOfficerApplicationController::class, 'index']);  
 Route::get('/loan-applications/{id}', [LoanOfficerApplicationController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -79,6 +84,13 @@ Route::post('/contact/submit', [ContactPageController::class, 'submit']);
 Route::get('/orientation', [OrientationController::class, 'show']);
 Route::post('/orientation/video-watched', [OrientationController::class, 'markVideoWatched']);
 Route::post('/orientation/submit', [OrientationController::class, 'submit']);
+
+
+
+
+
+
+
 
 // member apis
 // member dashboard datas
