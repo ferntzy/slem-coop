@@ -28,4 +28,24 @@ class Loans extends Controller
             ]);
         }
     }   
+
+    public function getPendingLoans(){
+        try{
+            $pendingLoans = LoanApplication::where('status', 'Pending')->count();
+
+            if(!$pendingLoans){
+                throw new Exception('There is no pending loan application');
+            }
+
+            return response()->json([
+                'pendingLoans' => $pendingLoans
+            ]);
+
+        }catch(Exception $e){
+            return response()->json([
+                'message' => 'Unable to get Pending loans',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 }

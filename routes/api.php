@@ -43,6 +43,7 @@ Route::post('/edit-profile', [ProfileController::class, 'editProfile']);
 
 //loan officer
 Route::get('/approved-loans', [Loans::class, 'getApprovedLoans']);
+Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
 
 // loan mobile routes
 Route::put('/loan-officer/profile/{profileId}', [LoanOfficerProfileController::class, 'update']);
