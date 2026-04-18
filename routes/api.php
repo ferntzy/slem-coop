@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\LoanOfficerProfileController;
 use App\Http\Controllers\Api\Loans;
 use App\Http\Controllers\HeroNewsEventController;
 use App\Http\Controllers\LoanApplication as ControllersLoanApplication;
+use App\Http\Controllers\Api\LoanOfficerNotifController;
 use App\Http\Controllers\MembershipApplicationController;
 use App\Http\Controllers\MobileAuth\Auth;
 use App\Http\Controllers\MobileMemberGeneral;
@@ -48,6 +49,14 @@ Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
 // loan mobile routes
 Route::put('/loan-officer/profile/{profileId}', [LoanOfficerProfileController::class, 'update']);
 Route::get('/loan-officer/profile/{profileId}', [LoanOfficerProfileController::class, 'show']);
+
+// loan officer notifications
+Route::prefix('loan-officer/notifications')->group(function () {
+    Route::get('', [LoanOfficerNotifController::class, 'index']);
+    Route::put('{notificationId}', [LoanOfficerNotifController::class, 'update']);
+    Route::delete('{notificationId}', [LoanOfficerNotifController::class, 'destroy']);
+});
+
 // loan applications
 Route::get('/loan-applications-list', [LoanOfficerApplicationController::class, 'index']);  
 Route::get('/loan-applications/{id}', [LoanOfficerApplicationController::class, 'show']);

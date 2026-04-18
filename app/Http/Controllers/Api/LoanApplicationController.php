@@ -33,7 +33,7 @@ class LoanApplicationController extends Controller
             return false;
         }
 
-        $isLoanOfficer = ($profile->roles_id === 6);
+        $isLoanOfficer = ($profile->roles_id === 9);
 
         return $isLoanOfficer;
     }
@@ -54,7 +54,7 @@ class LoanApplicationController extends Controller
             'username' => $user->username,
             'email' => $user->email,
             'role_id' => $user->profile?->roles_id,
-            'is_loan_officer' => ($user->profile?->roles_id === 6),
+            'is_loan_officer' => ($user->profile?->roles_id === 9),
             'has_profile' => $user->profile ? 'yes' : 'no',
         ];
     }
@@ -434,11 +434,6 @@ class LoanApplicationController extends Controller
 
         return response()->json(['message' => 'Loan application rejected.']);
     }
-
-    // ─────────────────────────────────────────────────────────────
-    // CANCEL - Allow Loan Officers
-    // POST /api/loan-applications/{id}/cancel
-    // ─────────────────────────────────────────────────────────────
 
     public function cancel(Request $request, $id): JsonResponse
     {
