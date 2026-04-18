@@ -58,7 +58,7 @@ Route::prefix('loan-officer/notifications')->group(function () {
 });
 
 // loan applications
-Route::get('/loan-applications-list', [LoanOfficerApplicationController::class, 'index']);  
+Route::get('/loan-applications', [LoanOfficerApplicationController::class, 'index']);
 Route::get('/loan-applications/{id}', [LoanOfficerApplicationController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
