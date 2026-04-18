@@ -123,25 +123,19 @@ class LoanApplicationController extends Controller
                 'user_id' => $record->member->profile->user->user_id,
                 'title' => 'Loan Application',
                 'description' => 'Your loan application has been approved! Waiting for release date.',
-                'notifiable_type' => 'loan_application',
-                'notifiable_id' => $record->loan_application_id,
             ]);
 
             if ($profileId) {
                 app(NotificationService::class)->notifyProfile(
                     $profileId,
                     'Loan application approved',
-                    "Your loan application #{$record->loan_application_id} has been approved.",
-                    notifiableType: 'loan_application',
-                    notifiableId: $record->loan_application_id
+                    "Your loan application #{$record->loan_application_id} has been approved."
                 );
             }
 
             app(NotificationService::class)->notifyAdmins(
                 'Loan application approved',
-                "Loan application #{$record->loan_application_id} has been approved.",
-                notifiableType: 'loan_application',
-                notifiableId: $record->loan_application_id
+                "Loan application #{$record->loan_application_id} has been approved."
             );
         });
 
@@ -410,25 +404,19 @@ class LoanApplicationController extends Controller
                 'user_id' => $record->member->profile->user->user_id,
                 'title' => 'Loan application was rejected',
                 'description' => $request->reason,
-                'notifiable_type' => 'loan_application',
-                'notifiable_id' => $record->loan_application_id,
             ]);
 
             if ($profileId) {
                 app(NotificationService::class)->notifyProfile(
                     $profileId,
                     'Loan application rejected',
-                    "Your loan application #{$record->loan_application_id} has been rejected. Reason: {$request->reason}",
-                    notifiableType: 'loan_application',
-                    notifiableId: $record->loan_application_id
+                    "Your loan application #{$record->loan_application_id} has been rejected. Reason: {$request->reason}"
                 );
             }
 
             app(NotificationService::class)->notifyAdmins(
                 'Loan application rejected',
-                "Loan application #{$record->loan_application_id} has been rejected. Reason: {$request->reason}",
-                notifiableType: 'loan_application',
-                notifiableId: $record->loan_application_id
+                "Loan application #{$record->loan_application_id} has been rejected. Reason: {$request->reason}"
             );
         });
 
@@ -471,25 +459,19 @@ class LoanApplicationController extends Controller
                 'user_id' => $record->member->profile->user->user_id,
                 'title' => 'Loan Application',
                 'description' => 'Your loan application was successfully cancelled!',
-                'notifiable_type' => 'loan_application',
-                'notifiable_id' => $record->loan_application_id,
             ]);
 
             if ($profileId) {
                 app(NotificationService::class)->notifyProfile(
                     $profileId,
                     'Loan application cancelled',
-                    "Your loan application #{$record->loan_application_id} has been cancelled.",
-                    notifiableType: 'loan_application',
-                    notifiableId: $record->loan_application_id
+                    "Your loan application #{$record->loan_application_id} has been cancelled."
                 );
             }
 
             app(NotificationService::class)->notifyAdmins(
                 'Loan application cancelled',
-                "Loan application #{$record->loan_application_id} is cancelled.",
-                notifiableType: 'loan_application',
-                notifiableId: $record->loan_application_id
+                "Loan application #{$record->loan_application_id} is cancelled."
             );
         });
 
