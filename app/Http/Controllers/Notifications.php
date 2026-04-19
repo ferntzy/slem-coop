@@ -17,23 +17,6 @@ class Notifications extends Controller
 
             $notif = Notification::where('user_id', $uid)->latest()->get();
 
-            // Add redirect URL to each notification
-            $notif = $notif->map(function ($notification) {
-                return [
-                    'id' => $notification->id,
-                    'user_id' => $notification->user_id,
-                    'title' => $notification->title,
-                    'description' => $notification->description,
-                    'status' => $notification->status,
-                    'is_read' => $notification->is_read,
-                    'notifiable_type' => $notification->notifiable_type,
-                    'notifiable_id' => $notification->notifiable_id,
-                    'redirect_url' => $notification->getRedirectUrl(),
-                    'created_at' => $notification->created_at,
-                    'updated_at' => $notification->updated_at,
-                ];
-            });
-
             return response()->json([
                 'notifications' => $notif,
             ], 200);
@@ -50,24 +33,7 @@ class Notifications extends Controller
         try {
             $uid = User::where('profile_id', $request->profile_id)->value('user_id');
 
-            $notif = Notification::where('user_id', $uid)->where('status', 'unseen')->get();
-
-            // Add redirect URL to each notification
-            $notif = $notif->map(function ($notification) {
-                return [
-                    'id' => $notification->id,
-                    'user_id' => $notification->user_id,
-                    'title' => $notification->title,
-                    'description' => $notification->description,
-                    'status' => $notification->status,
-                    'is_read' => $notification->is_read,
-                    'notifiable_type' => $notification->notifiable_type,
-                    'notifiable_id' => $notification->notifiable_id,
-                    'redirect_url' => $notification->getRedirectUrl(),
-                    'created_at' => $notification->created_at,
-                    'updated_at' => $notification->updated_at,
-                ];
-            });
+            $notif = Notification::where('user_id', $uid)->where('status', 'unseen')->count();
 
             return response()->json([
                 'notifications' => $notif,
