@@ -17,6 +17,8 @@ class LoanHistoryRelationManager extends RelationManager
 
     protected static ?string $title = 'Loan History';
 
+     protected static bool $shouldSkipAuthorization = true;
+
     public function table(Table $table): Table
     {
         return $table
