@@ -17,24 +17,24 @@
 @endphp
 
 @if (! $schedule)
-    <div style="font-size: 14px; color: #6b7280; padding: 12px 0;">
+    <div class="py-3 text-sm text-gray-500 dark:text-zinc-300">
         No amortization schedule available.
     </div>
 @else
-    <div style="overflow-x: auto; border: 1px solid #d1fae5; border-radius: 16px; background: #ffffff;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+    <div class="overflow-x-auto rounded-2xl border border-emerald-100 bg-white dark:border-zinc-800 dark:bg-black">
+        <table class="w-full border-collapse text-sm text-gray-700 dark:text-zinc-100">
             <thead>
-                <tr style="background: #ecfdf5;">
-                    <th style="padding: 12px 14px; text-align: left; font-weight: 700; border-bottom: 1px solid #d1fae5;">#</th>
-                    <th style="padding: 12px 14px; text-align: left; font-weight: 700; border-bottom: 1px solid #d1fae5;">Due Date</th>
-                    <th style="padding: 12px 14px; text-align: right; font-weight: 700; border-bottom: 1px solid #d1fae5;">Interest</th>
-                    <th style="padding: 12px 14px; text-align: right; font-weight: 700; border-bottom: 1px solid #d1fae5;">Principal</th>
-                    <th style="padding: 12px 14px; text-align: right; font-weight: 700; border-bottom: 1px solid #d1fae5;">Amortization</th>
-                    <th style="padding: 12px 14px; text-align: right; font-weight: 700; border-bottom: 1px solid #d1fae5;">Penalty</th>
-                    <th style="padding: 12px 14px; text-align: right; font-weight: 700; border-bottom: 1px solid #d1fae5;">Paid</th>
-                    <th style="padding: 12px 14px; text-align: right; font-weight: 700; border-bottom: 1px solid #d1fae5;">Unpaid</th>
-                    <th style="padding: 12px 14px; text-align: left; font-weight: 700; border-bottom: 1px solid #d1fae5;">Status</th>
-                    <th style="padding: 12px 14px; text-align: right; font-weight: 700; border-bottom: 1px solid #d1fae5;">Balance</th>
+                <tr class="bg-emerald-50 dark:bg-black">
+                    <th class="border-b border-emerald-100 px-3.5 py-3 text-left font-bold dark:border-zinc-700 dark:text-zinc-100">#</th>
+                    <th class="border-b border-emerald-100 px-3.5 py-3 text-left font-bold dark:border-zinc-700 dark:text-zinc-100">Due Date</th>
+                    <th class="border-b border-emerald-100 px-3.5 py-3 text-right font-bold dark:border-zinc-700 dark:text-zinc-100">Interest</th>
+                    <th class="border-b border-emerald-100 px-3.5 py-3 text-right font-bold dark:border-zinc-700 dark:text-zinc-100">Principal</th>
+                    <th class="border-b border-emerald-100 px-3.5 py-3 text-right font-bold dark:border-zinc-700 dark:text-zinc-100">Amortization</th>
+                    <th class="border-b border-emerald-100 px-3.5 py-3 text-right font-bold dark:border-zinc-700 dark:text-zinc-100">Penalty</th>
+                    <th class="border-b border-emerald-100 px-3.5 py-3 text-right font-bold dark:border-zinc-700 dark:text-zinc-100">Paid</th>
+                    <th class="border-b border-emerald-100 px-3.5 py-3 text-right font-bold dark:border-zinc-700 dark:text-zinc-100">Unpaid</th>
+                    <th class="border-b border-emerald-100 px-3.5 py-3 text-left font-bold dark:border-zinc-700 dark:text-zinc-100">Status</th>
+                    <th class="border-b border-emerald-100 px-3.5 py-3 text-right font-bold dark:border-zinc-700 dark:text-zinc-100">Balance</th>
                 </tr>
             </thead>
 
@@ -49,55 +49,55 @@
 
                         $status = $unpaid <= 0 ? 'Paid' : ($paid > 0 ? 'Partial' : 'Unpaid');
 
-                        $badgeStyle = match ($status) {
-                            'Paid' => 'background:#dcfce7;color:#166534;',
-                            'Partial' => 'background:#fef3c7;color:#92400e;',
-                            default => 'background:#fee2e2;color:#991b1b;',
+                        $badgeClasses = match ($status) {
+                            'Paid' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300',
+                            'Partial' => 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300',
+                            default => 'bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300',
                         };
 
-                        $rowBg = $loop->odd ? '#ffffff' : '#f9fffc';
+                        $rowClasses = $loop->odd ? 'bg-white dark:bg-black' : 'bg-emerald-50/30 dark:bg-zinc-950';
                     @endphp
 
-                    <tr style="background: {{ $rowBg }};">
-                        <td style="padding: 12px 14px; border-bottom: 1px solid #eef2f7; white-space: nowrap;">
+                    <tr class="{{ $rowClasses }}">
+                        <td class="whitespace-nowrap border-b border-slate-200 px-3.5 py-3 dark:border-zinc-800">
                             {{ $row['month'] ?? $loop->iteration }}
                         </td>
 
-                        <td style="padding: 12px 14px; border-bottom: 1px solid #eef2f7; white-space: nowrap;">
+                        <td class="whitespace-nowrap border-b border-slate-200 px-3.5 py-3 dark:border-zinc-800">
                             {{ $row['due_date'] }}
                         </td>
 
-                        <td style="padding: 12px 14px; border-bottom: 1px solid #eef2f7; text-align: right; white-space: nowrap;">
+                        <td class="whitespace-nowrap border-b border-slate-200 px-3.5 py-3 text-right dark:border-zinc-800">
                             ₱{{ number_format((float) $row['interest'], 2) }}
                         </td>
 
-                        <td style="padding: 12px 14px; border-bottom: 1px solid #eef2f7; text-align: right; white-space: nowrap;">
+                        <td class="whitespace-nowrap border-b border-slate-200 px-3.5 py-3 text-right dark:border-zinc-800">
                             ₱{{ number_format((float) $row['principal'], 2) }}
                         </td>
 
-                        <td style="padding: 12px 14px; border-bottom: 1px solid #eef2f7; text-align: right; white-space: nowrap; font-weight: 600; color: #111827;">
+                        <td class="whitespace-nowrap border-b border-slate-200 px-3.5 py-3 text-right font-semibold text-gray-900 dark:border-zinc-800 dark:text-zinc-100">
                             ₱{{ number_format((float) $row['amortization'], 2) }}
                         </td>
 
-                        <td style="padding: 12px 14px; border-bottom: 1px solid #eef2f7; text-align: right; white-space: nowrap; color: #e11d48; font-weight: 700;">
+                        <td class="whitespace-nowrap border-b border-slate-200 px-3.5 py-3 text-right font-bold text-rose-600 dark:border-zinc-800 dark:text-rose-300">
                             ₱{{ number_format((float) $penalty, 2) }}
                         </td>
 
-                        <td style="padding: 12px 14px; border-bottom: 1px solid #eef2f7; text-align: right; white-space: nowrap; color: #059669; font-weight: 600;">
+                        <td class="whitespace-nowrap border-b border-slate-200 px-3.5 py-3 text-right font-semibold text-emerald-600 dark:border-zinc-800 dark:text-emerald-300">
                             ₱{{ number_format((float) $paid, 2) }}
                         </td>
 
-                        <td style="padding: 12px 14px; border-bottom: 1px solid #eef2f7; text-align: right; white-space: nowrap; color: #d97706; font-weight: 600;">
+                        <td class="whitespace-nowrap border-b border-slate-200 px-3.5 py-3 text-right font-semibold text-amber-600 dark:border-zinc-800 dark:text-amber-300">
                             ₱{{ number_format((float) $unpaid, 2) }}
                         </td>
 
-                        <td style="padding: 12px 14px; border-bottom: 1px solid #eef2f7; white-space: nowrap;">
-                            <span style="display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600; {{ $badgeStyle }}">
+                        <td class="whitespace-nowrap border-b border-slate-200 px-3.5 py-3 dark:border-zinc-800">
+                            <span class="inline-block rounded-full px-2.5 py-1 text-xs font-semibold {{ $badgeClasses }}">
                                 {{ $status }}
                             </span>
                         </td>
 
-                        <td style="padding: 12px 14px; border-bottom: 1px solid #eef2f7; text-align: right; white-space: nowrap;">
+                        <td class="whitespace-nowrap border-b border-slate-200 px-3.5 py-3 text-right dark:border-zinc-800">
                             ₱{{ number_format((float) $row['balance'], 2) }}
                         </td>
                     </tr>
