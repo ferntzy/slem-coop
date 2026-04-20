@@ -433,7 +433,7 @@ class LoanApplicationsTable
                     Action::make('setPenaltyRule')
                         ->label('Set Penalty Rule')
                         ->icon('heroicon-o-shield-exclamation')
-                        ->color('warning')
+                        ->color('success')
                         ->visible(function ($record): bool {
                             $user = auth()->user();
 
