@@ -41,6 +41,8 @@ Route::get('/{path?}', function () {
     return view('welcome');
 })->where('path', '.*')->name('spa');
 
+Route::redirect('/coop/login', '/login');
+
 Route::prefix('orientation')->group(function () {
 
     Route::get('/',                 [OrientationController::class, 'show']);
@@ -48,7 +50,4 @@ Route::prefix('orientation')->group(function () {
     Route::post('/video-watched',   [OrientationController::class, 'markVideoWatched']);
     Route::post('/submit',          [OrientationController::class, 'submit']);
     Route::get('/certificate',      [OrientationController::class, 'downloadCertificate']);
-
-
-
 });
