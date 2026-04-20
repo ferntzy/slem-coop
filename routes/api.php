@@ -33,6 +33,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/mobile-verify-pin', [Auth::class, 'verifyPin']);
 });
 
+Route::get('/active-all-loans', [MobileMemberGeneral::class, 'getNumberOfActiveLoans']);
+
 Route::get('/membership-types', [MembershipApplicationController::class, 'membershipTypes']);
 Route::get('/branches', [MembershipApplicationController::class, 'branches']);
 Route::post('/profiles', [ProfileController::class, 'store']);
