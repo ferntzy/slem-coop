@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ContactPageController;
 use App\Http\Controllers\Api\LoanApplicationController as LoanOfficerApplicationController;
 use App\Http\Controllers\Api\LoanOfficerProfileController;
 use App\Http\Controllers\Api\Loans;
+use App\Http\Controllers\Api\Members;
 use App\Http\Controllers\HeroNewsEventController;
 use App\Http\Controllers\LoanApplication as ControllersLoanApplication;
 use App\Http\Controllers\Api\LoanOfficerNotifController;
@@ -42,9 +43,11 @@ Route::post('/membership-application', [MembershipApplicationController::class, 
 Route::post('/edit-profile', [ProfileController::class, 'editProfile']);
 
 
-//loan officer
+//loan officer apis
 Route::get('/approved-loans', [Loans::class, 'getApprovedLoans']);
 Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
+
+Route::get('/active-members', [Members::class, 'getActiveMembers']);
 
 // loan mobile routes
 Route::put('/loan-officer/profile/{profileId}', [LoanOfficerProfileController::class, 'update']);

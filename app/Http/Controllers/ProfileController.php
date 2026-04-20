@@ -50,14 +50,6 @@ class ProfileController extends Controller
         try {
             $pid = $request->profile_id;
 
-            Log::info('editProfile payload', [
-                'all' => $request->all(),
-                'has_file' => $request->hasFile('image'),
-                'files' => $request->allFiles(),
-                'profile_id' => $pid,
-                'content_type' => $request->header('Content-Type'),
-            ]);
-
             $profile = Profile::where('profile_id', $pid)->first();
             if (! $profile) {
                 return response()->json([
