@@ -61,4 +61,19 @@ class Loans extends Controller
             ]);
         }
     }
+
+    public function getLoanApplication(Request $request){
+        try{
+            $detail = LoanApplication::with('member.profile.user')->where('loan_application_id', $request->id)->first();
+
+            return response()->json([
+                'detail' => $detail
+            ]);
+        }catch(Exception $e){
+            return response()->json([
+                'message' => 'Unable to get loan application detail',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 }
