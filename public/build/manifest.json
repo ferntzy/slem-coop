@@ -9,7 +9,7 @@
     ]
   },
   "resources/css/filament/admin/theme.css": {
-    "file": "assets/theme-d5Jg8KAx.css",
+    "file": "assets/theme-CeOo-leZ.css",
     "src": "resources/css/filament/admin/theme.css",
     "isEntry": true,
     "name": "theme",
@@ -24,12 +24,12 @@
     "isEntry": true
   },
   "resources/js/src/main.tsx": {
-    "file": "assets/main-DUtIOY-S.js",
+    "file": "assets/main-DmPHk_0M.js",
     "name": "main",
     "src": "resources/js/src/main.tsx",
     "isEntry": true,
     "css": [
-      "assets/main-BsLZqqCn.css"
+      "assets/main-DTXZz-V6.css"
     ]
   }
 }
