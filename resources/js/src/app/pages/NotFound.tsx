@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router';
-import { useTheme } from 'next-themes';
-import { ArrowLeft, Home, AlertTriangle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useNavigate } from "react-router";
+import { useTheme } from "next-themes";
+import { ArrowLeft, Home, AlertTriangle } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export function NotFound() {
     const navigate = useNavigate();
@@ -15,7 +15,9 @@ export function NotFound() {
         return () => clearTimeout(timer);
     }, []);
 
-    const isDarkTheme = mounted ? (resolvedTheme === 'dark' || theme === 'dark') : false;
+    const isDarkTheme = mounted
+        ? resolvedTheme === "dark" || theme === "dark"
+        : false;
 
     return (
         <>
@@ -34,14 +36,14 @@ export function NotFound() {
                 }
             `}</style>
 
-            <div className="min-h-screen bg-white dark:bg-[#090f0b] text-gray-900 dark:text-white flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+            <div className="min-h-screen bg-white dark:bg-[#000000] text-gray-900 dark:text-white flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
                 <div className="w-full max-w-6xl">
-
                     {/* Main Grid - Responsive Layout */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-
                         {/* Left Side - Mascot Image */}
-                        <div className={`flex justify-center order-first lg:order-none ${pageLoaded ? 'animate-slide-up' : 'opacity-0'}`}>
+                        <div
+                            className={`flex justify-center order-first lg:order-none ${pageLoaded ? "animate-slide-up" : "opacity-0"}`}
+                        >
                             <div className="w-full max-w-sm lg:max-w-lg xl:max-w-xl">
                                 {/* Mascot Image Card (Invisible) */}
                                 <div className="relative aspect-square">
@@ -51,8 +53,10 @@ export function NotFound() {
                                         className="w-full h-full object-cover"
                                         onError={(e) => {
                                             // Fallback to placeholder if image fails to load
-                                            e.currentTarget.style.display = 'none';
-                                            const parent = e.currentTarget.parentElement;
+                                            e.currentTarget.style.display =
+                                                "none";
+                                            const parent =
+                                                e.currentTarget.parentElement;
                                             if (parent) {
                                                 parent.innerHTML = `
                                                     <div class="text-center space-y-3 w-full h-64 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg">
@@ -75,16 +79,15 @@ export function NotFound() {
                                     />
 
                                     {/* Subtle Background Elements */}
-                                    <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-orange-500/5 pointer-events-none rounded-lg"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-orange-500/5 dark:opacity-0 pointer-events-none rounded-lg"></div>
                                 </div>
-
-
                             </div>
                         </div>
 
                         {/* Right Side - Content */}
-                        <div className={`text-center lg:text-left space-y-6 lg:space-y-8 ${pageLoaded ? 'animate-slide-down' : 'opacity-0'}`}>
-
+                        <div
+                            className={`text-center lg:text-left space-y-6 lg:space-y-8 ${pageLoaded ? "animate-slide-down" : "opacity-0"}`}
+                        >
                             {/* Icon for Mobile Only */}
                             <div className="flex justify-center lg:hidden">
                                 <div className="relative">
@@ -111,7 +114,9 @@ export function NotFound() {
                                     Oops! We can't find that page.
                                 </h2>
                                 <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed max-w-sm lg:max-w-none">
-                                    The page you're looking for doesn't exist or has been moved. Don't worry, let's get you back on track!
+                                    The page you're looking for doesn't exist or
+                                    has been moved. Don't worry, let's get you
+                                    back on track!
                                 </p>
                             </div>
 
@@ -131,10 +136,7 @@ export function NotFound() {
                                     <ArrowLeft className="w-4 h-4 flex-shrink-0" />
                                     <span>Go Back</span>
                                 </button>
-
                             </div>
-
-
                         </div>
                     </div>
                 </div>
