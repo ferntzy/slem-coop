@@ -44,25 +44,18 @@ Route::post('/membership-application', [MembershipApplicationController::class, 
 // edit profile
 Route::post('/edit-profile', [ProfileController::class, 'editProfile']);
 
+
+//account officer apis
+//stat card data
+Route::get('/active-members', [Members::class, 'getActiveMembers']);
+
 //loan officer apis
+//stat card data
 Route::get('/approved-loans', [Loans::class, 'getApprovedLoans']);
 Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
 
-Route::get('/active-members', [Members::class, 'getActiveMembers']);
-
-// loan mobile routes
-Route::put('/loan-officer/profile/{profileId}', [LoanOfficerProfileController::class, 'update']);
-Route::get('/loan-officer/profile/{profileId}', [LoanOfficerProfileController::class, 'show']);
-
-// loan officer notifications
-Route::prefix('loan-officer/notifications')->group(function () {
-    Route::get('', [LoanOfficerNotifController::class, 'index']);
-    Route::put('{notificationId}', [LoanOfficerNotifController::class, 'update']);
-    Route::delete('{notificationId}', [LoanOfficerNotifController::class, 'destroy']);
-});
-
 // loan applications
-Route::get('/loan-applications', [LoanOfficerApplicationController::class, 'index']);
+Route::get('/loan-applications', [Loans::class, 'getLoanApplications']);
 Route::get('/loan-applications/{id}', [LoanOfficerApplicationController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
