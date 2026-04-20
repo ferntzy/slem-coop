@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\MemberDetails\Tables;
 
+use App\Filament\Resources\MemberDetails\MemberDetailResource;
 use App\Models\Profile;
 use App\Models\SavingsAccountTransaction;
 use App\Models\SavingsType;
@@ -80,26 +81,27 @@ class MemberDetailsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->recordUrl(fn ($record) => MemberDetailResource::getUrl('view', ['record' => $record]))
             ->columns([
                 TextColumn::make('profile.full_name')
-                ->label('Member')
-                ->searchable(
-                    query: function (Builder $query, string $search): Builder {
-                        return $query->whereHas('profile', function (Builder $q) use ($search) {
-                            $q->where('first_name', 'like', "%{$search}%")
-                                ->orWhere('middle_name', 'like', "%{$search}%")
-                                ->orWhere('last_name', 'like', "%{$search}%");
-                        });
-                    }
-                )
-                ->sortable(
-                    query: function (Builder $query, string $direction): Builder {
-                        return $query
-                            ->join('profiles', 'profiles.profile_id', '=', 'member_details.profile_id')
-                            ->orderBy('profiles.first_name', $direction)
-                            ->orderBy('profiles.last_name', $direction);
-                    }
-                ),
+                    ->label('Member')
+                    ->searchable(
+                        query: function (Builder $query, string $search): Builder {
+                            return $query->whereHas('profile', function (Builder $q) use ($search) {
+                                $q->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('middle_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%");
+                            });
+                        }
+                    )
+                    ->sortable(
+                        query: function (Builder $query, string $direction): Builder {
+                            return $query
+                                ->join('profiles', 'profiles.profile_id', '=', 'member_details.profile_id')
+                                ->orderBy('profiles.first_name', $direction)
+                                ->orderBy('profiles.last_name', $direction);
+                        }
+                    ),
 
                 TextColumn::make('profile.email')
                     ->label('Login Email')
@@ -128,7 +130,8 @@ class MemberDetailsTable
                 //
             ])
             ->recordActions([
-                ViewAction::make(),
+                ViewAction::make()
+                    ->hidden(),
 
                 ActionGroup::make([
                     EditAction::make(),
