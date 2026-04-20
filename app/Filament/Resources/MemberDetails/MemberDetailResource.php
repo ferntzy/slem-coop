@@ -63,17 +63,29 @@ class MemberDetailResource extends Resource
         $query = parent::getEloquentQuery();
         $user = auth()->user();
 
-        if (!$user) return $query->whereRaw('1=0');
+        if (! $user) {
+            return $query->whereRaw('1=0');
+        }
 
-        if ($user->isAdminOrSuperAdmin() || $user->isHeadOffice()) return $query; // ← add isHeadOffice()
+        if ($user->isAdminOrSuperAdmin() || $user->isHeadOffice()) return $query;
+
 
         if ($user->isBranchScoped()) {
             $branchId = $user->branchId();
-            if (!$branchId) return $query->whereRaw('1=0');
+
+            if (! $branchId) {
+                return $query->whereRaw('1=0');
+            }
+
             return $query->where('branch_id', $branchId);
         }
 
+     if ($user->isMember()) {
+        return $query->where('profile_id', $user->profile_id);
+    }
+
         return $query->whereRaw('1=0');
+
     }
 
     public static function getPages(): array
@@ -85,4 +97,5 @@ class MemberDetailResource extends Resource
             'edit' => EditMemberDetail::route('/{record}/edit'),
         ];
     }
+    
 }
