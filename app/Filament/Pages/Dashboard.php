@@ -6,6 +6,7 @@ use App\Filament\Widgets\CollectionsChart;
 use App\Filament\Widgets\CollectionsTodayWidget;
 use App\Filament\Widgets\LoanApplicationsChart;
 use App\Filament\Widgets\LoanOfficerDecisionTrendChart;
+use App\Filament\Widgets\LoanOfficerGreetingWidget;
 use App\Filament\Widgets\LoanOfficerPipelineStatsWidget;
 use App\Filament\Widgets\LoanOfficerPriorityQueueWidget;
 use App\Filament\Widgets\LoanPortfolioChart;
@@ -63,6 +64,7 @@ class Dashboard extends BaseDashboard
         // ── Loan Officer dashboard ───────────────────────────────────────────
         if ($this->isLoanOfficerDashboardUser($user)) {
             return [
+                LoanOfficerGreetingWidget::class,
                 LoanOfficerPipelineStatsWidget::class,
                 LoanOfficerDecisionTrendChart::class,
                 LoanOfficerPriorityQueueWidget::class,
