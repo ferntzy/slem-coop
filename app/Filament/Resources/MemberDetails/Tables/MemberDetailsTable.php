@@ -128,8 +128,9 @@ class MemberDetailsTable
                 //
             ])
             ->recordActions([
+                ViewAction::make(),
+
                 ActionGroup::make([
-                    ViewAction::make(),
                     EditAction::make(),
                     DeleteAction::make(),
 
@@ -696,7 +697,8 @@ class MemberDetailsTable
                                 ->success()
                                 ->send();
                         }),
-                ]),
+                ])
+                ->visible(fn () => ! auth()->user()?->isMember()),
             ])
             ->recordActionsPosition(RecordActionsPosition::BeforeColumns);
     }
