@@ -56,6 +56,9 @@ Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
 
 // loan applications
 Route::get('/loan-applications', [Loans::class, 'getLoanApplications']);
+Route::post('/get-loan-application-detail', [Loans::class, 'getLoanApplication']);
+
+
 Route::get('/loan-applications/{id}', [LoanOfficerApplicationController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
