@@ -2,9 +2,28 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Dashboard as BaseDashboard;
+use App\Filament\Widgets\CollectionsChart;
+use App\Filament\Widgets\CollectionsTodayWidget;
+use App\Filament\Widgets\LoanApplicationsChart;
+use App\Filament\Widgets\LoanOfficerDecisionTrendChart;
+use App\Filament\Widgets\LoanOfficerGreetingWidget;
+use App\Filament\Widgets\LoanOfficerPipelineStatsWidget;
+use App\Filament\Widgets\LoanOfficerPriorityQueueWidget;
+use App\Filament\Widgets\LoanPortfolioChart;
+use App\Filament\Widgets\MemberGreetingWidget;
+use App\Filament\Widgets\MemberLoanScheduleWidget;
+use App\Filament\Widgets\MemberLoanStatusChart;
+use App\Filament\Widgets\MemberPaymentHistoryChart;
+use App\Filament\Widgets\MemberRecentTransactionsWidget;
+use App\Filament\Widgets\MemberStatusChart;
+use App\Filament\Widgets\MemberUpcomingDueDatesWidget;
+use App\Filament\Widgets\RecentLoanApplicationsWidget;
+use App\Filament\Widgets\ShareCapitalChart;
+use App\Filament\Widgets\StatsOverviewWidget;
+use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
+use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Auth;
 
 class Dashboard extends BaseDashboard
@@ -21,24 +40,35 @@ class Dashboard extends BaseDashboard
         if ($user->isMember()) {
             return [
                 // Row 0: Greeting banner
-                \App\Filament\Widgets\MemberGreetingWidget::class,
+                MemberGreetingWidget::class,
 
                 // Row 1: 3 KPI stat cards (Total Loan Balance, Total Payments, Pending Apps)
-                \App\Filament\Widgets\StatsOverviewWidget::class,
+                StatsOverviewWidget::class,
 
                 // Row 2: Loan Status donut (4 cols) + Payment History bar chart (8 cols)
-                \App\Filament\Widgets\MemberLoanStatusChart::class,
-                \App\Filament\Widgets\MemberPaymentHistoryChart::class,
+                MemberLoanStatusChart::class,
+                MemberPaymentHistoryChart::class,
 
                 // Row 3: Recent Transactions (6 cols) + Upcoming Due Dates (6 cols)
-                \App\Filament\Widgets\MemberRecentTransactionsWidget::class,
-                \App\Filament\Widgets\MemberUpcomingDueDatesWidget::class,
+                MemberRecentTransactionsWidget::class,
+                MemberUpcomingDueDatesWidget::class,
 
                 // Row 4: Share Capital Chart (full width)
-                \App\Filament\Widgets\ShareCapitalChart::class,
+                ShareCapitalChart::class,
 
                 // Row 5: Full Loan Payment Schedule (full width)
-                \App\Filament\Widgets\MemberLoanScheduleWidget::class,
+                MemberLoanScheduleWidget::class,
+            ];
+        }
+
+        // ── Loan Officer dashboard ───────────────────────────────────────────
+        if ($this->isLoanOfficerDashboardUser($user)) {
+            return [
+                LoanOfficerGreetingWidget::class,
+                LoanOfficerPipelineStatsWidget::class,
+                LoanOfficerDecisionTrendChart::class,
+                LoanOfficerPriorityQueueWidget::class,
+                RecentLoanApplicationsWidget::class,
             ];
         }
 
@@ -47,29 +77,47 @@ class Dashboard extends BaseDashboard
         $widgets = [];
 
         // ── Row 1: KPI Stats (full width, 6 cards) ──────────────────
-        $widgets[] = \App\Filament\Widgets\StatsOverviewWidget::class;
+        $widgets[] = StatsOverviewWidget::class;
 
         // ── Row 2: Hero chart (8 cols) + supporting doughnut (4 cols)
-        $widgets[] = \App\Filament\Widgets\CollectionsChart::class;
-        $widgets[] = \App\Filament\Widgets\LoanApplicationsChart::class;
+        $widgets[] = CollectionsChart::class;
+        $widgets[] = LoanApplicationsChart::class;
 
         // ── Row 3: Two equal charts (6 cols each) ────────────────────
-        $widgets[] = \App\Filament\Widgets\MemberStatusChart::class;
-        $widgets[] = \App\Filament\Widgets\LoanPortfolioChart::class;
+        $widgets[] = MemberStatusChart::class;
+        $widgets[] = LoanPortfolioChart::class;
 
         // ── Row 4: Share Capital chart ────────────────────────────────
-        $widgets[] = \App\Filament\Widgets\ShareCapitalChart::class;
+        $widgets[] = ShareCapitalChart::class;
 
         if ($user->hasAnyRole(['admin', 'cashier', 'teller', 'cash_handler', 'branch_manager'])) {
-            $widgets[] = \App\Filament\Widgets\CollectionsTodayWidget::class;
+            $widgets[] = CollectionsTodayWidget::class;
         }
 
         // ── Row 5: Full-width loan applications table ─────────────────
         if ($user->hasAnyRole(['admin', 'loan_officer', 'loan_manager', 'credit_committee', 'branch_manager'])) {
-            $widgets[] = \App\Filament\Widgets\RecentLoanApplicationsWidget::class;
+            $widgets[] = RecentLoanApplicationsWidget::class;
         }
 
         return $widgets;
+    }
+
+    protected function isLoanOfficerDashboardUser(User $user): bool
+    {
+        if ($user->isAdminOrSuperAdmin()) {
+            return false;
+        }
+
+        return $user->hasAnyRole([
+            'loan_officer',
+            'Loan Officer',
+            'hq_loan_officer',
+            'HQ Loan Officer',
+            'loan_manager',
+            'Loan Manager',
+            'credit_committee',
+            'Credit Committee',
+        ]);
     }
 
     protected function getHeaderActions(): array
@@ -77,10 +125,10 @@ class Dashboard extends BaseDashboard
         return [
             Action::make('setPeriod')
                 ->label(match ($this->period) {
-                    'weekly'    => 'Weekly',
+                    'weekly' => 'Weekly',
                     'quarterly' => 'Quarterly',
-                    'annual'    => 'Annual',
-                    default     => 'Monthly',
+                    'annual' => 'Annual',
+                    default => 'Monthly',
                 })
                 ->color('gray')
                 ->outlined()
@@ -88,10 +136,10 @@ class Dashboard extends BaseDashboard
                     Select::make('period')
                         ->label('Reporting Period')
                         ->options([
-                            'weekly'    => 'This Week',
-                            'monthly'   => 'This Month',
+                            'weekly' => 'This Week',
+                            'monthly' => 'This Month',
                             'quarterly' => 'This Quarter',
-                            'annual'    => 'This Year',
+                            'annual' => 'This Year',
                         ])
                         ->default($this->period)
                         ->required(),
@@ -103,13 +151,13 @@ class Dashboard extends BaseDashboard
         ];
     }
 
-    public function getColumns(): int | array
+    public function getColumns(): int|array
     {
         return [
             'default' => 1,
-            'sm'      => 2,
-            'md'      => 4,
-            'lg'      => 12,
+            'sm' => 2,
+            'md' => 4,
+            'lg' => 12,
         ];
     }
 }

@@ -2,16 +2,17 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\LoanApplication;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
-use App\Models\LoanApplication;
-use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Facades\Auth;
 
 class RecentLoanApplicationsWidget extends BaseWidget
 {
     protected static ?string $heading = 'Recent Loan Applications';
+
     protected static ?int $sort = 8;
 
     public static function canView(): bool
@@ -19,7 +20,7 @@ class RecentLoanApplicationsWidget extends BaseWidget
         return ! Auth::user()->isMember();
     }
 
-    public function getColumnSpan(): int | string | array
+    public function getColumnSpan(): int|string|array
     {
         return 'full';
     }
@@ -29,7 +30,7 @@ class RecentLoanApplicationsWidget extends BaseWidget
         return $table
             ->query(
                 LoanApplication::query()
-                    ->with(['member.profile', 'loanType'])
+                    ->with(['member.profile', 'type'])
                     ->latest()
                     ->limit(20)
             )
@@ -41,19 +42,16 @@ class RecentLoanApplicationsWidget extends BaseWidget
 
                 TextColumn::make('member.profile.first_name')
                     ->label('Member')
-                    ->formatStateUsing(fn ($record) =>
-                        $record->member?->profile?->first_name . ' ' .
+                    ->formatStateUsing(fn ($record) => $record->member?->profile?->first_name.' '.
                         $record->member?->profile?->last_name
                     )
-                    ->searchable(query: fn ($query, $search) =>
-                        $query->whereHas('member.profile', fn ($q) =>
-                            $q->where('first_name', 'like', "%{$search}%")
-                              ->orWhere('last_name', 'like', "%{$search}%")
-                        )
+                    ->searchable(query: fn ($query, $search) => $query->whereHas('member.profile', fn ($q) => $q->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                    )
                     )
                     ->icon('heroicon-o-user'),
 
-                TextColumn::make('loanType.name')
+                TextColumn::make('type.name')
                     ->label('Loan Type')
                     ->badge()
                     ->color('info'),
@@ -62,10 +60,10 @@ class RecentLoanApplicationsWidget extends BaseWidget
                     ->label('Type')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'New'         => 'success',
+                        'New' => 'success',
                         'Restructure' => 'warning',
-                        'Reloan'      => 'info',
-                        default       => 'gray',
+                        'Reloan' => 'info',
+                        default => 'gray',
                     }),
 
                 TextColumn::make('amount_requested')
@@ -75,18 +73,18 @@ class RecentLoanApplicationsWidget extends BaseWidget
 
                 TextColumn::make('term_months')
                     ->label('Term')
-                    ->formatStateUsing(fn ($state) => $state . ' mos.')
+                    ->formatStateUsing(fn ($state) => $state.' mos.')
                     ->alignCenter(),
 
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'Approved'     => 'success',
-                        'Pending'      => 'warning',
+                        'Approved' => 'success',
+                        'Pending' => 'warning',
                         'Under Review' => 'info',
-                        'Rejected'     => 'danger',
-                        'Cancelled'    => 'gray',
-                        default        => 'gray',
+                        'Rejected' => 'danger',
+                        'Cancelled' => 'gray',
+                        default => 'gray',
                     }),
 
                 TextColumn::make('collateral_status')
@@ -94,9 +92,9 @@ class RecentLoanApplicationsWidget extends BaseWidget
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'Approved' => 'success',
-                        'Pending'  => 'warning',
+                        'Pending' => 'warning',
                         'Rejected' => 'danger',
-                        default    => 'gray',
+                        default => 'gray',
                     }),
 
                 TextColumn::make('created_at')
@@ -110,18 +108,18 @@ class RecentLoanApplicationsWidget extends BaseWidget
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'Pending'      => 'Pending',
+                        'Pending' => 'Pending',
                         'Under Review' => 'Under Review',
-                        'Approved'     => 'Approved',
-                        'Rejected'     => 'Rejected',
-                        'Cancelled'    => 'Cancelled',
+                        'Approved' => 'Approved',
+                        'Rejected' => 'Rejected',
+                        'Cancelled' => 'Cancelled',
                     ]),
                 Tables\Filters\SelectFilter::make('application_type')
                     ->label('Type')
                     ->options([
-                        'New'         => 'New',
+                        'New' => 'New',
                         'Restructure' => 'Restructure',
-                        'Reloan'      => 'Reloan',
+                        'Reloan' => 'Reloan',
                     ]),
             ])
             ->emptyStateIcon('heroicon-o-document-text')

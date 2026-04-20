@@ -55,9 +55,7 @@ class RestructureApplicationsTable
                             ->select('restructure_applications.*');
                     }),
 
-                TextColumn::make('loan_application_id')
-                    ->label('Loan #')
-                    ->sortable(),
+           
 
                 TextColumn::make('loanApplication.type.name')
                     ->label('Loan Type')
@@ -68,8 +66,13 @@ class RestructureApplicationsTable
                     ->money('PHP')
                     ->sortable(),
 
+                TextColumn::make('new_interest')
+                    ->label('Interest Rate')
+                    ->suffix('%')
+                    ->sortable(),
+
                 TextColumn::make('term_months')
-                    ->label('Term (Months)')
+                    ->label('New Term (Months)')
                     ->sortable(),
 
                 BadgeColumn::make('status')
@@ -80,6 +83,11 @@ class RestructureApplicationsTable
                         'danger' => 'Rejected',
                         'gray' => 'Cancelled',
                     ]),
+
+                TextColumn::make('created_at')
+                    ->label('Date Applied')
+                    ->dateTime('M j, Y g:i A')
+                    ->sortable(),
 
             ])
             ->filters([
