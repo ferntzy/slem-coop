@@ -46,13 +46,15 @@ class Loans extends Controller
     }
 
     public function getLoanApplications(){
-        try{
-            $lola = LoanApplication::with('member')->where('status', 'Pending')->get();
+        try {
+            $lola = LoanApplication::with('member.profile.user')
+                ->where('status', 'Pending')
+                ->get();
 
             return response()->json([
                 'lola' => $lola
             ]);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'Unable to get loan applications',
                 'error' => $e->getMessage()
