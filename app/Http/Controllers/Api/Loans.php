@@ -11,14 +11,10 @@ class Loans extends Controller
 {
     public function getApprovedLoans(){
         try{
-            $aLoans = LoanApplication::where('status', 'Approved')->count();
-
-            if(!$aLoans){
-                throw new Exception('There are no approved loans');
-            }
+            $noal = LoanApplication::where('status', 'Approved')->count();
 
             return response()->json([
-                'approvedLoans' => $aLoans
+                'noal' => $noal
             ]);
 
         }catch(Exception $e){

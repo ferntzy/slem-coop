@@ -42,7 +42,6 @@ Route::post('/membership-application', [MembershipApplicationController::class, 
 // edit profile
 Route::post('/edit-profile', [ProfileController::class, 'editProfile']);
 
-
 //loan officer apis
 Route::get('/approved-loans', [Loans::class, 'getApprovedLoans']);
 Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
