@@ -143,90 +143,97 @@
             </div>
 
             {{-- Table --}}
-            <div style="overflow-x:auto; border:1px solid #e5e7eb; border-radius:12px;">
-                <table style="width:100%; border-collapse:collapse; min-width:680px;">
+            <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-zinc-700 dark:bg-black">
+                <table class="w-full min-w-[680px] border-collapse text-sm text-gray-700 dark:text-zinc-100">
                     <thead>
-                        <tr style="background:#f9fafb; border-bottom:1px solid #e5e7eb;">
+                        <tr class="border-b border-gray-200 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-950">
                             @php
                                 $headers = ['#', 'Due Date', 'Amortization', 'Penalty', 'Total Paid', 'Unpaid', 'Status'];
                             @endphp
                             @foreach($headers as $header)
-                                <th style="
-                                    padding: 10px 14px;
-                                    text-align: {{ in_array($header, ['Amortization','Penalty','Total Paid','Unpaid']) ? 'right' : 'left' }};
-                                    font-size: 10.5px; font-weight:700;
-                                    text-transform:uppercase; letter-spacing:0.5px;
-                                    color:#6b7280;
-                                ">{{ $header }}</th>
+                                <th
+                                    class="px-3.5 py-2.5 text-[10.5px] font-bold uppercase tracking-[0.5px] text-gray-500 dark:text-zinc-300 {{ in_array($header, ['Amortization','Penalty','Total Paid','Unpaid']) ? 'text-right' : 'text-left' }}"
+                                >{{ $header }}</th>
                             @endforeach
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($schedule as $row)
                             @php
-                                $statusStyles = match($row['status']) {
-                                    'Paid'           => ['bg' => '#dcfce7', 'color' => '#166534'],
-                                    'Partial'        => ['bg' => '#fef3c7', 'color' => '#92400e'],
-                                    'Late'           => ['bg' => '#fee2e2', 'color' => '#991b1b'],
-                                    'Partial / Late' => ['bg' => '#fde68a', 'color' => '#92400e'],
-                                    default          => ['bg' => '#f3f4f6', 'color' => '#374151'],
+                                $statusBadgeClasses = match($row['status']) {
+                                    'Paid'           => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300',
+                                    'Partial'        => 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300',
+                                    'Late'           => 'bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300',
+                                    'Partial / Late' => 'bg-amber-200 text-amber-900 dark:bg-amber-500/30 dark:text-amber-300',
+                                    default          => 'bg-gray-100 text-gray-700 dark:bg-zinc-700 dark:text-zinc-200',
                                 };
 
-                                $rowBg = $row['status'] === 'Paid'
-                                    ? 'background:#f0fdf4;'
+                                $rowClasses = $row['status'] === 'Paid'
+                                    ? 'bg-emerald-50/60 dark:bg-emerald-950/20'
                                     : ($row['status'] === 'Late' || $row['status'] === 'Partial / Late'
-                                        ? 'background:#fff7f7;'
-                                        : 'background:#ffffff;');
+                                        ? 'bg-rose-50/70 dark:bg-rose-950/20'
+                                        : 'bg-white dark:bg-black');
 
                                 $isToday = \Carbon\Carbon::parse($row['due_date'])->isToday();
                                 $isOverdue = \Carbon\Carbon::parse($row['due_date'])->isPast()
                                     && $row['status'] !== 'Paid';
+
+                                $dueDateClasses = $isOverdue
+                                    ? 'text-rose-600 dark:text-rose-300 font-bold'
+                                    : 'text-gray-700 dark:text-zinc-200 font-medium';
+
+                                $penaltyClasses = $row['penalty'] > 0
+                                    ? 'text-rose-600 dark:text-rose-300 font-semibold'
+                                    : 'text-gray-400 dark:text-zinc-500 font-normal';
+
+                                $paidClasses = $row['total_paid'] > 0
+                                    ? 'text-emerald-600 dark:text-emerald-300 font-semibold'
+                                    : 'text-gray-400 dark:text-zinc-500 font-normal';
+
+                                $unpaidClasses = $row['unpaid_amount'] > 0
+                                    ? 'text-rose-600 dark:text-rose-300'
+                                    : 'text-gray-400 dark:text-zinc-500';
                             @endphp
-                            <tr style="{{ $rowBg }} border-bottom:1px solid #f3f4f6;">
+                            <tr class="{{ $rowClasses }} border-b border-gray-100 dark:border-zinc-800">
 
                                 {{-- Period --}}
-                                <td style="padding:10px 14px; font-size:12px; font-weight:700; color:#1e3a5f;">
+                                <td class="px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-zinc-200">
                                     {{ $row['period'] }}
                                 </td>
 
                                 {{-- Due Date --}}
-                                <td style="padding:10px 14px; font-size:12px; color:{{ $isOverdue ? '#dc2626' : '#374151' }}; font-weight:{{ $isOverdue ? '700' : '500' }};">
+                                <td class="px-3.5 py-2.5 text-xs {{ $dueDateClasses }}">
                                     {{ \Carbon\Carbon::parse($row['due_date'])->format('M d, Y') }}
                                     @if($isToday)
-                                        <span style="font-size:10px; background:#fef3c7; color:#92400e; padding:1px 6px; border-radius:999px; margin-left:4px; font-weight:700;">Today</span>
+                                        <span class="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">Today</span>
                                     @elseif($isOverdue)
-                                        <span style="font-size:10px; background:#fee2e2; color:#991b1b; padding:1px 6px; border-radius:999px; margin-left:4px; font-weight:700;">Overdue</span>
+                                        <span class="ml-1 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-800 dark:bg-rose-500/20 dark:text-rose-300">Overdue</span>
                                     @endif
                                 </td>
 
                                 {{-- Amortization --}}
-                                <td style="padding:10px 14px; font-size:12px; text-align:right; color:#111827; font-weight:600;">
+                                <td class="px-3.5 py-2.5 text-right text-xs font-semibold text-gray-900 dark:text-zinc-100">
                                     ₱{{ number_format($row['scheduled_amortization'], 2) }}
                                 </td>
 
                                 {{-- Penalty --}}
-                                <td style="padding:10px 14px; font-size:12px; text-align:right; color:{{ $row['penalty'] > 0 ? '#dc2626' : '#9ca3af' }}; font-weight:{{ $row['penalty'] > 0 ? '600' : '400' }};">
+                                <td class="px-3.5 py-2.5 text-right text-xs {{ $penaltyClasses }}">
                                     {{ $row['penalty'] > 0 ? '₱' . number_format($row['penalty'], 2) : '—' }}
                                 </td>
 
                                 {{-- Total Paid --}}
-                                <td style="padding:10px 14px; font-size:12px; text-align:right; color:{{ $row['total_paid'] > 0 ? '#059669' : '#9ca3af' }}; font-weight:{{ $row['total_paid'] > 0 ? '600' : '400' }};">
+                                <td class="px-3.5 py-2.5 text-right text-xs {{ $paidClasses }}">
                                     {{ $row['total_paid'] > 0 ? '₱' . number_format($row['total_paid'], 2) : '—' }}
                                 </td>
 
                                 {{-- Unpaid --}}
-                                <td style="padding:10px 14px; font-size:12px; text-align:right; font-weight:700; color:{{ $row['unpaid_amount'] > 0 ? '#dc2626' : '#9ca3af' }};">
+                                <td class="px-3.5 py-2.5 text-right text-xs font-bold {{ $unpaidClasses }}">
                                     {{ $row['unpaid_amount'] > 0 ? '₱' . number_format($row['unpaid_amount'], 2) : '—' }}
                                 </td>
 
                                 {{-- Status badge --}}
-                                <td style="padding:10px 14px;">
-                                    <span style="
-                                        font-size:11px; font-weight:700;
-                                        padding:3px 10px; border-radius:999px;
-                                        background:{{ $statusStyles['bg'] }};
-                                        color:{{ $statusStyles['color'] }};
-                                    ">{{ $row['status'] }}</span>
+                                <td class="px-3.5 py-2.5">
+                                    <span class="rounded-full px-2.5 py-1 text-[11px] font-bold {{ $statusBadgeClasses }}">{{ $row['status'] }}</span>
                                 </td>
 
                             </tr>
@@ -236,7 +243,7 @@
             </div>
 
             {{-- Footer note --}}
-            <p style="margin:10px 0 0; font-size:11px; color:#9ca3af; text-align:right;">
+            <p class="mt-2.5 text-right text-[11px] text-gray-400 dark:text-zinc-500">
                 Showing {{ $totalRows }} period(s) · Schedule is generated in real-time
             </p>
         @endif
