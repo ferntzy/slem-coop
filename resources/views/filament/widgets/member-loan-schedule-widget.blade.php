@@ -42,14 +42,7 @@
         {{-- Selected loan summary bar --}}
         @php $selectedLoan = $this->getSelectedLoan(); @endphp
         @if($selectedLoan)
-            <div style="
-                display: flex; flex-wrap: wrap; gap: 12px;
-                background: linear-gradient(135deg, #f0fdfa, #e0f2fe);
-                border: 1px solid #99f6e4;
-                border-radius: 12px;
-                padding: 14px 18px;
-                margin-bottom: 16px;
-            ">
+            <div class="mb-4 flex flex-wrap gap-3 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-sky-50 px-4 py-3.5 dark:border-emerald-900/60 dark:from-zinc-900 dark:to-zinc-800">
                 @php
                     $summaryItems = [
                         ['label' => 'Loan #',            'value' => 'LA-' . str_pad($selectedLoan->loan_account_id, 5, '0', STR_PAD_LEFT)],
@@ -62,11 +55,11 @@
                     ];
                 @endphp
                 @foreach($summaryItems as $item)
-                    <div style="display:flex; flex-direction:column; gap:2px; min-width:100px;">
-                        <span style="font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:#6b7280;">
+                    <div class="flex min-w-[100px] flex-col gap-0.5">
+                        <span class="text-[10px] font-semibold uppercase tracking-[0.5px] text-gray-500 dark:text-zinc-400">
                             {{ $item['label'] }}
                         </span>
-                        <span style="font-size:13px; font-weight:700; color:{{ ($item['highlight'] ?? false) ? '#0f766e' : '#111827' }};">
+                        <span class="text-[13px] font-bold {{ ($item['highlight'] ?? false) ? 'text-teal-700 dark:text-teal-300' : 'text-gray-900 dark:text-zinc-100' }}">
                             {{ $item['value'] }}
                         </span>
                     </div>
@@ -78,33 +71,25 @@
         @php $schedule = $this->getSchedule(); @endphp
 
         @if(empty($schedule))
-            <div style="
-                text-align:center; padding:3rem 1rem;
-                color:#9ca3af; font-size:13px;
-                background:#f9fafb; border-radius:12px;
-                border: 1px dashed #e5e7eb;
-            ">
+            <div class="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-12 text-center text-sm text-gray-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400">
                 <div style="font-size:32px; margin-bottom:8px;">📋</div>
                 <div style="font-weight:600; margin-bottom:4px;">No schedule found</div>
                 <div style="font-size:12px;">Your loan payment schedule will appear here once a loan is active.</div>
             </div>
         @else
             {{-- Legend --}}
-            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+            <div class="mb-3 flex flex-wrap gap-2">
                 @php
                     $legend = [
-                        ['label' => 'Paid',           'bg' => '#dcfce7', 'color' => '#166534'],
-                        ['label' => 'Partial',        'bg' => '#fef3c7', 'color' => '#92400e'],
-                        ['label' => 'Late',           'bg' => '#fee2e2', 'color' => '#991b1b'],
-                        ['label' => 'Partial / Late', 'bg' => '#fde68a', 'color' => '#92400e'],
-                        ['label' => 'Unpaid',         'bg' => '#f3f4f6', 'color' => '#374151'],
+                        ['label' => 'Paid',           'classes' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300'],
+                        ['label' => 'Partial',        'classes' => 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300'],
+                        ['label' => 'Late',           'classes' => 'bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300'],
+                        ['label' => 'Partial / Late', 'classes' => 'bg-amber-200 text-amber-900 dark:bg-amber-500/30 dark:text-amber-300'],
+                        ['label' => 'Unpaid',         'classes' => 'bg-gray-100 text-gray-700 dark:bg-zinc-700 dark:text-zinc-200'],
                     ];
                 @endphp
                 @foreach($legend as $l)
-                    <span style="
-                        font-size:11px; font-weight:600; padding:3px 10px; border-radius:999px;
-                        background:{{ $l['bg'] }}; color:{{ $l['color'] }};
-                    ">{{ $l['label'] }}</span>
+                    <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $l['classes'] }}">{{ $l['label'] }}</span>
                 @endforeach
             </div>
 
@@ -116,26 +101,22 @@
                 $unpaidRows   = collect($schedule)->whereIn('status', ['Unpaid', 'Partial'])->count();
                 $totalPenalty = collect($schedule)->sum('penalty');
             @endphp
-            <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+            <div class="mb-4 flex flex-wrap gap-2.5">
                 @php
                     $stats = [
-                        ['label' => 'Total Periods',  'value' => $totalRows,  'color' => '#1e3a5f'],
-                        ['label' => 'Paid',           'value' => $paidRows,   'color' => '#166534'],
-                        ['label' => 'Remaining',      'value' => $unpaidRows, 'color' => '#92400e'],
-                        ['label' => 'Late / Overdue', 'value' => $lateRows,   'color' => '#991b1b'],
-                        ['label' => 'Total Penalty',  'value' => '₱' . number_format($totalPenalty, 2), 'color' => '#991b1b'],
+                        ['label' => 'Total Periods',  'value' => $totalRows,  'classes' => 'text-slate-700 dark:text-sky-300'],
+                        ['label' => 'Paid',           'value' => $paidRows,   'classes' => 'text-emerald-700 dark:text-emerald-300'],
+                        ['label' => 'Remaining',      'value' => $unpaidRows, 'classes' => 'text-amber-700 dark:text-amber-300'],
+                        ['label' => 'Late / Overdue', 'value' => $lateRows,   'classes' => 'text-rose-700 dark:text-rose-300'],
+                        ['label' => 'Total Penalty',  'value' => '₱' . number_format($totalPenalty, 2), 'classes' => 'text-rose-700 dark:text-rose-300'],
                     ];
                 @endphp
                 @foreach($stats as $stat)
-                    <div style="
-                        padding: 10px 16px; border-radius:10px;
-                        background:#f9fafb; border:1px solid #e5e7eb;
-                        display:flex; flex-direction:column; gap:2px; min-width:90px;
-                    ">
-                        <span style="font-size:10px; color:#6b7280; font-weight:600; text-transform:uppercase; letter-spacing:0.4px;">
+                    <div class="flex min-w-[90px] flex-col gap-0.5 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-zinc-700 dark:bg-zinc-900">
+                        <span class="text-[10px] font-semibold uppercase tracking-[0.4px] text-gray-500 dark:text-zinc-400">
                             {{ $stat['label'] }}
                         </span>
-                        <span style="font-size:16px; font-weight:700; color:{{ $stat['color'] }};">
+                        <span class="text-base font-bold {{ $stat['classes'] }}">
                             {{ $stat['value'] }}
                         </span>
                     </div>
