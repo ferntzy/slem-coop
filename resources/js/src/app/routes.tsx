@@ -41,9 +41,11 @@ export const router = createBrowserRouter([
       { path: 'contact', Component: Contact },
       { path: 'calculator', Component: LoanCalculator },
       { path: 'login', Component: Login },
-
-      // Catch-all for undefined routes
-      { path: '*', Component: NotFound },
     ],
+  },
+  // Catch-all route outside of Layout for 404 pages without header/footer
+  {
+    path: '*',
+    Component: NotFound,
   },
 ]);
