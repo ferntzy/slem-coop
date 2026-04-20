@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Member;
+use App\Models\MemberDetail;
 use Exception;
 use Illuminate\Http\Request;
 
@@ -11,7 +11,7 @@ class Members extends Controller
 {
     public function getActiveMembers(){
         try{
-            $NumberOfActiveMembers = Member::where('status', 'Active')->count();
+            $NumberOfActiveMembers = MemberDetail::where('status', 'Active')->count();
 
             return response()->json([
                 'noa' => $NumberOfActiveMembers
