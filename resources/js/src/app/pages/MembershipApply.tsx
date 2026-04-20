@@ -938,7 +938,7 @@ export function MembershipApply() {
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Mobile number <span className="text-red-500">*</span></Label>
                         <div className="flex items-center rounded-xl border border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] overflow-hidden focus-within:border-green-500 dark:focus-within:border-green-400 focus-within:ring-2 focus-within:ring-green-500/20">
-                          <span className="px-3 text-sm font-black text-gray-500 dark:text-gray-400 border-r border-green-200 dark:border-green-900/50 select-none">+63</span>
+                         {/* <span className="px-3 text-sm font-black text-gray-500 dark:text-gray-400 border-r border-green-200 dark:border-green-900/50 select-none">+63</span> */}
                           <Input
                             inputMode="numeric"
                             placeholder="09XXXXXXXXX"
@@ -1233,7 +1233,7 @@ export function MembershipApply() {
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Phone Number <span className="text-red-500">*</span></Label>
                         <div className="flex items-center rounded-xl border border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] overflow-hidden focus-within:border-green-500 dark:focus-within:border-green-400 focus-within:ring-2 focus-within:ring-green-500/20">
-                          <span className="px-3 text-sm font-black text-gray-500 dark:text-gray-400 border-r border-green-200 dark:border-green-900/50 select-none">+63</span>
+                          {/* <span className="px-3 text-sm font-black text-gray-500 dark:text-gray-400 border-r border-green-200 dark:border-green-900/50 select-none">+63</span> */}
                           <Input
                             inputMode="numeric"
                             placeholder="09XXXXXXXXX"
