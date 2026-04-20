@@ -12,6 +12,7 @@ import { Contact } from './pages/Contact';
 import { LoanCalculator } from './pages/LoanCalculator';
 import { Login } from './pages/Login';
 import { NotFound } from './pages/NotFound';
+import { ServerError } from './pages/ServerError';
 
 export const router = createBrowserRouter([
   {
@@ -47,5 +48,10 @@ export const router = createBrowserRouter([
   {
     path: '*',
     Component: NotFound,
+  },
+  // Server error route outside of Layout
+  {
+    path: '/500',
+    Component: ServerError,
   },
 ]);

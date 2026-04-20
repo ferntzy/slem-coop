@@ -24,5 +24,22 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('app:mark-delinquent-members')->dailyAt('10:00');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->renderable(function (\Throwable $exception, $request) {
+            if (
+                $request->is('500') ||
+                $request->expectsJson() ||
+                $request->wantsJson() ||
+                $request->is('api/*') ||
+                $request->is('filament/*') ||
+                $request->is('nova/*')
+            ) {
+                return null;
+            }
+
+            if (method_exists($exception, 'getStatusCode') && $exception->getStatusCode() !== 500) {
+                return null;
+            }
+
+            return redirect('/500');
+        });
     })->create();
