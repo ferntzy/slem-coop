@@ -2,18 +2,25 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\BranchCrudWidget;
+use App\Filament\Widgets\CoopFeesTableWidget;
+use App\Filament\Widgets\CoopFeesWidget;
+use App\Filament\Widgets\CoopFeeTypesTableWidget;
+use App\Filament\Widgets\LoanTypeCrudWidget;
+use App\Filament\Widgets\MembershipTypeCrudWidget;
+use App\Filament\Widgets\PaymentPriorityWidget;
+use App\Filament\Widgets\PenaltyRulesWidget;
 use App\Models\Branch;
 use App\Models\CoopSetting;
 use App\Models\LoanType;
 use App\Models\MembershipType;
-use App\Models\PenaltyRule;
 use App\Models\PaymentAllocationSetting;
+use App\Models\PenaltyRule;
 use App\Models\ShareCapitalTransaction;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -21,14 +28,20 @@ use Filament\Schemas\Components\Livewire;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Schema;
 
 class CoopSettings extends Page
 {
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-adjustments-horizontal';
+
     protected static ?string $navigationLabel = 'Coop Settings';
+
     protected static ?string $title = 'Coop Settings';
+
     protected static ?string $slug = 'coop-settings';
+
     protected static string|\UnitEnum|null $navigationGroup = 'Settings';
+
     protected static ?int $navigationSort = 100;
 
     protected string $view = 'filament.pages.coop-settings';
@@ -39,72 +52,126 @@ class CoopSettings extends Page
     }
 
     public int $branch_max_members = 500;
+
     public bool $branch_allow_inter_branch_transfer = true;
+
     public float $branch_inter_branch_transfer_fee = 50.00;
+
     public bool $branch_require_branch_manager_approval = true;
+
     public string $branch_default_branch_code_prefix = 'BR';
+
     public int $branch_count = 0;
 
     public int $share_capital_transaction_count = 0;
+
     public float $share_capital_minimum_initial_subscription = 1000.00;
+
     public float $share_capital_par_value_per_share = 100.00;
+
     public float $share_capital_minimum_monthly_contribution = 200.00;
+
     public int $share_capital_maximum_shares_per_member = 5000;
+
     public bool $share_capital_allow_share_withdrawal = false;
+
     public int $share_capital_withdrawal_notice_days = 30;
+
     public float $share_capital_dividend_rate_percent = 8.00;
+
     public string $share_capital_dividend_payout_schedule = 'annual';
 
     public int $penalty_rule_count = 0;
+
     public float $penalty_late_payment_rate_percent = 2.00;
+
     public int $penalty_grace_period_days = 5;
+
     public float $penalty_maximum_penalty_cap_percent = 20.00;
+
     public bool $penalty_apply_compound_penalty = false;
+
     public float $penalty_missed_contribution_penalty = 50.00;
+
     public bool $penalty_waiver_allowed = true;
+
     public string $penalty_calculation_method = 'daily';
 
     public int $loan_type_count = 0;
+
     public float $loan_default_interest_rate_percent = 12.00;
+
     public int $loan_maximum_loan_multiplier = 3;
+
     public float $loan_minimum_loan_amount = 1000.00;
+
     public float $loan_maximum_loan_amount = 500000.00;
+
     public int $loan_maximum_term_months = 60;
+
     public float $loan_loan_processing_fee_percent = 1.00;
+
     public int $loan_minimum_membership_months_to_apply = 6;
+
     public bool $loan_require_co_maker = true;
+
     public float $loan_co_maker_minimum_share_capital = 5000.00;
+
     public string $loan_interest_calculation_method = 'diminishing';
+
     public bool $loan_allow_early_payment = true;
+
     public float $loan_early_payment_rebate_percent = 25.00;
 
+    public float $loan_loan_officer_approval_limit = 20000.00;
+
     public int $membership_type_count = 0;
+
     public float $membership_registration_fee = 200.00;
+
     public float $membership_annual_membership_fee = 100.00;
+
     public int $membership_minimum_age = 18;
+
     public bool $membership_allow_associate_membership = true;
+
     public float $membership_associate_membership_fee = 150.00;
+
     public int $membership_probationary_period_months = 3;
+
     public bool $membership_require_id_verification = true;
+
     public int $membership_auto_suspend_on_missed_contributions = 3;
 
     public int $member_status_delinquent_months_threshold = 3;
+
     public bool $member_status_auto_mark_delinquent = true;
 
     public int $payment_allocation_rule_count = 0;
+
     public bool $payment_apply_to_oldest_loan_first = true;
+
     public bool $payment_allow_partial_payment = true;
+
     public float $payment_minimum_partial_payment_percent = 25.00;
+
     public string $payment_overpayment_action = 'apply_to_principal';
+
     public bool $payment_auto_debit_share_capital = true;
+
     public string $payment_share_capital_deduction_priority = 'after_loan';
+
     public string $payment_payment_receipt_prefix = 'OR';
 
     // ORIENTATION
     public string $orientation_zoom_link = '';
+
     public string $orientation_video_link = '';
+
     public int $orientation_passing_score = 75;
+
     public bool $orientation_require_for_loan = true;
+
     public array $orientation_questions = [];
 
     public function mount(): void
@@ -148,6 +215,7 @@ class CoopSettings extends Page
         $this->loan_interest_calculation_method = CoopSetting::get('loan.interest_calculation_method', 'diminishing') ?? 'diminishing';
         $this->loan_allow_early_payment = (bool) CoopSetting::get('loan.allow_early_payment', true);
         $this->loan_early_payment_rebate_percent = (float) CoopSetting::get('loan.early_payment_rebate_percent', 25.00);
+        $this->loan_loan_officer_approval_limit = (float) CoopSetting::get('loan.loan_officer_approval_limit', 20000.00);
 
         $this->membership_registration_fee = (float) CoopSetting::get('membership.registration_fee', 200.00);
         $this->membership_annual_membership_fee = (float) CoopSetting::get('membership.annual_membership_fee', 100.00);
@@ -183,7 +251,7 @@ class CoopSettings extends Page
             : (json_decode($rawQuestions ?: '[]', true) ?: []);
     }
 
-    public function form(\Filament\Schemas\Schema $schema): \Filament\Schemas\Schema
+    public function form(Schema $schema): Schema
     {
         return $schema->components([
             Tabs::make('CoopSettingsTabs')
@@ -192,21 +260,21 @@ class CoopSettings extends Page
                         ->icon('heroicon-o-building-storefront')
                         ->schema([
                             Section::make()->schema([])->columnSpanFull(),
-                            Livewire::make(\App\Filament\Widgets\BranchCrudWidget::class)->columnSpanFull(),
+                            Livewire::make(BranchCrudWidget::class)->columnSpanFull(),
                         ]),
 
                     Tab::make('Loan Types')
                         ->icon('heroicon-o-currency-dollar')
                         ->schema([
                             Section::make()->schema([])->columnSpanFull(),
-                            Livewire::make(\App\Filament\Widgets\LoanTypeCrudWidget::class)->columnSpanFull(),
+                            Livewire::make(LoanTypeCrudWidget::class)->columnSpanFull(),
                         ]),
 
                     Tab::make('Membership Types')
                         ->icon('heroicon-o-users')
                         ->schema([
                             Section::make()->schema([])->columnSpanFull(),
-                            Livewire::make(\App\Filament\Widgets\MembershipTypeCrudWidget::class)->columnSpanFull(),
+                            Livewire::make(MembershipTypeCrudWidget::class)->columnSpanFull(),
                         ]),
 
                     Tab::make('Coop Fees')
@@ -214,30 +282,47 @@ class CoopSettings extends Page
                         ->schema([
                             Section::make('Manage Fee Types')
                                 ->schema([
-                                    Livewire::make(\App\Filament\Widgets\CoopFeeTypesTableWidget::class)->columnSpanFull(),
+                                    Livewire::make(CoopFeeTypesTableWidget::class)->columnSpanFull(),
                                 ]),
                             Section::make('Manage Fees')
                                 ->schema([
-                                    Livewire::make(\App\Filament\Widgets\CoopFeesTableWidget::class)->columnSpanFull(),
+                                    Livewire::make(CoopFeesTableWidget::class)->columnSpanFull(),
                                 ]),
                             Section::make('Fee Overview')
                                 ->schema([
-                                    Livewire::make(\App\Filament\Widgets\CoopFeesWidget::class)->columnSpanFull(),
+                                    Livewire::make(CoopFeesWidget::class)->columnSpanFull(),
                                 ]),
                         ]),
 
                     Tab::make('Penalties')
                         ->icon('heroicon-o-exclamation-triangle')
                         ->schema([
-                            Livewire::make(\App\Filament\Widgets\PenaltyRulesWidget::class)->columnSpanFull(),
+                            Livewire::make(PenaltyRulesWidget::class)->columnSpanFull(),
                         ]),
 
                     Tab::make('Payment Allocation')
                         ->icon('heroicon-o-arrow-trending-up')
                         ->schema([
-                            Livewire::make(\App\Filament\Widgets\PaymentPriorityWidget::class)->columnSpanFull(),
+                            Livewire::make(PaymentPriorityWidget::class)->columnSpanFull(),
                         ]),
-                        Tab::make('Member Status')
+
+                    Tab::make('Loan Approval')
+                        ->icon('heroicon-o-check-badge')
+                        ->schema([
+                            Section::make('Loan Officer Approval Limit')
+                                ->description('Loans above this amount cannot be finalized by a Loan Officer and require both Manager and Admin approvals.')
+                                ->schema([
+                                    TextInput::make('loan_loan_officer_approval_limit')
+                                        ->label('Loan Officer Auto-Approval Limit')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->prefix('PHP')
+                                        ->required(),
+                                ])
+                                ->columns(1),
+                        ]),
+
+                    Tab::make('Member Status')
                         ->icon('heroicon-o-user-minus')
                         ->schema([
                             Section::make('Delinquent Member Settings')
@@ -296,7 +381,8 @@ class CoopSettings extends Page
                                             if ($key === '0') {
                                                 $questionIndex = 0;
                                             }
-                                            return "Question " . (++$questionIndex);
+
+                                            return 'Question '.(++$questionIndex);
                                         })
                                         ->schema([
                                             Textarea::make('question')
@@ -370,6 +456,7 @@ class CoopSettings extends Page
         CoopSetting::set('loan.interest_calculation_method', $this->loan_interest_calculation_method);
         CoopSetting::set('loan.allow_early_payment', $this->loan_allow_early_payment ? 'true' : 'false');
         CoopSetting::set('loan.early_payment_rebate_percent', $this->loan_early_payment_rebate_percent);
+        CoopSetting::set('loan.loan_officer_approval_limit', $this->loan_loan_officer_approval_limit);
 
         CoopSetting::set('membership.registration_fee', $this->membership_registration_fee);
         CoopSetting::set('membership.annual_membership_fee', $this->membership_annual_membership_fee);

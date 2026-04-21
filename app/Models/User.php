@@ -184,6 +184,35 @@ class User extends Authenticatable implements HasAvatar
         ]);
     }
 
+    public function isLoanOfficerApprover(): bool
+    {
+        return $this->hasAnyRole([
+            'Loan Officer',
+            'loan_officer',
+            'HQ Loan Officer',
+            'hq_loan_officer',
+            'Account Officer',
+            'account_officer',
+            'HQ Account Officer',
+            'hq_account_officer',
+        ]);
+    }
+
+    public function isManagerApprover(): bool
+    {
+        return $this->hasAnyRole([
+            'Manager',
+            'manager',
+            'Loan Manager',
+            'loan_manager',
+            'Branch Manager',
+            'branch_manager',
+            'HQ Manager',
+            'hq_manager',
+            'hqmanager',
+        ]);
+    }
+
     public function isHeadOffice(): bool
     {
         return $this->isAdminOrSuperAdmin()
