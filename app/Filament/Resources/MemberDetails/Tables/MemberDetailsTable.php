@@ -6,6 +6,7 @@ use App\Filament\Resources\MemberDetails\MemberDetailResource;
 use App\Models\Profile;
 use App\Models\SavingsAccountTransaction;
 use App\Models\SavingsType;
+use App\Models\ShareCapitalTransaction;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
@@ -281,6 +282,81 @@ class MemberDetailsTable
 
                             Notification::make()
                                 ->title('Savings Approved')
+                                ->success()
+                                ->send();
+                        }),
+
+                    Action::make('add_share_capital')
+                        ->label('Add Share Capital')
+                        ->icon('heroicon-o-currency-dollar')
+                        ->color('success')
+                        ->form([
+                            Select::make('profile_id')
+                                ->label('Member')
+                                ->options(function ($record) {
+                                    return Profile::where('profile_id', $record->profile_id)
+                                        ->get()
+                                        ->mapWithKeys(function ($profile) {
+                                            return [$profile->profile_id => $profile->full_name];
+                                        })
+                                        ->toArray();
+                                })
+                                ->default(fn ($record) => $record->profile_id)
+                                ->disabled()
+                                ->dehydrated(true)
+                                ->required(),
+
+                            TextInput::make('type')
+                                ->label('Type')
+                                ->default('Deposit')
+                                ->disabled()
+                                ->dehydrated(true)
+                                ->required(),
+
+                            TextInput::make('amount')
+                                ->label('Amount')
+                                ->numeric()
+                                ->prefix('₱')
+                                ->minValue(0.01)
+                                ->required(),
+
+                            DatePicker::make('transaction_date')
+                                ->label('Transaction Date')
+                                ->default(now())
+                                ->required(),
+
+                            TextInput::make('reference_no')
+                                ->label('Reference No.')
+                                ->maxLength(50),
+
+                            TextInput::make('notes')
+                                ->label('Notes')
+                                ->placeholder('Optional notes about this transaction')
+                                ->maxLength(255),
+                        ])
+                        ->action(function ($record, array $data) {
+                            if (! (auth()->user()?->hasAnyRole(['Admin', 'super_admin']) ?? false)) {
+                                Notification::make()
+                                    ->title('Unauthorized')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            ShareCapitalTransaction::create([
+                                'profile_id' => $data['profile_id'],
+                                'amount' => $data['amount'],
+                                'direction' => 'credit',
+                                'type' => 'deposit',
+                                'transaction_date' => $data['transaction_date'],
+                                'reference_no' => $data['reference_no'] ?? null,
+                                'notes' => $data['notes'] ?? null,
+                                'posted_by_user_id' => auth()->id(),
+                            ]);
+
+                            Notification::make()
+                                ->title('Share capital added successfully')
                                 ->success()
                                 ->send();
                         }),
@@ -701,7 +777,7 @@ class MemberDetailsTable
                                 ->send();
                         }),
                 ])
-                ->visible(fn () => ! auth()->user()?->isMember()),
+                    ->visible(fn () => ! auth()->user()?->isMember()),
             ])
             ->recordActionsPosition(RecordActionsPosition::BeforeColumns);
     }

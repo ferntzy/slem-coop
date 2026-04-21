@@ -10,6 +10,7 @@ use App\Models\LoanApplicationStatusLog;
 use App\Models\MemberDetail;
 use App\Models\Notification as ModelsNotification;
 use App\Models\PenaltyRule;
+use App\Models\ShareCapitalTransaction;
 use App\Services\CoopFeeCalculatorService;
 use App\Services\NotificationService;
 use Filament\Actions\Action;
@@ -254,6 +255,21 @@ class LoanApplicationsTable
                                 'status' => 'Active',
                                 'parent_loan_account_id' => $parentLoanId,
                             ]);
+
+                            $shareCapitalFee = (float) ($fees['shared_capital_fee'] ?? 0);
+
+                            if ($profileId && $shareCapitalFee > 0) {
+                                ShareCapitalTransaction::create([
+                                    'profile_id' => $profileId,
+                                    'amount' => $shareCapitalFee,
+                                    'direction' => 'credit',
+                                    'type' => 'deposit',
+                                    'transaction_date' => $releaseDate,
+                                    'reference_no' => 'LA-'.$record->loan_application_id,
+                                    'notes' => 'Share capital fee from loan release.',
+                                    'posted_by_user_id' => auth()->id(),
+                                ]);
+                            }
 
                             Notification::make()
                                 ->title('Loan Released Successfully')
