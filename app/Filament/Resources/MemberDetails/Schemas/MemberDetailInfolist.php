@@ -208,117 +208,108 @@ class MemberDetailInfolist
                         Tab::make('Shared Capital Transactions')
                             ->icon('heroicon-o-banknotes')
                             ->schema([
-                                TextEntry::make('total_shared_capital')
-                                    ->label('Total Shared Capital Transactions')
-                                    ->getStateUsing(fn ($record) => '₱'.number_format(
-                                        $record->loanApplications()->sum('shared_capital_fee'),
-                                        2
-                                    ))
+                                TextEntry::make('share_capital_balance')
+                                    ->label('Share Capital Balance')
+                                    ->money('PHP')
                                     ->weight('bold')
                                     ->color('success')
                                     ->size('lg'),
 
-                                RepeatableEntry::make('loanApplications')
-                                    ->label('Shared Capital per Loan')
+                                RepeatableEntry::make('sharedCapitalTransactions')
+                                    ->label('Share Capital Transactions')
                                     ->schema([
-                                        TextEntry::make('type.name')
-                                            ->label('Loan Type')
-                                            ->badge()
-                                            ->color('info'),
-                                        TextEntry::make('shared_capital_fee')
-                                            ->label('Shared Capital Fee')
+                                        TextEntry::make('transaction_date')
+                                            ->label('Date')
+                                            ->date('F j, Y'),
+                                        TextEntry::make('amount')
+                                            ->label('Amount')
                                             ->money('PHP')
                                             ->weight('bold')
                                             ->color('success'),
-                                        TextEntry::make('amount_requested')
-                                            ->label('Amount Requested')
-                                            ->money('PHP'),
-                                        TextEntry::make('term_months')
-                                            ->label('Term (Months)')
-                                            ->badge()
-                                            ->color('secondary'),
-                                        TextEntry::make('status')
-                                            ->label('Loan Status')
+                                        TextEntry::make('direction')
+                                            ->label('Direction')
                                             ->badge()
                                             ->color(fn ($state) => match ($state) {
-                                                'Pending' => 'warning',
-                                                'Under Review' => 'info',
-                                                'Approved' => 'success',
-                                                'Rejected' => 'danger',
-                                                'Cancelled' => 'gray',
+                                                'credit' => 'success',
+                                                'debit' => 'danger',
                                                 default => 'gray',
                                             }),
-                                        TextEntry::make('created_at')
-                                            ->label('Date Applied')
-                                            ->dateTime('F j, Y g:i A'),
-                                        TextEntry::make('approved_at')
-                                            ->label('Approved At')
-                                            ->dateTime('F j, Y g:i A')
-                                            ->placeholder('Not yet approved'),
+                                        TextEntry::make('type')
+                                            ->label('Type')
+                                            ->badge(),
+                                        TextEntry::make('reference_no')
+                                            ->label('Reference No.')
+                                            ->placeholder('—'),
+                                        TextEntry::make('notes')
+                                            ->label('Notes')
+                                            ->placeholder('—'),
+                                        TextEntry::make('postedBy.name')
+                                            ->label('Posted By')
+                                            ->placeholder('—'),
                                     ])
                                     ->columns(3)
                                     ->contained(),
                             ]),
                         Tab::make('Savings')
-                                    ->icon('heroicon-o-building-library')
+                            ->icon('heroicon-o-building-library')
+                            ->schema([
+                                Section::make('Savings')
                                     ->schema([
-                                        Section::make('Savings')
-                                            ->schema([
-                                                TextEntry::make('profile.full_name')
-                                                    ->label('Member Name')
-                                                    ->weight('bold')
-                                                    ->color('success'),
+                                        TextEntry::make('profile.full_name')
+                                            ->label('Member Name')
+                                            ->weight('bold')
+                                            ->color('success'),
 
-                                                TextEntry::make('amount')
-                                                    ->label('Balance')
-                                                    ->money('PHP')
-                                                    ->weight('bold')
-                                                    ->color('success'),
+                                        TextEntry::make('amount')
+                                            ->label('Balance')
+                                            ->money('PHP')
+                                            ->weight('bold')
+                                            ->color('success'),
 
-                                                TextEntry::make('status')
-                                                    ->badge()
-                                                    ->color(fn (string $state): string => match ($state) {
-                                                        'Approved' => 'success',
-                                                        'Active' => 'success', // 🔥 FIXED
-                                                        'Pending' => 'warning',
-                                                        'Rejected' => 'danger',
-                                                        default => 'gray',
-                                                    }),
+                                        TextEntry::make('status')
+                                            ->badge()
+                                            ->color(fn (string $state): string => match ($state) {
+                                                'Approved' => 'success',
+                                                'Active' => 'success', // 🔥 FIXED
+                                                'Pending' => 'warning',
+                                                'Rejected' => 'danger',
+                                                default => 'gray',
+                                            }),
 
-                                                TextEntry::make('profile.created_at')
-                                                    ->label('Created')
-                                                    ->dateTime('M d, Y h:i A'),
-                                            ])
-                                            ->columns(2),
+                                        TextEntry::make('profile.created_at')
+                                            ->label('Created')
+                                            ->dateTime('M d, Y h:i A'),
+                                    ])
+                                    ->columns(2),
 
-                                        Section::make('Time Deposits')
-                                            ->schema([
-                                                TextEntry::make('profile.full_name')
-                                                    ->label('Member Name')
-                                                    ->weight('bold')
-                                                    ->color('success'),
+                                Section::make('Time Deposits')
+                                    ->schema([
+                                        TextEntry::make('profile.full_name')
+                                            ->label('Member Name')
+                                            ->weight('bold')
+                                            ->color('success'),
 
-                                                TextEntry::make('amount')
-                                                    ->label('Balance')
-                                                    ->money('PHP')
-                                                    ->weight('bold')
-                                                    ->color('success'),
+                                        TextEntry::make('amount')
+                                            ->label('Balance')
+                                            ->money('PHP')
+                                            ->weight('bold')
+                                            ->color('success'),
 
-                                                TextEntry::make('status')
-                                                    ->badge()
-                                                    ->color(fn (string $state): string => match ($state) {
-                                                        'Approved' => 'success',
-                                                        'Active' => 'success', // 🔥 FIXED HERE TOO
-                                                        'Pending' => 'warning',
-                                                        'Rejected' => 'danger',
-                                                        default => 'gray',
-                                                    }),
+                                        TextEntry::make('status')
+                                            ->badge()
+                                            ->color(fn (string $state): string => match ($state) {
+                                                'Approved' => 'success',
+                                                'Active' => 'success', // 🔥 FIXED HERE TOO
+                                                'Pending' => 'warning',
+                                                'Rejected' => 'danger',
+                                                default => 'gray',
+                                            }),
 
-                                                TextEntry::make('created_at')
-                                                    ->label('Created')
-                                                    ->dateTime('M d, Y h:i A'),
-                                            ])
-                                            ->columns(2),
+                                        TextEntry::make('created_at')
+                                            ->label('Created')
+                                            ->dateTime('M d, Y h:i A'),
+                                    ])
+                                    ->columns(2),
 
                             ]),
                     ])

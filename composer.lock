@@ -1511,7 +1511,6 @@
         },
         {
             "name": "filament/actions",
-<<<<<<< Updated upstream
             "version": "v4.10.2",
             "source": {
                 "type": "git",
@@ -1522,18 +1521,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/filamentphp/actions/zipball/954e898e59c7bdafd90b11a25213ced746f9a820",
                 "reference": "954e898e59c7bdafd90b11a25213ced746f9a820",
-=======
-            "version": "v4.10.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/filamentphp/actions.git",
-                "reference": "7104408da1d8974faab81c03729512260d054020"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/filamentphp/actions/zipball/7104408da1d8974faab81c03729512260d054020",
-                "reference": "7104408da1d8974faab81c03729512260d054020",
->>>>>>> Stashed changes
                 "shasum": ""
             },
             "require": {
@@ -1568,7 +1555,6 @@
                 "issues": "https://github.com/filamentphp/filament/issues",
                 "source": "https://github.com/filamentphp/filament"
             },
-<<<<<<< Updated upstream
             "time": "2026-04-17T09:57:54+00:00"
         },
         {
@@ -1583,22 +1569,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/filamentphp/panels/zipball/b84e56946635483212e6941539c99b7e4b3a71a5",
                 "reference": "b84e56946635483212e6941539c99b7e4b3a71a5",
-=======
-            "time": "2026-04-14T11:05:39+00:00"
-        },
-        {
-            "name": "filament/filament",
-            "version": "v4.10.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/filamentphp/panels.git",
-                "reference": "1197c0c3c217b8017752217158dc06290329ee88"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/filamentphp/panels/zipball/1197c0c3c217b8017752217158dc06290329ee88",
-                "reference": "1197c0c3c217b8017752217158dc06290329ee88",
->>>>>>> Stashed changes
                 "shasum": ""
             },
             "require": {
@@ -1642,7 +1612,6 @@
                 "issues": "https://github.com/filamentphp/filament/issues",
                 "source": "https://github.com/filamentphp/filament"
             },
-<<<<<<< Updated upstream
             "time": "2026-04-17T10:14:17+00:00"
         },
         {
@@ -1657,22 +1626,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/filamentphp/forms/zipball/5ad81f6f5a73850983a358e4f5cec33e50cd37c7",
                 "reference": "5ad81f6f5a73850983a358e4f5cec33e50cd37c7",
-=======
-            "time": "2026-04-14T11:03:53+00:00"
-        },
-        {
-            "name": "filament/forms",
-            "version": "v4.10.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/filamentphp/forms.git",
-                "reference": "9d76a76035ff07956bef06ece2ceaa135f502beb"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/filamentphp/forms/zipball/9d76a76035ff07956bef06ece2ceaa135f502beb",
-                "reference": "9d76a76035ff07956bef06ece2ceaa135f502beb",
->>>>>>> Stashed changes
                 "shasum": ""
             },
             "require": {
@@ -1709,19 +1662,11 @@
                 "issues": "https://github.com/filamentphp/filament/issues",
                 "source": "https://github.com/filamentphp/filament"
             },
-<<<<<<< Updated upstream
             "time": "2026-04-17T10:14:34+00:00"
         },
         {
             "name": "filament/infolists",
             "version": "v4.10.2",
-=======
-            "time": "2026-04-14T11:03:42+00:00"
-        },
-        {
-            "name": "filament/infolists",
-            "version": "v4.10.1",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/filamentphp/infolists.git",
@@ -1766,7 +1711,6 @@
         },
         {
             "name": "filament/notifications",
-<<<<<<< Updated upstream
             "version": "v4.10.2",
             "source": {
                 "type": "git",
@@ -1777,18 +1721,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/filamentphp/notifications/zipball/eb41b33279220373432e95a3cb1aa1a2aa5b4e41",
                 "reference": "eb41b33279220373432e95a3cb1aa1a2aa5b4e41",
-=======
-            "version": "v4.10.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/filamentphp/notifications.git",
-                "reference": "a1be68b65f03b9230a3dd7f21dd0194f3eab7b35"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/filamentphp/notifications/zipball/a1be68b65f03b9230a3dd7f21dd0194f3eab7b35",
-                "reference": "a1be68b65f03b9230a3dd7f21dd0194f3eab7b35",
->>>>>>> Stashed changes
                 "shasum": ""
             },
             "require": {
@@ -1822,19 +1754,11 @@
                 "issues": "https://github.com/filamentphp/filament/issues",
                 "source": "https://github.com/filamentphp/filament"
             },
-<<<<<<< Updated upstream
             "time": "2026-04-17T09:54:34+00:00"
         },
         {
             "name": "filament/query-builder",
             "version": "v4.10.2",
-=======
-            "time": "2026-04-14T11:03:30+00:00"
-        },
-        {
-            "name": "filament/query-builder",
-            "version": "v4.10.1",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/filamentphp/query-builder.git",
@@ -1880,11 +1804,7 @@
         },
         {
             "name": "filament/schemas",
-<<<<<<< Updated upstream
             "version": "v4.10.2",
-=======
-            "version": "v4.10.1",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/filamentphp/schemas.git",
@@ -1929,11 +1849,7 @@
         },
         {
             "name": "filament/support",
-<<<<<<< Updated upstream
             "version": "v4.10.2",
-=======
-            "version": "v4.10.1",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/filamentphp/support.git",
@@ -1991,11 +1907,7 @@
         },
         {
             "name": "filament/tables",
-<<<<<<< Updated upstream
             "version": "v4.10.2",
-=======
-            "version": "v4.10.1",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/filamentphp/tables.git",
@@ -2041,11 +1953,7 @@
         },
         {
             "name": "filament/widgets",
-<<<<<<< Updated upstream
             "version": "v4.10.2",
-=======
-            "version": "v4.10.1",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/filamentphp/widgets.git",
@@ -7399,11 +7307,7 @@
         },
         {
             "name": "symfony/polyfill-ctype",
-<<<<<<< Updated upstream
             "version": "v1.36.0",
-=======
-            "version": "v1.35.0",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-ctype.git",
@@ -7462,11 +7366,7 @@
                 "portable"
             ],
             "support": {
-<<<<<<< Updated upstream
                 "source": "https://github.com/symfony/polyfill-ctype/tree/v1.36.0"
-=======
-                "source": "https://github.com/symfony/polyfill-ctype/tree/v1.35.0"
->>>>>>> Stashed changes
             },
             "funding": [
                 {
@@ -7490,11 +7390,7 @@
         },
         {
             "name": "symfony/polyfill-intl-grapheme",
-<<<<<<< Updated upstream
             "version": "v1.36.0",
-=======
-            "version": "v1.35.0",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-intl-grapheme.git",
@@ -7552,11 +7448,7 @@
                 "shim"
             ],
             "support": {
-<<<<<<< Updated upstream
                 "source": "https://github.com/symfony/polyfill-intl-grapheme/tree/v1.36.0"
-=======
-                "source": "https://github.com/symfony/polyfill-intl-grapheme/tree/v1.35.0"
->>>>>>> Stashed changes
             },
             "funding": [
                 {
@@ -7580,11 +7472,7 @@
         },
         {
             "name": "symfony/polyfill-intl-idn",
-<<<<<<< Updated upstream
             "version": "v1.36.0",
-=======
-            "version": "v1.35.0",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-intl-idn.git",
@@ -7647,11 +7535,7 @@
                 "shim"
             ],
             "support": {
-<<<<<<< Updated upstream
                 "source": "https://github.com/symfony/polyfill-intl-idn/tree/v1.36.0"
-=======
-                "source": "https://github.com/symfony/polyfill-intl-idn/tree/v1.35.0"
->>>>>>> Stashed changes
             },
             "funding": [
                 {
@@ -7675,11 +7559,7 @@
         },
         {
             "name": "symfony/polyfill-intl-normalizer",
-<<<<<<< Updated upstream
             "version": "v1.36.0",
-=======
-            "version": "v1.35.0",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-intl-normalizer.git",
@@ -7740,11 +7620,7 @@
                 "shim"
             ],
             "support": {
-<<<<<<< Updated upstream
                 "source": "https://github.com/symfony/polyfill-intl-normalizer/tree/v1.36.0"
-=======
-                "source": "https://github.com/symfony/polyfill-intl-normalizer/tree/v1.35.0"
->>>>>>> Stashed changes
             },
             "funding": [
                 {
@@ -7768,11 +7644,7 @@
         },
         {
             "name": "symfony/polyfill-mbstring",
-<<<<<<< Updated upstream
             "version": "v1.36.0",
-=======
-            "version": "v1.35.0",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-mbstring.git",
@@ -7833,11 +7705,7 @@
                 "shim"
             ],
             "support": {
-<<<<<<< Updated upstream
                 "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.36.0"
-=======
-                "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.35.0"
->>>>>>> Stashed changes
             },
             "funding": [
                 {
@@ -7861,11 +7729,7 @@
         },
         {
             "name": "symfony/polyfill-php80",
-<<<<<<< Updated upstream
             "version": "v1.36.0",
-=======
-            "version": "v1.35.0",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-php80.git",
@@ -7925,11 +7789,7 @@
                 "shim"
             ],
             "support": {
-<<<<<<< Updated upstream
                 "source": "https://github.com/symfony/polyfill-php80/tree/v1.36.0"
-=======
-                "source": "https://github.com/symfony/polyfill-php80/tree/v1.35.0"
->>>>>>> Stashed changes
             },
             "funding": [
                 {
@@ -7953,11 +7813,7 @@
         },
         {
             "name": "symfony/polyfill-php83",
-<<<<<<< Updated upstream
             "version": "v1.36.0",
-=======
-            "version": "v1.35.0",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-php83.git",
@@ -8013,11 +7869,7 @@
                 "shim"
             ],
             "support": {
-<<<<<<< Updated upstream
                 "source": "https://github.com/symfony/polyfill-php83/tree/v1.36.0"
-=======
-                "source": "https://github.com/symfony/polyfill-php83/tree/v1.35.0"
->>>>>>> Stashed changes
             },
             "funding": [
                 {
@@ -8041,11 +7893,7 @@
         },
         {
             "name": "symfony/polyfill-php84",
-<<<<<<< Updated upstream
             "version": "v1.36.0",
-=======
-            "version": "v1.35.0",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-php84.git",
@@ -8101,11 +7949,7 @@
                 "shim"
             ],
             "support": {
-<<<<<<< Updated upstream
                 "source": "https://github.com/symfony/polyfill-php84/tree/v1.36.0"
-=======
-                "source": "https://github.com/symfony/polyfill-php84/tree/v1.35.0"
->>>>>>> Stashed changes
             },
             "funding": [
                 {
@@ -8129,11 +7973,7 @@
         },
         {
             "name": "symfony/polyfill-php85",
-<<<<<<< Updated upstream
             "version": "v1.36.0",
-=======
-            "version": "v1.35.0",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-php85.git",
@@ -8189,11 +8029,7 @@
                 "shim"
             ],
             "support": {
-<<<<<<< Updated upstream
                 "source": "https://github.com/symfony/polyfill-php85/tree/v1.36.0"
-=======
-                "source": "https://github.com/symfony/polyfill-php85/tree/v1.35.0"
->>>>>>> Stashed changes
             },
             "funding": [
                 {
@@ -8217,11 +8053,7 @@
         },
         {
             "name": "symfony/polyfill-uuid",
-<<<<<<< Updated upstream
             "version": "v1.36.0",
-=======
-            "version": "v1.35.0",
->>>>>>> Stashed changes
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-uuid.git",
@@ -8280,11 +8112,7 @@
                 "uuid"
             ],
             "support": {
-<<<<<<< Updated upstream
                 "source": "https://github.com/symfony/polyfill-uuid/tree/v1.36.0"
-=======
-                "source": "https://github.com/symfony/polyfill-uuid/tree/v1.35.0"
->>>>>>> Stashed changes
             },
             "funding": [
                 {
@@ -9849,7 +9677,6 @@
         },
         {
             "name": "laravel/boost",
-<<<<<<< Updated upstream
             "version": "v2.4.4",
             "source": {
                 "type": "git",
@@ -9860,18 +9687,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/laravel/boost/zipball/db101b977897e00c6d2e40e9b610591cb0aa277e",
                 "reference": "db101b977897e00c6d2e40e9b610591cb0aa277e",
-=======
-            "version": "v2.4.3",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/laravel/boost.git",
-                "reference": "841d52905728cfac9f93c778a1758e740ce9a367"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/laravel/boost/zipball/841d52905728cfac9f93c778a1758e740ce9a367",
-                "reference": "841d52905728cfac9f93c778a1758e740ce9a367",
->>>>>>> Stashed changes
                 "shasum": ""
             },
             "require": {
@@ -9924,11 +9739,7 @@
                 "issues": "https://github.com/laravel/boost/issues",
                 "source": "https://github.com/laravel/boost"
             },
-<<<<<<< Updated upstream
             "time": "2026-04-16T16:53:05+00:00"
-=======
-            "time": "2026-04-10T15:59:10+00:00"
->>>>>>> Stashed changes
         },
         {
             "name": "laravel/mcp",
@@ -10516,7 +10327,6 @@
         },
         {
             "name": "pestphp/pest",
-<<<<<<< Updated upstream
             "version": "v4.6.2",
             "source": {
                 "type": "git",
@@ -10527,18 +10337,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/pestphp/pest/zipball/cabff738f72fe121beed6963c1bc4254e204c3d3",
                 "reference": "cabff738f72fe121beed6963c1bc4254e204c3d3",
-=======
-            "version": "v4.6.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/pestphp/pest.git",
-                "reference": "4e03cd3edbae9bb9e024660a6380ebb5832a6df9"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/pestphp/pest/zipball/4e03cd3edbae9bb9e024660a6380ebb5832a6df9",
-                "reference": "4e03cd3edbae9bb9e024660a6380ebb5832a6df9",
->>>>>>> Stashed changes
                 "shasum": ""
             },
             "require": {
@@ -10550,20 +10348,12 @@
                 "pestphp/pest-plugin-mutate": "^4.0.1",
                 "pestphp/pest-plugin-profanity": "^4.2.1",
                 "php": "^8.3.0",
-<<<<<<< Updated upstream
                 "phpunit/phpunit": "^12.5.22",
-=======
-                "phpunit/phpunit": "^12.5.16",
->>>>>>> Stashed changes
                 "symfony/process": "^7.4.8|^8.0.8"
             },
             "conflict": {
                 "filp/whoops": "<2.18.3",
-<<<<<<< Updated upstream
                 "phpunit/phpunit": ">12.5.22",
-=======
-                "phpunit/phpunit": ">12.5.16",
->>>>>>> Stashed changes
                 "sebastian/exporter": "<7.0.0",
                 "webmozart/assert": "<1.11.0"
             },
@@ -10638,11 +10428,7 @@
             ],
             "support": {
                 "issues": "https://github.com/pestphp/pest/issues",
-<<<<<<< Updated upstream
                 "source": "https://github.com/pestphp/pest/tree/v4.6.2"
-=======
-                "source": "https://github.com/pestphp/pest/tree/v4.6.0"
->>>>>>> Stashed changes
             },
             "funding": [
                 {
@@ -10654,11 +10440,7 @@
                     "type": "github"
                 }
             ],
-<<<<<<< Updated upstream
             "time": "2026-04-18T02:32:23+00:00"
-=======
-            "time": "2026-04-14T17:23:26+00:00"
->>>>>>> Stashed changes
         },
         {
             "name": "pestphp/pest-plugin",
@@ -11694,7 +11476,6 @@
         },
         {
             "name": "phpunit/phpunit",
-<<<<<<< Updated upstream
             "version": "12.5.22",
             "source": {
                 "type": "git",
@@ -11705,18 +11486,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/e07667405f0f43317a1799d3907c43a123bc5587",
                 "reference": "e07667405f0f43317a1799d3907c43a123bc5587",
-=======
-            "version": "12.5.16",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "b2429f58ae75cae980b5bb9873abe4de6aac8b58"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/b2429f58ae75cae980b5bb9873abe4de6aac8b58",
-                "reference": "b2429f58ae75cae980b5bb9873abe4de6aac8b58",
->>>>>>> Stashed changes
                 "shasum": ""
             },
             "require": {
@@ -11738,11 +11507,7 @@
                 "sebastian/cli-parser": "^4.2.0",
                 "sebastian/comparator": "^7.1.6",
                 "sebastian/diff": "^7.0.0",
-<<<<<<< Updated upstream
                 "sebastian/environment": "^8.1.0",
-=======
-                "sebastian/environment": "^8.0.4",
->>>>>>> Stashed changes
                 "sebastian/exporter": "^7.0.2",
                 "sebastian/global-state": "^8.0.2",
                 "sebastian/object-enumerator": "^7.0.0",
@@ -11789,11 +11554,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-<<<<<<< Updated upstream
                 "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.22"
-=======
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.16"
->>>>>>> Stashed changes
             },
             "funding": [
                 {
@@ -11801,11 +11562,7 @@
                     "type": "other"
                 }
             ],
-<<<<<<< Updated upstream
             "time": "2026-04-17T12:51:04+00:00"
-=======
-            "time": "2026-04-03T05:26:42+00:00"
->>>>>>> Stashed changes
         },
         {
             "name": "sebastian/cli-parser",
