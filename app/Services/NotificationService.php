@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Spatie\Permission\Exceptions\RoleDoesNotExist;
 
 class NotificationService
 {
@@ -58,10 +59,20 @@ class NotificationService
         ?string $notifiableType = null,
         ?int $notifiableId = null
     ): void {
-        $roleUsers = User::role($roles)->get();
+        $roleNames = is_array($roles) ? $roles : [$roles];
 
-        foreach ($roleUsers as $user) {
-            $this->notifyUser($user->user_id, $title, $description, $isRead, $notifiableType, $notifiableId);
+        foreach ($roleNames as $roleName) {
+            try {
+                $roleUsers = User::role($roleName)->get();
+            } catch (RoleDoesNotExist $exception) {
+                Log::warning("NotificationService: role does not exist for notifyRoles - {$roleName}");
+
+                continue;
+            }
+
+            foreach ($roleUsers as $user) {
+                $this->notifyUser($user->user_id, $title, $description, $isRead, $notifiableType, $notifiableId);
+            }
         }
     }
 
@@ -73,6 +84,26 @@ class NotificationService
         ?int $notifiableId = null
     ): void {
         $this->notifyRoles(['Admin', 'super_admin'], $title, $description, $isRead, $notifiableType, $notifiableId);
+    }
+
+    public function notifyManagers(
+        string $title,
+        string $description,
+        bool $isRead = false,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null
+    ): void {
+        $this->notifyRoles([
+            'Manager',
+            'manager',
+            'Loan Manager',
+            'loan_manager',
+            'Branch Manager',
+            'branch_manager',
+            'HQ Manager',
+            'hq_manager',
+            'hqmanager',
+        ], $title, $description, $isRead, $notifiableType, $notifiableId);
     }
 
     public function createUserWithAutoPassword(Profile $profile): ?User

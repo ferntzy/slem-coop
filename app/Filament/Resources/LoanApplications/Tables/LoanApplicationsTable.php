@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\LoanApplications\Tables;
 
 use App\Filament\Resources\LoanApplications\Schemas\LoanApplicationsInfolist;
+use App\Models\CoopSetting;
 use App\Models\LoanAccount;
 use App\Models\LoanApplication;
 use App\Models\LoanApplicationCollstat;
@@ -29,6 +30,16 @@ use Illuminate\Support\HtmlString;
 
 class LoanApplicationsTable
 {
+    private static function loanOfficerApprovalLimit(): float
+    {
+        return (float) CoopSetting::get('loan.loan_officer_approval_limit', 20000);
+    }
+
+    private static function requiresDualApproval($record): bool
+    {
+        return (float) $record->amount_requested > self::loanOfficerApprovalLimit();
+    }
+
     private static function createUserNotification($record, $title, $description, $notifiableType = null, $notifiableId = null): void
     {
         $userId = $record->member?->profile?->user?->user_id;
@@ -558,9 +569,13 @@ class LoanApplicationsTable
                                 && (($user?->isHeadOffice() ?? false) || $user?->isBranchScoped());
                         })
                         ->action(function ($record) {
+                            $user = auth()->user();
                             $profileId = $record->member?->profile_id ?? null;
+                            $notificationService = app(NotificationService::class);
+                            $requiresDualApproval = self::requiresDualApproval($record);
+                            $approvalLimit = self::loanOfficerApprovalLimit();
 
-                            if (! ((auth()->user()?->isHeadOffice() ?? false) || auth()->user()?->isBranchScoped())) {
+                            if (! (($user?->isHeadOffice() ?? false) || $user?->isBranchScoped())) {
                                 Notification::make()
                                     ->title('Unauthorized')
                                     ->danger()
@@ -576,6 +591,113 @@ class LoanApplicationsTable
                                     ->send();
 
                                 return;
+                            }
+
+                            if ($requiresDualApproval && ($user?->isLoanOfficerApprover() ?? false)) {
+                                $from = $record->status;
+
+                                $record->update(['status' => 'Under Review']);
+
+                                if ($from !== 'Under Review') {
+                                    LoanApplicationStatusLog::create([
+                                        'loan_application_id' => $record->loan_application_id,
+                                        'from_status' => $from,
+                                        'to_status' => 'Under Review',
+                                        'changed_by_user_id' => auth()->id(),
+                                        'reason' => 'Escalated for Manager and Admin approvals due to loan officer limit.',
+                                        'changed_at' => now(),
+                                    ]);
+                                }
+
+                                $notificationService->notifyManagers(
+                                    'Loan requires manager approval',
+                                    "Loan application #{$record->loan_application_id} exceeds the loan officer limit of PHP ".number_format($approvalLimit, 2).' and needs manager approval.',
+                                    notifiableType: 'loan_application',
+                                    notifiableId: $record->loan_application_id
+                                );
+
+                                $notificationService->notifyAdmins(
+                                    'Loan requires admin approval',
+                                    "Loan application #{$record->loan_application_id} exceeds the loan officer limit of PHP ".number_format($approvalLimit, 2).' and needs manager + admin approvals.',
+                                    notifiableType: 'loan_application',
+                                    notifiableId: $record->loan_application_id
+                                );
+
+                                if ($profileId) {
+                                    $notificationService->notifyProfile(
+                                        $profileId,
+                                        'Loan application escalated for approval',
+                                        "Your loan application #{$record->loan_application_id} is under review and requires manager + admin approvals.",
+                                        notifiableType: 'loan_application',
+                                        notifiableId: $record->loan_application_id
+                                    );
+                                }
+
+                                Notification::make()
+                                    ->title('Escalated for manager and admin approvals')
+                                    ->body('This loan exceeds your approval limit and was routed for higher approval.')
+                                    ->warning()
+                                    ->send();
+
+                                return;
+                            }
+
+                            if ($requiresDualApproval) {
+                                $isManagerApprover = $user?->isManagerApprover() ?? false;
+                                $isAdminApprover = $user?->isAdminOrSuperAdmin() ?? false;
+
+                                if (! $isManagerApprover && ! $isAdminApprover) {
+                                    Notification::make()
+                                        ->title('Unauthorized for high-value approval')
+                                        ->body('Only Manager and Admin can complete approvals above the configured threshold.')
+                                        ->danger()
+                                        ->send();
+
+                                    return;
+                                }
+
+                                $updates = ['status' => 'Under Review'];
+
+                                if ($isManagerApprover && ! $record->manager_approved_at) {
+                                    $updates['manager_approved_at'] = now();
+                                    $updates['manager_approved_by_user_id'] = auth()->id();
+                                }
+
+                                if ($isAdminApprover && ! $record->admin_approved_at) {
+                                    $updates['admin_approved_at'] = now();
+                                    $updates['admin_approved_by_user_id'] = auth()->id();
+                                }
+
+                                $record->update($updates);
+                                $record->refresh();
+
+                                if (! $record->manager_approved_at || ! $record->admin_approved_at) {
+                                    if (! $record->manager_approved_at) {
+                                        $notificationService->notifyManagers(
+                                            'Manager approval still required',
+                                            "Loan application #{$record->loan_application_id} still requires manager approval.",
+                                            notifiableType: 'loan_application',
+                                            notifiableId: $record->loan_application_id
+                                        );
+                                    }
+
+                                    if (! $record->admin_approved_at) {
+                                        $notificationService->notifyAdmins(
+                                            'Admin approval still required',
+                                            "Loan application #{$record->loan_application_id} still requires admin approval.",
+                                            notifiableType: 'loan_application',
+                                            notifiableId: $record->loan_application_id
+                                        );
+                                    }
+
+                                    Notification::make()
+                                        ->title('Approval recorded')
+                                        ->body('Waiting for both Manager and Admin approvals before final approval.')
+                                        ->info()
+                                        ->send();
+
+                                    return;
+                                }
                             }
 
                             $from = $record->status;
@@ -607,7 +729,7 @@ class LoanApplicationsTable
                                 ->send();
 
                             if ($profileId) {
-                                app(NotificationService::class)->notifyProfile(
+                                $notificationService->notifyProfile(
                                     $profileId,
                                     'Loan application approved',
                                     "Your loan application #{$record->loan_application_id} has been approved.",
@@ -616,7 +738,7 @@ class LoanApplicationsTable
                                 );
                             }
 
-                            app(NotificationService::class)->notifyAdmins(
+                            $notificationService->notifyAdmins(
                                 'Loan application approved',
                                 "Loan application #{$record->loan_application_id} has been approved.",
                                 notifiableType: 'loan_application',
@@ -648,7 +770,14 @@ class LoanApplicationsTable
                             }
 
                             $from = $record->status;
-                            $record->update(['status' => 'Rejected']);
+                            $record->update([
+                                'status' => 'Rejected',
+                                'approved_at' => null,
+                                'manager_approved_at' => null,
+                                'manager_approved_by_user_id' => null,
+                                'admin_approved_at' => null,
+                                'admin_approved_by_user_id' => null,
+                            ]);
 
                             LoanApplicationStatusLog::create([
                                 'loan_application_id' => $record->loan_application_id,
