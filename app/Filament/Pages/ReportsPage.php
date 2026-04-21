@@ -175,8 +175,8 @@ class ReportsPage extends Page implements HasForms
     public function downloadPdf(): mixed
     {
         $report = $this->reportData($this->activeReportTab);
-
-        return Pdf::loadView('filament.reports.pdf', [
+        $filename = Str::slug($report['title']).'.pdf';
+        $pdf = Pdf::loadView('filament.reports.pdf', [
             'report' => $report,
         ])
             ->setPaper('a4', $report['orientation'] ?? 'portrait')
@@ -185,8 +185,13 @@ class ReportsPage extends Page implements HasForms
                 'isHtml5ParserEnabled' => true,
                 'isRemoteEnabled' => true,
                 'dpi' => 150,
-            ])
-            ->download(Str::slug($report['title']).'.pdf');
+            ]);
+
+        return response()->streamDownload(function () use ($pdf): void {
+            echo $pdf->output();
+        }, $filename, [
+            'Content-Type' => 'application/pdf',
+        ]);
     }
 
     public function refreshReport(): void {}
