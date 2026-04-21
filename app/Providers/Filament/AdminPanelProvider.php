@@ -4,7 +4,23 @@ namespace App\Providers\Filament;
 
 use App\Filament\Auth\CustomLogin;
 use App\Filament\Pages\Dashboard;
+use App\Filament\Widgets\CollectionsChart;
+use App\Filament\Widgets\CollectionsTodayWidget;
+use App\Filament\Widgets\LoanApplicationsChart;
+use App\Filament\Widgets\LoanPortfolioChart;
+use App\Filament\Widgets\MemberGreetingWidget;
+use App\Filament\Widgets\MemberLoanScheduleWidget;
+use App\Filament\Widgets\MemberLoanStatusChart;
+use App\Filament\Widgets\MemberPaymentHistoryChart;
+use App\Filament\Widgets\MemberRecentTransactionsWidget;
+use App\Filament\Widgets\MemberStatusChart;
+use App\Filament\Widgets\MemberUpcomingDueDatesWidget;
+use App\Filament\Widgets\RecentLoanApplicationsWidget;
+use App\Filament\Widgets\ShareCapitalChart;
+use App\Filament\Widgets\StatsOverviewWidget;
+use App\Http\Middleware\CheckUserIsActive;
 use App\Models\SystemSetting;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -20,12 +36,8 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\View\Middleware\ShareErrorsFromSession;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
-use App\Http\Middleware\CheckUserIsActive;
-use Filament\Navigation\NavigationGroup;
-use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\HtmlString;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -41,7 +53,7 @@ class AdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->brandLogo(new HtmlString('
     <div class="flex items-center gap-2">
-        <img src="' . asset('logo-dark.png') . '" alt="Logo" class="h-8" />
+        <img src="'.asset('logo-dark.png').'" alt="Logo" class="h-8" />
 
         <span class="text-xl font-normal leading-5 tracking-tight dark:text-white">
             SLEM
@@ -56,10 +68,11 @@ class AdminPanelProvider extends PanelProvider
 
             ->favicon(function () {
                 // Prevent crash during migrations
-                if (!Schema::hasTable('system_settings')) {
+                if (! Schema::hasTable('system_settings')) {
                     return asset('logo-dark.png');
                 }
                 $favicon = SystemSetting::get('favicon');
+
                 return $favicon
                     ? Storage::disk('public')->url($favicon)
                     : asset('logo-dark.png');
@@ -67,28 +80,27 @@ class AdminPanelProvider extends PanelProvider
 
             ->renderHook(
                 PanelsRenderHook::USER_MENU_BEFORE,
-                fn() => view('filament.Notification'),
+                fn () => view('filament.Notification'),
             )
             // Plugins
             ->plugins([
                 FilamentShieldPlugin::make()
                     ->gridColumns([
                         'default' => 1,
-                        'sm'      => 2,
-                        'lg'      => 3,
+                        'sm' => 2,
+                        'lg' => 3,
                     ])
                     ->sectionColumnSpan(1)
                     ->checkboxListColumns([
                         'default' => 1,
-                        'sm'      => 2,
-                        'lg'      => 4,
+                        'sm' => 2,
+                        'lg' => 4,
                     ])
                     ->resourceCheckboxListColumns([
                         'default' => 1,
-                        'sm'      => 2,
+                        'sm' => 2,
                     ]),
             ])
-
 
             ->colors([
                 'primary' => Color::hex(
@@ -105,20 +117,20 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
 
-                \App\Filament\Widgets\MemberGreetingWidget::class,
-                \App\Filament\Widgets\StatsOverviewWidget::class,
-                \App\Filament\Widgets\MemberLoanStatusChart::class,
-                \App\Filament\Widgets\MemberPaymentHistoryChart::class,
-                \App\Filament\Widgets\MemberRecentTransactionsWidget::class,
-                \App\Filament\Widgets\MemberUpcomingDueDatesWidget::class,
-                \App\Filament\Widgets\ShareCapitalChart::class,
-                \App\Filament\Widgets\MemberLoanScheduleWidget::class,
-                \App\Filament\Widgets\CollectionsChart::class,
-                \App\Filament\Widgets\LoanApplicationsChart::class,
-                \App\Filament\Widgets\MemberStatusChart::class,
-                \App\Filament\Widgets\LoanPortfolioChart::class,
-                \App\Filament\Widgets\CollectionsTodayWidget::class,
-                \App\Filament\Widgets\RecentLoanApplicationsWidget::class,
+                MemberGreetingWidget::class,
+                StatsOverviewWidget::class,
+                MemberLoanStatusChart::class,
+                MemberPaymentHistoryChart::class,
+                MemberRecentTransactionsWidget::class,
+                MemberUpcomingDueDatesWidget::class,
+                ShareCapitalChart::class,
+                MemberLoanScheduleWidget::class,
+                CollectionsChart::class,
+                LoanApplicationsChart::class,
+                MemberStatusChart::class,
+                LoanPortfolioChart::class,
+                CollectionsTodayWidget::class,
+                RecentLoanApplicationsWidget::class,
             ])
 
             // Middleware
@@ -142,6 +154,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 'Dashboard',
+                'Reports',
                 'Membership Management',
                 'Loan Management',
                 'Payment Management',
@@ -158,6 +171,7 @@ class AdminPanelProvider extends PanelProvider
         try {
             if (Schema::hasTable('system_settings')) {
                 $color = SystemSetting::get('primary_color');
+
                 return $color ?: '#0d9488';
             }
         } catch (\Exception $e) {

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\CheckUserIsActive;
+use App\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,8 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // apply our active-user check to all web requests
         $middleware->web([
-            \App\Http\Middleware\VerifyCsrfToken::class,
-            \App\Http\Middleware\CheckUserIsActive::class,
+            VerifyCsrfToken::class,
+            CheckUserIsActive::class,
         ]);
     })
     ->withSchedule(function (Schedule $schedule): void {
@@ -24,8 +26,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('app:mark-delinquent-members')->dailyAt('10:00');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->renderable(function (\Throwable $exception, $request) {
+        $exceptions->renderable(function (Throwable $exception, $request) {
             if (
+                $request->is('livewire/*') ||
+                $request->header('X-Livewire') ||
                 $request->is('500') ||
                 $request->expectsJson() ||
                 $request->wantsJson() ||
