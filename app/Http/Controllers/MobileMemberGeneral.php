@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CollectionAndPosting;
 use App\Models\LoanAccount;
+use App\Models\MemberDetail;
 use Exception;
 use Illuminate\Http\Request;
 
@@ -111,6 +112,43 @@ class MobileMemberGeneral extends Controller
             return response()->json([
                 'message' => 'Unable to get active loans',
                 'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function getDelinquentMembersList(Request $request)
+    {
+        try {
+            $perPage = (int) $request->query('per_page', 15);
+            $perPage = max(1, min($perPage, 100));
+            $search = trim((string) $request->query('search', ''));
+
+            $query = MemberDetail::query()
+                ->with(['profile', 'branch', 'membershipType'])
+                ->where('status', 'Delinquent');
+
+            if ($search !== '') {
+                $query->where(function ($searchQuery) use ($search) {
+                    $searchQuery->where('member_no', 'like', "%{$search}%")
+                        ->orWhereHas('profile', function ($profileQuery) use ($search) {
+                            $profileQuery->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('middle_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%")
+                                ->orWhere('mobile_number', 'like', "%{$search}%");
+                        });
+                });
+            }
+
+            $delinquentMembers = $query
+                ->orderByDesc('updated_at')
+                ->paginate($perPage);
+
+            return response()->json($delinquentMembers);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Unable to get delinquent members list',
+                'error' => $e->getMessage(),
             ]);
         }
     }
