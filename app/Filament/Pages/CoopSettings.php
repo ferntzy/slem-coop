@@ -163,6 +163,10 @@ class CoopSettings extends Page
 
     public string $payment_payment_receipt_prefix = 'OR';
 
+    public float $savings_regular_interest_rate_percent = 1.00;
+
+    public float $savings_time_deposit_interest_rate_percent = 2.00;
+
     // ORIENTATION
     public string $orientation_zoom_link = '';
 
@@ -239,6 +243,9 @@ class CoopSettings extends Page
         $this->payment_share_capital_deduction_priority = CoopSetting::get('payment_allocation.share_capital_deduction_priority', 'after_loan') ?? 'after_loan';
         $this->payment_payment_receipt_prefix = CoopSetting::get('payment_allocation.payment_receipt_prefix', 'OR') ?? 'OR';
 
+        $this->savings_regular_interest_rate_percent = (float) CoopSetting::get('savings.regular_interest_rate_percent', 1.00);
+        $this->savings_time_deposit_interest_rate_percent = (float) CoopSetting::get('savings.time_deposit_interest_rate_percent', 2.00);
+
         // ORIENTATION
         $this->orientation_zoom_link = CoopSetting::get('orientation.zoom_link', '') ?? '';
         $this->orientation_video_link = CoopSetting::get('orientation.video_link', '') ?? '';
@@ -304,6 +311,29 @@ class CoopSettings extends Page
                         ->icon('heroicon-o-arrow-trending-up')
                         ->schema([
                             Livewire::make(PaymentPriorityWidget::class)->columnSpanFull(),
+                        ]),
+
+                    Tab::make('Savings')
+                        ->icon('heroicon-o-building-library')
+                        ->schema([
+                            Section::make('Savings Interest Settings')
+                                ->description('Set separate annual interest rates for regular savings and time deposits.')
+                                ->schema([
+                                    TextInput::make('savings_regular_interest_rate_percent')
+                                        ->label('Regular Savings Interest Rate')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->suffix('%')
+                                        ->required(),
+
+                                    TextInput::make('savings_time_deposit_interest_rate_percent')
+                                        ->label('Time Deposit Interest Rate')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->suffix('%')
+                                        ->required(),
+                                ])
+                                ->columns(2),
                         ]),
 
                     Tab::make('Loan Approval')
@@ -477,6 +507,9 @@ class CoopSettings extends Page
         CoopSetting::set('payment_allocation.auto_debit_share_capital', $this->payment_auto_debit_share_capital ? 'true' : 'false');
         CoopSetting::set('payment_allocation.share_capital_deduction_priority', $this->payment_share_capital_deduction_priority);
         CoopSetting::set('payment_allocation.payment_receipt_prefix', $this->payment_payment_receipt_prefix);
+
+        CoopSetting::set('savings.regular_interest_rate_percent', $this->savings_regular_interest_rate_percent);
+        CoopSetting::set('savings.time_deposit_interest_rate_percent', $this->savings_time_deposit_interest_rate_percent);
 
         // ORIENTATION
         CoopSetting::set('orientation.zoom_link', $this->orientation_zoom_link, 'string');
