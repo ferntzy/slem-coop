@@ -13,6 +13,8 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 
 class UserResource extends Resource
@@ -36,7 +38,7 @@ class UserResource extends Resource
      * Encrypt the user_id when building the URL.
      * e.g. /users/eyJpdiI6I.../edit
      */
-    public static function getRecordRouteKey(\Illuminate\Database\Eloquent\Model $record): string
+    public static function getRecordRouteKey(Model $record): string
     {
         return Crypt::encryptString($record->user_id);
     }
@@ -47,10 +49,10 @@ class UserResource extends Resource
     public static function resolveRecordRouteBinding(
         int|string $key,
         ?\Closure $modifyQuery = null
-    ): ?\Illuminate\Database\Eloquent\Model {
+    ): ?Model {
         try {
             $decrypted = Crypt::decryptString($key);
-        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+        } catch (DecryptException $e) {
             abort(404);
         }
 
@@ -75,9 +77,9 @@ class UserResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListUsers::route('/'),
-            //'create' => CreateUser::route('/create'),
-            'edit'   => EditUser::route('/{record}/edit'),
+            'index' => ListUsers::route('/'),
+            // 'create' => CreateUser::route('/create'),
+            'edit' => EditUser::route('/{record}/edit'),
         ];
     }
 }

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class LoanApplicationDocument extends Model
 {
-     protected $primaryKey = 'loan_application_document_id';
+    protected $primaryKey = 'loan_application_document_id';
 
     protected $fillable = [
         'loan_application_id',

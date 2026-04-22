@@ -12,7 +12,7 @@ return new class extends Migration
 
             // Source of Income (optional or required? assuming optional)
             $table->enum('source_of_income', ['salary', 'business', 'others'])
-                  ->nullable();
+                ->nullable();
 
             // Address
             $table->string('house_no')->nullable(); // REQUIRED
@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('province')->nullable();
 
             // Employment / Business
-           $table->integer('years_in_business')->nullable(); // REQUIRED
+            $table->integer('years_in_business')->nullable(); // REQUIRED
         });
     }
 

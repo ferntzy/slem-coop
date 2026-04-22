@@ -9,19 +9,19 @@ class NewsController extends Controller
 {
     public function show()
     {
-        try{
-            if(News::getNews()){
-            $n = News::all();
+        try {
+            if (News::getNews()) {
+                $n = News::all();
 
-            return response()->json([
-                'message' => 'News retrieved successfully',
-                'data' => $n,
-                'status' => 200
-            ]);
+                return response()->json([
+                    'message' => 'News retrieved successfully',
+                    'data' => $n,
+                    'status' => 200,
+                ]);
             }
-        }catch(Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }

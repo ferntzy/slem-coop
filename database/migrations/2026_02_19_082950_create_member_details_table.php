@@ -35,7 +35,7 @@ return new class extends Migration
             $table->foreignId('branch_id')
                 ->constrained('branches', 'branch_id');
 
-            $table->enum('status', ['Active','Inactive','Delinquent'])->nullable();
+            $table->enum('status', ['Active', 'Inactive', 'Delinquent'])->nullable();
 
             $table->timestamps();
         });

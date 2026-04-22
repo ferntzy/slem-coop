@@ -39,6 +39,6 @@ class LoanApplicationPrintController extends Controller
         $pdf = Pdf::loadView('pdf.loan-application-auto-fill', $data)
             ->setPaper('a4', 'portrait');
 
-        return $pdf->stream($memberName . '.pdf'); 
+        return $pdf->stream($memberName.'.pdf');
     }
 }

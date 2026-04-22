@@ -2,13 +2,13 @@
 
 namespace App\Filament\Resources\ShareCapitalTransactions\Schemas;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 
 class ShareCapitalTransactionForm
 {
@@ -27,7 +27,7 @@ class ShareCapitalTransactionForm
                         ->searchable()
                         ->preload()
                         ->getOptionLabelFromRecordUsing(
-                            fn ($record) => $record->full_name . ' — ' . $record->email
+                            fn ($record) => $record->full_name.' — '.$record->email
                         )
                         ->required(),
 

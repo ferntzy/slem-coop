@@ -18,7 +18,7 @@ class CoopIdSeeder extends Seeder
 
         // Find the highest number already used in the current year
         $lastCoopId = DB::table('users')
-            ->where('coop_id', 'like', $prefix . '%')
+            ->where('coop_id', 'like', $prefix.'%')
             ->orderByRaw("CAST(SUBSTRING_INDEX(coop_id, '-', -1) AS UNSIGNED) DESC")
             ->value('coop_id');
 
@@ -38,20 +38,21 @@ class CoopIdSeeder extends Seeder
 
         if ($usersWithoutCoop->isEmpty()) {
             $this->command->info('No users without coop_id found.');
+
             return;
         }
 
-        $this->command->info("Assigning coop_ids starting from {$prefix}" . str_pad($nextNumber, 3, '0', STR_PAD_LEFT));
+        $this->command->info("Assigning coop_ids starting from {$prefix}".str_pad($nextNumber, 3, '0', STR_PAD_LEFT));
 
         foreach ($usersWithoutCoop as $user) {
             $padded = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
-            $coopId = $prefix . $padded;
+            $coopId = $prefix.$padded;
 
             // Very simple collision check (should almost never happen in seeder)
             while (User::where('coop_id', $coopId)->exists()) {
                 $nextNumber++;
                 $padded = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
-                $coopId = $prefix . $padded;
+                $coopId = $prefix.$padded;
             }
 
             $user->coop_id = $coopId;

@@ -2,16 +2,16 @@
 
 namespace App\Filament\Widgets;
 
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Widgets\TableWidget as BaseWidget;
 use App\Models\DailyCollectionEntry;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Support\Facades\Auth;
 
 class CollectionsTodayWidget extends BaseWidget
 {
     protected static ?string $heading = "Today's Collection Summary";
+
     protected static ?int $sort = 7;
 
     public static function canView(): bool
@@ -19,7 +19,7 @@ class CollectionsTodayWidget extends BaseWidget
         return ! Auth::user()->isMember();
     }
 
-    public function getColumnSpan(): int | string | array
+    public function getColumnSpan(): int|string|array
     {
         return 'full';
     }
@@ -36,15 +36,12 @@ class CollectionsTodayWidget extends BaseWidget
             ->columns([
                 TextColumn::make('aoUser.profile.first_name')
                     ->label('Account Officer')
-                    ->formatStateUsing(fn ($record) =>
-                        $record->aoUser?->profile?->first_name . ' ' .
+                    ->formatStateUsing(fn ($record) => $record->aoUser?->profile?->first_name.' '.
                         $record->aoUser?->profile?->last_name
                     )
-                    ->searchable(query: fn ($query, $search) =>
-                        $query->whereHas('aoUser.profile', fn ($q) =>
-                            $q->where('first_name', 'like', "%{$search}%")
-                              ->orWhere('last_name', 'like', "%{$search}%")
-                        )
+                    ->searchable(query: fn ($query, $search) => $query->whereHas('aoUser.profile', fn ($q) => $q->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                    )
                     )
                     ->icon('heroicon-o-user'),
 
@@ -78,9 +75,9 @@ class CollectionsTodayWidget extends BaseWidget
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'Verified'  => 'success',
+                        'Verified' => 'success',
                         'Submitted' => 'info',
-                        default     => 'warning',
+                        default => 'warning',
                     }),
 
                 TextColumn::make('submitted_at')

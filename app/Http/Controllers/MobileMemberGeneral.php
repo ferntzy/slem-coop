@@ -10,12 +10,13 @@ use Illuminate\Http\Request;
 
 class MobileMemberGeneral extends Controller
 {
-    public function getDashboardData(Request $request){
-        try{
+    public function getDashboardData(Request $request)
+    {
+        try {
             $pid = $request->pid;
             $totalLoanBalance = LoanAccount::where('profile_id', $pid)->sum('balance');
-            
-            if(!$totalLoanBalance){
+
+            if (! $totalLoanBalance) {
                 throw new Exception('Unable to get total loan balance');
             }
 
@@ -23,19 +24,19 @@ class MobileMemberGeneral extends Controller
 
             return response()->json([
                 'activeLoans' => $activeLoans,
-                'totalLoanBalance' => $totalLoanBalance
+                'totalLoanBalance' => $totalLoanBalance,
             ]);
 
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json([
                 'error' => 'Unable to get data!',
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ]);
         }
     }
 
     public function getActiveLoansData(Request $request)
-    { 
+    {
         try {
             $pid = $request->pid;
 
@@ -51,22 +52,23 @@ class MobileMemberGeneral extends Controller
                 ->whereIn('status', ['Posted', 'Draft'])
                 ->get(['loan_account_id', 'payment_date'])
                 ->groupBy('loan_account_id')
-                ->map(fn($rows) => $rows->pluck('payment_date')->toArray());
+                ->map(fn ($rows) => $rows->pluck('payment_date')->toArray());
 
             return response()->json([
                 'activeLoans' => $activeLoans,
-                'paidDates'   => $paidDates, // { loan_account_id: ["2024-01-15", "2024-02-10", ...] }
+                'paidDates' => $paidDates, // { loan_account_id: ["2024-01-15", "2024-02-10", ...] }
             ]);
 
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'Unable to get Data',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
 
-    public function getLoanHistoryData(Request $request){
+    public function getLoanHistoryData(Request $request)
+    {
         try {
             $pid = $request->pid;
 
@@ -84,34 +86,35 @@ class MobileMemberGeneral extends Controller
                 ->whereIn('status', ['Posted', 'Draft'])
                 ->get(['loan_account_id', 'payment_date'])
                 ->groupBy('loan_account_id')
-                ->map(fn($rows) => $rows->pluck('payment_date')->toArray());
+                ->map(fn ($rows) => $rows->pluck('payment_date')->toArray());
 
             return response()->json([
                 'loans' => $loans,
-                'paidDates'   => $paidDates, 
+                'paidDates' => $paidDates,
             ]);
 
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'Unable to get Data',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
 
-    public function getNumberOfActiveLoans(){
-        try{
+    public function getNumberOfActiveLoans()
+    {
+        try {
             $noal = LoanAccount::where('status', 'Active')
                 ->count();
 
             return response()->json([
-                'noal' => $noal
+                'noal' => $noal,
             ]);
 
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'Unable to get active loans',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
         }
     }

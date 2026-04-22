@@ -13,7 +13,7 @@ class CreateSavingsAccount extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         if (empty($data['account_number'])) {
-            $data['account_number'] = 'SAV-' . now()->format('YmdHis');
+            $data['account_number'] = 'SAV-'.now()->format('YmdHis');
         }
 
         $type = isset($data['savings_type_id'])

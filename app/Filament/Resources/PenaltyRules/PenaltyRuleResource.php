@@ -13,7 +13,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use UnitEnum;
 
 class PenaltyRuleResource extends Resource
 {
@@ -55,9 +54,9 @@ class PenaltyRuleResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListPenaltyRules::route('/'),
+            'index' => ListPenaltyRules::route('/'),
             'create' => CreatePenaltyRule::route('/create'),
-            'edit'   => EditPenaltyRule::route('/{record}/edit'),
+            'edit' => EditPenaltyRule::route('/{record}/edit'),
         ];
     }
 }

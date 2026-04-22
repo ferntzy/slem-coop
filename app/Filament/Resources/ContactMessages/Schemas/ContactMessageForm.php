@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\ContactMessages\Schemas;
 
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -40,8 +40,8 @@ class ContactMessageForm
 
                         Select::make('status')
                             ->options([
-                                'unread'  => 'Unread',
-                                'read'    => 'Read',
+                                'unread' => 'Unread',
+                                'read' => 'Read',
                                 'replied' => 'Replied',
                             ])
                             ->required(),

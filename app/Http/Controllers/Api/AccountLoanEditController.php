@@ -3,10 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\LoanApplication;
-use App\Models\MemberDetail;
-use App\Models\LoanType;
 use Carbon\Carbon;
 
 class AccountLoanEditController extends Controller
@@ -148,7 +145,7 @@ class AccountLoanEditController extends Controller
             'type',
         ])->find($id);
 
-        if (!$loan) {
+        if (! $loan) {
             return response()->json(['message' => 'Loan not found'], 404);
         }
 

@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-   public function up(): void
+    public function up(): void
     {
         Schema::table('member_details', function (Blueprint $table) {
             $table->unsignedInteger('years_in_coop')->nullable()->after('status');

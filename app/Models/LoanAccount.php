@@ -79,7 +79,7 @@ class LoanAccount extends Model
 
     public function restructureApplication(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\RestructureApplication::class, 'restructure_application_id', 'restructure_application_id');
+        return $this->belongsTo(RestructureApplication::class, 'restructure_application_id', 'restructure_application_id');
     }
 
     public function penaltyRule(): BelongsTo

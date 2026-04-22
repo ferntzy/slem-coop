@@ -2,15 +2,17 @@
 
 namespace App\Filament\Widgets;
 
-use Livewire\Attributes\On;
-use Filament\Widgets\ChartWidget;
 use App\Models\LoanApplication;
+use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
 
 class LoanApplicationsChart extends ChartWidget
 {
     protected ?string $heading = 'Loan Applications by Status';
+
     protected static ?int $sort = 3;
+
     protected ?string $maxHeight = '320px';
 
     public static function canView(): bool
@@ -18,13 +20,13 @@ class LoanApplicationsChart extends ChartWidget
         return ! Auth::user()->isMember();
     }
 
-    public function getColumnSpan(): int | string | array
+    public function getColumnSpan(): int|string|array
     {
         return [
             'default' => 1,
-            'sm'      => 2,
-            'md'      => 2,
-            'lg'      => 4,
+            'sm' => 2,
+            'md' => 2,
+            'lg' => 4,
         ];
     }
 
@@ -40,7 +42,7 @@ class LoanApplicationsChart extends ChartWidget
         [$start, $end] = $this->getPeriodRange($filter);
 
         $statuses = ['Pending', 'Under Review', 'Approved', 'Rejected', 'Cancelled'];
-        $counts   = [];
+        $counts = [];
 
         foreach ($statuses as $status) {
             $counts[] = LoanApplication::where('status', $status)
@@ -51,7 +53,7 @@ class LoanApplicationsChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'data'            => $counts,
+                    'data' => $counts,
                     'backgroundColor' => [
                         'rgba(245, 158, 11, 0.8)',
                         'rgba(59, 130, 246, 0.8)',
@@ -69,10 +71,10 @@ class LoanApplicationsChart extends ChartWidget
     protected function getPeriodRange(string $filter): array
     {
         return match ($filter) {
-            'weekly'    => [now()->startOfWeek(),    now()->endOfWeek()],
+            'weekly' => [now()->startOfWeek(),    now()->endOfWeek()],
             'quarterly' => [now()->firstOfQuarter(), now()->lastOfQuarter()],
-            'annual'    => [now()->startOfYear(),    now()->endOfYear()],
-            default     => [now()->startOfMonth(),   now()->endOfMonth()],
+            'annual' => [now()->startOfYear(),    now()->endOfYear()],
+            default => [now()->startOfMonth(),   now()->endOfMonth()],
         };
     }
 

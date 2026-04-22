@@ -23,7 +23,7 @@ class Orientation extends Model
 
     protected $casts = [
         'allow_retakes' => 'boolean',
-        'is_active'     => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     // ── Relationships ────────────────────────────────────────────────────────
