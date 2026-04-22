@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\CollectionAndPosting;
 use App\Models\User;
+use App\Services\LoanScheduleService;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -57,6 +57,21 @@ class ReceiptController extends Controller
         $nextDueDate = ! empty($record->next_due_date)
             ? Carbon::parse($record->next_due_date)->format('M d, Y')
             : 'N/A';
+
+        $loanAccount = $record->loanAccount?->fresh();
+
+        if ($loanAccount) {
+            $remainingBalance = (float) ($loanAccount->balance ?? $remainingBalance);
+
+            $freshSchedule = app(LoanScheduleService::class)->build($loanAccount);
+            $freshNextDue = collect($freshSchedule)->first(
+                fn (array $row): bool => round((float) ($row['unpaid_amount'] ?? 0), 2) > 0
+            );
+
+            if ($freshNextDue && ! empty($freshNextDue['due_date'])) {
+                $nextDueDate = Carbon::parse($freshNextDue['due_date'])->format('M d, Y');
+            }
+        }
 
         return [
             'record' => $record,

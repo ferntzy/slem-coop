@@ -784,6 +784,8 @@ class ListCollectionAndPostings extends ListRecords
                     }
 
                     $this->dispatch('show-receipt', [
+                        'record_id' => $record->getKey(),
+                        'download_url' => route('receipt.download', $record),
                         'member' => $memberName,
                         'loan' => $loanNumber,
                         'date' => Carbon::parse($record->payment_date)->format('M d, Y'),
