@@ -36,4 +36,3 @@ class ManagePaymentAllocationLogic extends EditRecord
         return false;
     }
 }
-}
