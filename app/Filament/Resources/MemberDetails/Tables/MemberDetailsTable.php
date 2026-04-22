@@ -27,17 +27,15 @@ use Illuminate\Support\Carbon;
 
 class MemberDetailsTable
 {
-<<<<<<< Dormancy
     protected static ?array $transactionalSavingsTypeIds = null;
 
     protected static ?int $dormancyMonthsThreshold = null;
 
     protected static array $profileDormancyStatusCache = [];
-=======
+    
     protected const MATURITY_ACTION_TRANSFER_TO_SAVINGS = 'transfer_to_savings';
 
     protected const MATURITY_ACTION_RENEW_TIME_DEPOSIT = 'renew_time_deposit';
->>>>>>> main
 
     protected static function getSavingsType(callable $get): ?SavingsType
     {
@@ -92,7 +90,6 @@ class MemberDetailsTable
         return now()->greaterThanOrEqualTo($maturityDate);
     }
 
-<<<<<<< Dormancy
     protected static function getDormancyMonthsThreshold(): int
     {
         if (static::$dormancyMonthsThreshold !== null) {
@@ -193,9 +190,10 @@ class MemberDetailsTable
             ->lessThanOrEqualTo($cutoffDate)
             ? 'Dormant'
             : 'Active';
-
+    
         return static::$profileDormancyStatusCache[$profileId];
-=======
+    }
+
     protected static function isTimeDepositDecisionWindowOpen(?SavingsAccountTransaction $transaction): bool
     {
         $maturityDate = static::getTimeDepositMaturityDate($transaction);
@@ -214,7 +212,6 @@ class MemberDetailsTable
             static::MATURITY_ACTION_TRANSFER_TO_SAVINGS => 'Transfer to Regular Savings',
             default => 'Auto-transfer to Regular Savings',
         };
->>>>>>> main
     }
 
     public static function configure(Table $table): Table
