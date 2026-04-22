@@ -59,6 +59,12 @@ class RestructureApplication extends Model
         return $this->belongsTo(LoanAccount::class, 'old_loan_account_id', 'loan_account_id');
     }
 
+    public function statusLogs()
+    {
+        return $this->hasMany(RestructureApplicationStatusLog::class, 'restructure_application_id', 'restructure_application_id')
+            ->orderByDesc('changed_at');
+    }
+
     public function totalPaid()
     {
         return $this->loanPayments()->sum('principal_paid');
