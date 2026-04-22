@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Enums\UserRole;
+use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -17,8 +17,8 @@ class RolesAndPermissionsSeeder extends Seeder
         // Create roles using Enum
         foreach (UserRole::cases() as $role) {
             Role::firstOrCreate([
-                'name' => $role->value, 
-                'guard_name' => 'web'
+                'name' => $role->value,
+                'guard_name' => 'web',
             ]);
         }
     }

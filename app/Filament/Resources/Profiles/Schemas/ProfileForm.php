@@ -33,20 +33,20 @@ class ProfileForm
                     ->required()
                     ->unique(ignoreRecord: true),
 
-              TextInput::make('mobile_number')
+                TextInput::make('mobile_number')
                     ->label('Mobile Number')
                     ->placeholder('09XXXXXXXXX')
                     ->maxLength(11)
                     ->rules(['nullable', 'regex:/^09[0-9]{9}$/'])
                     ->validationMessages([
                         'regex' => 'Mobile number must be a valid PH number starting with 09 and exactly 11 digits (e.g. 09123456789).',
-                                    ])
+                    ])
                     ->extraInputAttributes([
-                        'inputmode'     => 'numeric',
-                        'pattern'       => '09[0-9]{9}',
+                        'inputmode' => 'numeric',
+                        'pattern' => '09[0-9]{9}',
                         'x-on:keypress' => 'if(!/[0-9]/.test($event.key)) $event.preventDefault()',
-                        'x-on:input'    => '$event.target.value = $event.target.value.replace(/[^0-9]/g, "").slice(0, 11)',
-                        'x-on:paste'    => '$event.preventDefault()',
+                        'x-on:input' => '$event.target.value = $event.target.value.replace(/[^0-9]/g, "").slice(0, 11)',
+                        'x-on:paste' => '$event.preventDefault()',
                     ]),
 
                 DatePicker::make('birthdate')
@@ -55,7 +55,7 @@ class ProfileForm
                     ->rules([
                         function () {
                             return function (string $attribute, mixed $value, \Closure $fail) {
-                                if (!$value) {
+                                if (! $value) {
                                     return;
                                 }
 
@@ -63,6 +63,7 @@ class ProfileForm
 
                                 if ($birthdate->isToday() || $birthdate->isFuture()) {
                                     $fail('Birthdate cannot be today or a future date.');
+
                                     return;
                                 }
 

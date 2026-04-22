@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Cache;
 class SystemSetting extends Model
 {
     protected $primaryKey = 'key';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = ['key', 'value'];
@@ -20,6 +22,7 @@ class SystemSetting extends Model
     {
         return Cache::rememberForever("system_setting_{$key}", function () use ($key, $default) {
             $setting = static::find($key);
+
             return $setting?->value ?? $default;
         });
     }
@@ -43,11 +46,3 @@ class SystemSetting extends Model
         }
     }
 }
-
-
-
-
-
-
-
-

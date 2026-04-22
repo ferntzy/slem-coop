@@ -40,7 +40,7 @@ class UserObserver
         $this->syncUserProfileRole($user);
 
         // Regenerate QR if needed
-        if ($user->wasChanged('user_id') || !$user->qr_code) {
+        if ($user->wasChanged('user_id') || ! $user->qr_code) {
             app(QrCodeGeneratorService::class)->generateForUser($user);
         }
     }
@@ -62,7 +62,7 @@ class UserObserver
     {
         $this->syncUserProfileRole($user);
 
-        if (!$user->qr_code) {
+        if (! $user->qr_code) {
             app(QrCodeGeneratorService::class)->generateForUser($user);
         }
     }

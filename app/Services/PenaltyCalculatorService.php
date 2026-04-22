@@ -10,10 +10,10 @@ class PenaltyCalculatorService
     /**
      * Calculate penalty using a specific rule.
      *
-     * @param  int    $ruleId           PenaltyRule ID to use
-     * @param  float  $outstandingAmount The overdue loan amount
-     * @param  string $dueDateString    The original due date (Y-m-d)
-     * @param  string|null $asOf        Calculate as of this date (defaults to today)
+     * @param  int  $ruleId  PenaltyRule ID to use
+     * @param  float  $outstandingAmount  The overdue loan amount
+     * @param  string  $dueDateString  The original due date (Y-m-d)
+     * @param  string|null  $asOf  Calculate as of this date (defaults to today)
      * @return array{
      *     rule: PenaltyRule,
      *     outstanding_amount: float,
@@ -32,7 +32,7 @@ class PenaltyCalculatorService
         string $dueDateString,
         ?string $asOf = null
     ): array {
-        $rule    = PenaltyRule::findOrFail($ruleId);
+        $rule = PenaltyRule::findOrFail($ruleId);
         $dueDate = Carbon::parse($dueDateString)->startOfDay();
         $asOfDate = $asOf ? Carbon::parse($asOf)->startOfDay() : Carbon::today();
 
@@ -43,15 +43,15 @@ class PenaltyCalculatorService
         $penaltyAmount = $rule->calculate($outstandingAmount, $overdueDays);
 
         return [
-            'rule'               => $rule,
+            'rule' => $rule,
             'outstanding_amount' => $outstandingAmount,
-            'due_date'           => $dueDate->toDateString(),
-            'as_of'              => $asOfDate->toDateString(),
-            'overdue_days'       => $overdueDays,
-            'grace_period_days'  => $gracePeriodDays,
-            'effective_rate'     => $effectiveRate,
-            'penalty_amount'     => $penaltyAmount,
-            'total_due'          => round($outstandingAmount + $penaltyAmount, 2),
+            'due_date' => $dueDate->toDateString(),
+            'as_of' => $asOfDate->toDateString(),
+            'overdue_days' => $overdueDays,
+            'grace_period_days' => $gracePeriodDays,
+            'effective_rate' => $effectiveRate,
+            'penalty_amount' => $penaltyAmount,
+            'total_due' => round($outstandingAmount + $penaltyAmount, 2),
         ];
     }
 
@@ -65,8 +65,7 @@ class PenaltyCalculatorService
     ): array {
         $rules = PenaltyRule::where('status', 'active')->get();
 
-        return $rules->map(fn($rule) =>
-            $this->calculate($rule->id, $outstandingAmount, $dueDateString, $asOf)
+        return $rules->map(fn ($rule) => $this->calculate($rule->id, $outstandingAmount, $dueDateString, $asOf)
         )->toArray();
     }
 }

@@ -22,12 +22,12 @@ class ProfilesTable
                     ->searchable(query: function (Builder $query, string $search) {
                         $query->where(function ($q) use ($search) {
                             $q->where('first_name', 'like', "%{$search}%")
-                              ->orWhere('last_name', 'like', "%{$search}%");
+                                ->orWhere('last_name', 'like', "%{$search}%");
                         });
                     })
                     ->sortable(query: function (Builder $query, string $direction) {
                         $query->orderBy('last_name', $direction)
-                              ->orderBy('first_name', $direction);
+                            ->orderBy('first_name', $direction);
                     }),
 
                 TextColumn::make('email')

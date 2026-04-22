@@ -50,7 +50,7 @@ return [
         'public_storage_folder' => [
             'driver' => 'local',
             'root' => public_path('storage'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/') . '/storage',
+            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

@@ -5,12 +5,10 @@ namespace App\Filament\Resources\LoanTypes\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ToggleColumn;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Actions\ViewAction;
-use Filament\Support\Enums\Alignment;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 
 class LoanTypesTable
 {
@@ -41,7 +39,7 @@ class LoanTypesTable
 
                 TextColumn::make('max_term_months')
                     ->label('Max Term')
-                    ->formatStateUsing(fn ($state) => $state . ' months')
+                    ->formatStateUsing(fn ($state) => $state.' months')
                     ->alignCenter()
                     ->sortable(),
 

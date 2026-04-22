@@ -67,8 +67,9 @@ class MemberDetailResource extends Resource
             return $query->whereRaw('1=0');
         }
 
-        if ($user->isAdminOrSuperAdmin() || $user->isHeadOffice()) return $query;
-
+        if ($user->isAdminOrSuperAdmin() || $user->isHeadOffice()) {
+            return $query;
+        }
 
         if ($user->isBranchScoped()) {
             $branchId = $user->branchId();
@@ -80,9 +81,9 @@ class MemberDetailResource extends Resource
             return $query->where('branch_id', $branchId);
         }
 
-     if ($user->isMember()) {
-        return $query->where('profile_id', $user->profile_id);
-    }
+        if ($user->isMember()) {
+            return $query->where('profile_id', $user->profile_id);
+        }
 
         return $query->whereRaw('1=0');
 
@@ -97,5 +98,4 @@ class MemberDetailResource extends Resource
             'edit' => EditMemberDetail::route('/{record}/edit'),
         ];
     }
-    
 }

@@ -21,33 +21,33 @@ class PaymentAllocationSetting extends Model
     ];
 
     protected $casts = [
-        'allow_partial'       => 'boolean',
-        'allow_advance'       => 'boolean',
-        'allow_overpayment'   => 'boolean',
-        'auto_apply'          => 'boolean',
-        'allow_void'          => 'boolean',
+        'allow_partial' => 'boolean',
+        'allow_advance' => 'boolean',
+        'allow_overpayment' => 'boolean',
+        'auto_apply' => 'boolean',
+        'allow_void' => 'boolean',
         'require_void_reason' => 'boolean',
-        'allow_edit'          => 'boolean',
+        'allow_edit' => 'boolean',
         'require_edit_reason' => 'boolean',
     ];
 
     public function allocationRules(): HasMany
     {
         return $this->hasMany(PaymentAllocationRule::class, 'payment_allocation_setting_id')
-                    ->orderBy('priority');
+            ->orderBy('priority');
     }
 
     // Always returns the single settings record, creates it if missing
     public static function getSingleton(): self
     {
         return static::with('allocationRules')->firstOrCreate([], [
-            'allow_partial'       => true,
-            'allow_advance'       => true,
-            'allow_overpayment'   => true,
-            'auto_apply'          => false,
-            'allow_void'          => true,
+            'allow_partial' => true,
+            'allow_advance' => true,
+            'allow_overpayment' => true,
+            'auto_apply' => false,
+            'allow_void' => true,
             'require_void_reason' => true,
-            'allow_edit'          => true,
+            'allow_edit' => true,
             'require_edit_reason' => true,
         ]);
     }

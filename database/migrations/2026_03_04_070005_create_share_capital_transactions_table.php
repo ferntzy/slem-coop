@@ -36,9 +36,9 @@ return new class extends Migration
                 ->restrictOnDelete();
 
             $table->foreign('posted_by_user_id')
-    ->references('user_id')->on('users')
-    ->cascadeOnUpdate()
-    ->nullOnDelete();
+                ->references('user_id')->on('users')
+                ->cascadeOnUpdate()
+                ->nullOnDelete();
         });
     }
 

@@ -9,17 +9,17 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-public function up()
-{
-    Schema::table('contact_messages', function (Blueprint $table) {
-        $table->timestamp('read_at')->nullable()->after('status');
-    });
-}
+    public function up()
+    {
+        Schema::table('contact_messages', function (Blueprint $table) {
+            $table->timestamp('read_at')->nullable()->after('status');
+        });
+    }
 
-public function down()
-{
-    Schema::table('contact_messages', function (Blueprint $table) {
-        $table->dropColumn('read_at');
-    });
-}
+    public function down()
+    {
+        Schema::table('contact_messages', function (Blueprint $table) {
+            $table->dropColumn('read_at');
+        });
+    }
 };

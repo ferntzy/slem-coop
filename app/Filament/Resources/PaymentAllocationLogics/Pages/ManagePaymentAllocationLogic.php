@@ -32,7 +32,8 @@ class ManagePaymentAllocationLogic extends EditRecord
     }
 
     protected function hasCancelAction(): bool
-{
-    return false;
+    {
+        return false;
+    }
 }
 }

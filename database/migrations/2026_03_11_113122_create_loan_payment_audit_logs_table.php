@@ -19,9 +19,9 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('loan_payment_id')
-                  ->references('loan_payment_id')
-                  ->on('loan_payments')
-                  ->onDelete('cascade');
+                ->references('loan_payment_id')
+                ->on('loan_payments')
+                ->onDelete('cascade');
         });
     }
 

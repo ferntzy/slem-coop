@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\MemberDetail;
 use App\Models\Spouse;
-use App\Models\CoMaker;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class MemberDetailsController extends Controller
@@ -30,7 +29,7 @@ class MemberDetailsController extends Controller
 
             $query->whereHas('profile', function ($q) use ($search) {
                 $q->where('full_name', 'like', "%$search%")
-                  ->orWhere('email', 'like', "%$search%");
+                    ->orWhere('email', 'like', "%$search%");
             });
         }
 
@@ -45,7 +44,7 @@ class MemberDetailsController extends Controller
 
         return response()->json([
             'status' => true,
-            'data' => $query->paginate($perPage)
+            'data' => $query->paginate($perPage),
         ]);
     }
 
@@ -62,16 +61,16 @@ class MemberDetailsController extends Controller
             'coMakers',
         ])->find($id);
 
-        if (!$member) {
+        if (! $member) {
             return response()->json([
                 'status' => false,
-                'message' => 'Member not found'
+                'message' => 'Member not found',
             ], 404);
         }
 
         return response()->json([
             'status' => true,
-            'data' => $member
+            'data' => $member,
         ]);
     }
 
@@ -126,7 +125,7 @@ class MemberDetailsController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Member created successfully',
-                'data' => $member->load(['spouse', 'coMakers'])
+                'data' => $member->load(['spouse', 'coMakers']),
             ]);
 
         } catch (\Exception $e) {
@@ -134,7 +133,7 @@ class MemberDetailsController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -149,10 +148,10 @@ class MemberDetailsController extends Controller
         try {
             $member = MemberDetail::find($id);
 
-            if (!$member) {
+            if (! $member) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Member not found'
+                    'message' => 'Member not found',
                 ], 404);
             }
 
@@ -181,7 +180,7 @@ class MemberDetailsController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Member updated successfully',
-                'data' => $member->load(['spouse', 'coMakers'])
+                'data' => $member->load(['spouse', 'coMakers']),
             ]);
 
         } catch (\Exception $e) {
@@ -189,7 +188,7 @@ class MemberDetailsController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -201,10 +200,10 @@ class MemberDetailsController extends Controller
     {
         $member = MemberDetail::find($id);
 
-        if (!$member) {
+        if (! $member) {
             return response()->json([
                 'status' => false,
-                'message' => 'Member not found'
+                'message' => 'Member not found',
             ], 404);
         }
 
@@ -216,7 +215,7 @@ class MemberDetailsController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Member deleted successfully'
+            'message' => 'Member deleted successfully',
         ]);
     }
 }

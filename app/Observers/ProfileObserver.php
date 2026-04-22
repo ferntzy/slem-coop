@@ -46,7 +46,7 @@ class ProfileObserver
      */
     public function deleted(Profile $profile): void
     {
-        // When a profile is deleted, we could theoretically strip roles from user, 
+        // When a profile is deleted, we could theoretically strip roles from user,
         // but typically user is deleted first anyway because of foreign keys.
     }
 

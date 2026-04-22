@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Profile;
 use App\Models\MemberDetail;
 use App\Models\MemberSpouse;
+use App\Models\Profile;
+use Illuminate\Database\Seeder;
 
 class MemberSpouseSeeder extends Seeder
 {
@@ -15,6 +15,7 @@ class MemberSpouseSeeder extends Seeder
 
         if (! $profile) {
             $this->command?->warn('Profile not found for regularmember@example.com');
+
             return;
         }
 
@@ -22,6 +23,7 @@ class MemberSpouseSeeder extends Seeder
 
         if (! $memberDetail) {
             $this->command?->warn("MemberDetail not found for profile_id {$profile->profile_id}");
+
             return;
         }
 

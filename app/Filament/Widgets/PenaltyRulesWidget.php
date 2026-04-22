@@ -3,30 +3,21 @@
 namespace App\Filament\Widgets;
 
 use App\Models\PenaltyRule;
-use Filament\Tables\Table;
-use Filament\Widgets\TableWidget as BaseWidget;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Actions\CreateAction;
-use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Schemas\Components\TextInput;
-use Filament\Schemas\Components\Textarea;
-use Filament\Schemas\Components\Select;
-use Filament\Schemas\Components\Toggle;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
-use Exception;
-use Filament\Actions\SelectAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select as ComponentsSelect;
 use Filament\Forms\Components\Textarea as ComponentsTextarea;
 use Filament\Forms\Components\TextInput as ComponentsTextInput;
 use Filament\Forms\Components\Toggle as ComponentsToggle;
-use Filament\Tables\Columns\TextInputColumn;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Filament\Widgets\TableWidget as BaseWidget;
 
 class PenaltyRulesWidget extends BaseWidget
 {
@@ -50,7 +41,7 @@ class PenaltyRulesWidget extends BaseWidget
             ComponentsSelect::make('frequency')
                 ->label('Penalty Frequency')
                 ->options([
-                    'daily'   => 'Daily (accrues every day)',
+                    'daily' => 'Daily (accrues every day)',
                     'monthly' => 'Monthly (accrues every 30 days)',
                 ])
                 ->required(),
@@ -59,19 +50,19 @@ class PenaltyRulesWidget extends BaseWidget
                 ->label('Value Type')
                 ->options([
                     'percentage' => 'Percentage (% of outstanding)',
-                    'fixed'      => 'Fixed Amount (₱)',
+                    'fixed' => 'Fixed Amount (₱)',
                 ])
                 ->required(),
 
             ComponentsTextInput::make('value')
-                ->label(fn(Get $get) => $get('value_type') === 'percentage'
+                ->label(fn (Get $get) => $get('value_type') === 'percentage'
                     ? 'Rate (%)'
                     : 'Fixed Amount (₱)')
                 ->numeric()
                 ->minValue(0)
                 ->step(0.01)
-                ->suffix(fn(Get $get) => $get('value_type') === 'percentage' ? '%' : null)
-                ->prefix(fn(Get $get) => $get('value_type') === 'fixed' ? '₱' : null)
+                ->suffix(fn (Get $get) => $get('value_type') === 'percentage' ? '%' : null)
+                ->prefix(fn (Get $get) => $get('value_type') === 'fixed' ? '₱' : null)
                 ->required(),
 
             ComponentsTextInput::make('grace_period_days')
@@ -102,8 +93,8 @@ class PenaltyRulesWidget extends BaseWidget
                         ->minValue(1)
                         ->placeholder('e.g. 30')
                         ->helperText('Rate increases after every N days overdue.')
-                        ->visible(fn(Get $get) => $get('is_escalating'))
-                        ->required(fn(Get $get) => $get('is_escalating')),
+                        ->visible(fn (Get $get) => $get('is_escalating'))
+                        ->required(fn (Get $get) => $get('is_escalating')),
 
                     ComponentsTextInput::make('escalation_increment')
                         ->label('Increment per Interval')
@@ -112,8 +103,8 @@ class PenaltyRulesWidget extends BaseWidget
                         ->step(0.01)
                         ->placeholder('e.g. 0.5')
                         ->helperText('How much the rate increases each interval (% or ₱).')
-                        ->visible(fn(Get $get) => $get('is_escalating'))
-                        ->required(fn(Get $get) => $get('is_escalating')),
+                        ->visible(fn (Get $get) => $get('is_escalating'))
+                        ->required(fn (Get $get) => $get('is_escalating')),
 
                     ComponentsTextInput::make('escalation_max_value')
                         ->label('Maximum Rate / Amount')
@@ -122,13 +113,13 @@ class PenaltyRulesWidget extends BaseWidget
                         ->step(0.01)
                         ->placeholder('Leave blank for no ceiling')
                         ->helperText('The escalated rate will never exceed this value.')
-                        ->visible(fn(Get $get) => $get('is_escalating')),
+                        ->visible(fn (Get $get) => $get('is_escalating')),
                 ]),
 
             ComponentsSelect::make('status')
                 ->label('Status')
                 ->options([
-                    'active'   => 'Active',
+                    'active' => 'Active',
                     'inactive' => 'Inactive',
                 ])
                 ->default('active')
@@ -150,7 +141,7 @@ class PenaltyRulesWidget extends BaseWidget
 
                 BadgeColumn::make('frequency')
                     ->colors([
-                        'info'    => 'daily',
+                        'info' => 'daily',
                         'warning' => 'monthly',
                     ]),
 
@@ -165,8 +156,8 @@ class PenaltyRulesWidget extends BaseWidget
                     ->label('Rate / Amount')
                     ->getStateUsing(function (PenaltyRule $record): string {
                         return $record->value_type === 'percentage'
-                            ? number_format($record->value, 2) . '%'
-                            : '₱' . number_format($record->value, 2);
+                            ? number_format($record->value, 2).'%'
+                            : '₱'.number_format($record->value, 2);
                     })
                     ->sortable(),
 
@@ -179,7 +170,7 @@ class PenaltyRulesWidget extends BaseWidget
                     ->label('Cap')
                     ->getStateUsing(function (PenaltyRule $record): string {
                         return $record->max_penalty_cap
-                            ? '₱' . number_format($record->max_penalty_cap, 2)
+                            ? '₱'.number_format($record->max_penalty_cap, 2)
                             : 'None';
                     }),
 
@@ -189,15 +180,15 @@ class PenaltyRulesWidget extends BaseWidget
                     ->sortable(),
 
                 IconColumn::make('status')
-                    ->icon(fn(string $state): string => match ($state) {
-                        'active'   => 'heroicon-o-check-circle',
+                    ->icon(fn (string $state): string => match ($state) {
+                        'active' => 'heroicon-o-check-circle',
                         'inactive' => 'heroicon-o-x-circle',
-                        default    => 'heroicon-o-question-mark-circle',
+                        default => 'heroicon-o-question-mark-circle',
                     })
-                    ->color(fn(string $state): string => match ($state) {
-                        'active'   => 'success',
+                    ->color(fn (string $state): string => match ($state) {
+                        'active' => 'success',
                         'inactive' => 'danger',
-                        default    => 'gray',
+                        default => 'gray',
                     }),
             ])
             ->filters([

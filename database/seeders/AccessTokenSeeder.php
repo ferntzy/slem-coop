@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\AccessToken;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 class AccessTokenSeeder extends Seeder

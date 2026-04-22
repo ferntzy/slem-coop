@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\SavingsAccounts\Pages;
 
 use App\Filament\Resources\SavingsAccounts\SavingsAccountResource;
-use Filament\Resources\Pages\ViewRecord;
 use Filament\Actions\EditAction;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewSavingsAccount extends ViewRecord
 {

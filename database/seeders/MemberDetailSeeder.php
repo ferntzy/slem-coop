@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\Role;
-use Illuminate\Database\Seeder;
 use App\Models\Branch;
+use App\Models\MemberDetail;
 use App\Models\MembershipType;
 use App\Models\Profile;
-use App\Models\MemberDetail;
+use App\Models\Role;
+use Illuminate\Database\Seeder;
 
 class MemberDetailSeeder extends Seeder
 {

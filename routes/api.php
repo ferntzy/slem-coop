@@ -5,12 +5,10 @@ use App\Http\Controllers\Api\AccountDashboard;
 use App\Http\Controllers\Api\AccountOfficerController;
 use App\Http\Controllers\Api\ContactPageController;
 use App\Http\Controllers\Api\LoanApplicationController as LoanOfficerApplicationController;
-use App\Http\Controllers\Api\LoanOfficerProfileController;
 use App\Http\Controllers\Api\Loans;
 use App\Http\Controllers\Api\Members;
 use App\Http\Controllers\HeroNewsEventController;
 use App\Http\Controllers\LoanApplication as ControllersLoanApplication;
-use App\Http\Controllers\Api\LoanOfficerNotifController;
 use App\Http\Controllers\MembershipApplicationController;
 use App\Http\Controllers\MobileAuth\Auth;
 use App\Http\Controllers\MobileMemberGeneral;
@@ -48,22 +46,20 @@ Route::post('/membership-application', [MembershipApplicationController::class, 
 // edit profile
 Route::post('/edit-profile', [ProfileController::class, 'editProfile']);
 
-
-//account officer apis
-//stat card data
+// account officer apis
+// stat card data
 Route::get('/active-members', [Members::class, 'getActiveMembers']);
 Route::get('/inactive-members', [Members::class,  'inactiveMembers']);
 
 
-//loan officer apis
-//stat card data
+// loan officer apis
+// stat card data
 Route::get('/approved-loans', [Loans::class, 'getApprovedLoans']);
 Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
 
 // loan applications
 Route::get('/loan-applications', [Loans::class, 'getLoanApplications']);
 Route::post('/get-loan-application-detail', [Loans::class, 'getLoanApplication']);
-
 
 Route::get('/loan-applications/{id}', [LoanOfficerApplicationController::class, 'show']);
 

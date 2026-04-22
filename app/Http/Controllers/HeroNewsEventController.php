@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\HeroNewsEvent;
 use Exception;
 
@@ -10,17 +9,17 @@ class HeroNewsEventController extends Controller
 {
     public function show()
     {
-        try{
-            if(HeroNewsEvent::getHeroNewsEvent()){
-            $n = HeroNewsEvent::all();
+        try {
+            if (HeroNewsEvent::getHeroNewsEvent()) {
+                $n = HeroNewsEvent::all();
 
-            return response()->json([
-                'data' => $n,
-            ], 200);
+                return response()->json([
+                    'data' => $n,
+                ], 200);
             }
-        }catch(Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
