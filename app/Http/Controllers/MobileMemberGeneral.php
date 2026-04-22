@@ -16,7 +16,7 @@ class MobileMemberGeneral extends Controller
             $pid = $request->pid;
             $totalLoanBalance = LoanAccount::where('profile_id', $pid)->sum('balance');
 
-            if (! $totalLoanBalance) {
+            if(!$totalLoanBalance){
                 throw new Exception('Unable to get total loan balance');
             }
 
