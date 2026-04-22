@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\CoopFee;
 use App\Models\CoopFeeType;
+use Illuminate\Database\Seeder;
 
 class CoopFeeSeeder extends Seeder
 {
@@ -16,6 +16,7 @@ class CoopFeeSeeder extends Seeder
 
         if (! $loanApplication || ! $restructure || ! $reloan) {
             $this->command?->warn('Coop fee types not found. Run CoopFeeTypeSeeder first.');
+
             return;
         }
 

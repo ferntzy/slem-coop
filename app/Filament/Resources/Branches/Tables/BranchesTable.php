@@ -16,28 +16,28 @@ class BranchesTable
         return $table
             ->columns([
                 TextColumn::make('branch_id')
-                ->label('ID')
-                ->sortable(),
+                    ->label('ID')
+                    ->sortable(),
 
-            TextColumn::make('name')
-                ->searchable()
-                ->sortable(),
+                TextColumn::make('name')
+                    ->searchable()
+                    ->sortable(),
 
-            TextColumn::make('code')
-                ->label('Code')
-                ->searchable()
-                ->sortable(),
+                TextColumn::make('code')
+                    ->label('Code')
+                    ->searchable()
+                    ->sortable(),
 
-            TextColumn::make('address')
-                ->limit(40),
+                TextColumn::make('address')
+                    ->limit(40),
 
-            TextColumn::make('contact_no')
-                ->label('Contact'),
+                TextColumn::make('contact_no')
+                    ->label('Contact'),
 
-            IconColumn::make('is_active')
-                ->label('Active')
-                ->boolean()
-                ->sortable(),
+                IconColumn::make('is_active')
+                    ->label('Active')
+                    ->boolean()
+                    ->sortable(),
             ])->defaultSort('branch_id', 'desc')
             ->filters([
                 //

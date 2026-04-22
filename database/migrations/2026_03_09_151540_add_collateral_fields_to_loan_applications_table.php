@@ -12,10 +12,10 @@ return new class extends Migration
     public function up()
     {
         Schema::table('loan_applications', function (Blueprint $table) {
-        if (!Schema::hasColumn('loan_applications', 'collateral_type')) {
-            $table->string('collateral_type')->nullable()->after('collateral_status');
-        }
-    });
+            if (! Schema::hasColumn('loan_applications', 'collateral_type')) {
+                $table->string('collateral_type')->nullable()->after('collateral_status');
+            }
+        });
     }
 
     public function down()

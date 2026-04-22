@@ -20,7 +20,9 @@ class ShareCapitalTransactionObserver
     private function recalculate(ShareCapitalTransaction $tx): void
     {
         $profile = $tx->profile()->with('memberDetail')->first();
-        if (! $profile || ! $profile->memberDetail) return;
+        if (! $profile || ! $profile->memberDetail) {
+            return;
+        }
 
         $balance = ShareCapitalTransaction::query()
             ->where('profile_id', $tx->profile_id)

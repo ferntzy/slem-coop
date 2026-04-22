@@ -29,7 +29,7 @@ class AuthController extends Controller
 
             $user = User::where('profile_id', $pid)->first();
 
-            if (!$user || !Hash::check($password, $user->password)) {
+            if (! $user || ! Hash::check($password, $user->password)) {
                 return response()->json([
                     'message' => 'Invalid credentials!',
                 ], 401);

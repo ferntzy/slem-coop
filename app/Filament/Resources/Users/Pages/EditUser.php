@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users\Pages;
 
 use App\Filament\Resources\Users\UserResource;
+use App\Services\NotificationService;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
@@ -28,7 +29,7 @@ class EditUser extends EditRecord
             $oldStatus = $originalData['is_active'] ? 'Active' : 'Inactive';
             $newStatus = $record->is_active ? 'Active' : 'Inactive';
             $changedFields[] = "Status: {$oldStatus} → {$newStatus}";
-            app(\App\Services\NotificationService::class)->notifyUserStatusChanged(
+            app(NotificationService::class)->notifyUserStatusChanged(
                 $record,
                 $oldStatus,
                 $newStatus
@@ -40,7 +41,7 @@ class EditUser extends EditRecord
         }
 
         if (! empty($changedFields)) {
-            app(\App\Services\NotificationService::class)->notifyAdminOfAccountChange(
+            app(NotificationService::class)->notifyAdminOfAccountChange(
                 'User Account Updated',
                 "User {$record->username} was updated: ".implode(', ', $changedFields)
             );

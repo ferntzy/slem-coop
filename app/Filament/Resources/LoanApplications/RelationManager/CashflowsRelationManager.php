@@ -2,18 +2,18 @@
 
 namespace App\Filament\Resources\LoanApplications\RelationManagers;
 
-use Filament\Notifications\Notification;
-use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\Placeholder;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Grouping\Group;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Grouping\Group;
+use Filament\Tables\Table;
 
 class CashflowsRelationManager extends RelationManager
 {
@@ -103,7 +103,7 @@ class CashflowsRelationManager extends RelationManager
                                     (float) ($get('remittances') ?? 0) +
                                     (float) ($get('other_income') ?? 0);
 
-                                return '₱' . number_format($total, 2);
+                                return '₱'.number_format($total, 2);
                             }),
 
                         Placeholder::make('total_expenses')
@@ -115,7 +115,7 @@ class CashflowsRelationManager extends RelationManager
                                     (float) ($get('existing_loan_payments') ?? 0) +
                                     (float) ($get('other_expenses') ?? 0);
 
-                                return '₱' . number_format($total, 2);
+                                return '₱'.number_format($total, 2);
                             }),
 
                         Placeholder::make('net_cash_flow')
@@ -133,7 +133,7 @@ class CashflowsRelationManager extends RelationManager
                                     (float) ($get('existing_loan_payments') ?? 0) +
                                     (float) ($get('other_expenses') ?? 0);
 
-                                return '₱' . number_format($income - $expenses, 2);
+                                return '₱'.number_format($income - $expenses, 2);
                             }),
 
                         Placeholder::make('allowed_payment')
@@ -153,7 +153,7 @@ class CashflowsRelationManager extends RelationManager
 
                                 $net = $income - $expenses;
 
-                                return '₱' . number_format($net * 0.40, 2);
+                                return '₱'.number_format($net * 0.40, 2);
                             }),
                     ]),
                 ]),

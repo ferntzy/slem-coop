@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\MembershipApplications\Pages;
 
 use App\Filament\Resources\MembershipApplications\MembershipApplicationResource;
+use App\Filament\Widgets\MembershipApplicationsStats;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Contracts\Support\Htmlable;
 
@@ -23,7 +24,7 @@ class ListMembershipApplications extends ListRecords
     protected function getHeaderWidgets(): array
     {
         return [
-            \App\Filament\Widgets\MembershipApplicationsStats::class,
+            MembershipApplicationsStats::class,
         ];
     }
 }

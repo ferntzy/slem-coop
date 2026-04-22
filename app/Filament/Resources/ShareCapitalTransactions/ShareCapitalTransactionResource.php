@@ -52,7 +52,9 @@ class ShareCapitalTransactionResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        if ($user->isAdminOrSuperAdmin() || $user->isHeadOffice()) return $query;
+        if ($user->isAdminOrSuperAdmin() || $user->isHeadOffice()) {
+            return $query;
+        }
 
         if ($user->isMember()) {
             return $query->where('profile_id', $user->profile_id);

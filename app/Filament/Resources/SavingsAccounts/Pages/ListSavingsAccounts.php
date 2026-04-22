@@ -17,7 +17,7 @@ class ListSavingsAccounts extends ListRecords
 {
     protected static string $resource = SavingsAccountResource::class;
 
-    public function getTitle(): string | Htmlable
+    public function getTitle(): string|Htmlable
     {
         $user = Filament::auth()->user();
 

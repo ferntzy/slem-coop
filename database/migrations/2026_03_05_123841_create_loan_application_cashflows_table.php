@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('loan_application_cashflows', function (Blueprint $table) {
+        Schema::create('loan_application_cashflows', function (Blueprint $table) {
             $table->bigIncrements('loan_application_cashflow_id');
 
             $table->unsignedBigInteger('loan_application_id')->index();

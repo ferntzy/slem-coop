@@ -2,11 +2,11 @@
 
 namespace App\Filament\Resources\ContactMessages\Tables;
 
-use Filament\Tables;
-use Filament\Tables\Table;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Tables;
 use Filament\Tables\Enums\RecordActionsPosition;
+use Filament\Tables\Table;
 
 class ContactMessagesTable
 {
@@ -47,8 +47,8 @@ class ContactMessagesTable
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'unread'  => 'Unread',
-                        'read'    => 'Read',
+                        'unread' => 'Unread',
+                        'read' => 'Read',
                         'replied' => 'Replied',
                     ]),
             ])
@@ -59,7 +59,7 @@ class ContactMessagesTable
                         ->label('Mark as Read')
                         ->icon('heroicon-o-check')
                         ->action(fn ($record) => $record->update([
-                            'status'  => 'read',
+                            'status' => 'read',
                             'read_at' => now(),
                         ]))
                         ->visible(fn ($record) => $record->status === 'unread'),
@@ -70,7 +70,7 @@ class ContactMessagesTable
                         ->color('danger')
                         ->requiresConfirmation()
                         ->action(fn ($record) => $record->delete()),
-                ])
+                ]),
             ], position: RecordActionsPosition::BeforeColumns);
     }
 }

@@ -2,15 +2,17 @@
 
 namespace App\Filament\Widgets;
 
-use Filament\Widgets\ChartWidget;
 use App\Models\LoanApplication;
 use App\Models\MemberDetail;
+use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
 
 class MemberLoanStatusChart extends ChartWidget
 {
     protected ?string $heading = 'My Loan Status';
+
     protected static ?int $sort = 3;
+
     protected ?string $maxHeight = '320px';
 
     public static function canView(): bool
@@ -18,24 +20,24 @@ class MemberLoanStatusChart extends ChartWidget
         return Auth::user()->isMember();
     }
 
-    public function getColumnSpan(): int | string | array
+    public function getColumnSpan(): int|string|array
     {
         return [
             'default' => 1,
-            'sm'      => 2,
-            'md'      => 2,
-            'lg'      => 4,
+            'sm' => 2,
+            'md' => 2,
+            'lg' => 4,
         ];
     }
 
     protected function getData(): array
     {
-        $user      = Auth::user();
+        $user = Auth::user();
         $profileId = $user->profile_id;
-        $member    = MemberDetail::where('profile_id', $profileId)->first();
+        $member = MemberDetail::where('profile_id', $profileId)->first();
 
         $statuses = ['Approved', 'Pending', 'Under Review', 'Rejected', 'Cancelled'];
-        $counts   = [];
+        $counts = [];
 
         foreach ($statuses as $status) {
             $counts[] = $member
@@ -48,7 +50,7 @@ class MemberLoanStatusChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'data'            => $counts,
+                    'data' => $counts,
                     'backgroundColor' => [
                         'rgba(16, 185, 129, 0.8)',  // Approved  - green
                         'rgba(245, 158, 11, 0.8)',  // Pending   - amber

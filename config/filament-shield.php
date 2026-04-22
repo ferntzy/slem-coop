@@ -1,6 +1,15 @@
 <?php
 
 declare(strict_types=1);
+use App\Filament\Pages\CoopSettings;
+use App\Filament\Pages\ManageAboutPage;
+use App\Filament\Pages\ManageContactPage;
+use App\Filament\Pages\NewsEvents;
+use App\Filament\Pages\SystemSettings;
+use BezhanSalleh\FilamentShield\Resources\Roles\RoleResource;
+use Filament\Pages\Dashboard;
+use Filament\Widgets\AccountWidget;
+use Filament\Widgets\FilamentInfoWidget;
 
 return [
 
@@ -165,7 +174,7 @@ return [
     'resources' => [
         'subject' => 'model',
         'manage' => [
-            \BezhanSalleh\FilamentShield\Resources\Roles\RoleResource::class => [
+            RoleResource::class => [
                 'viewAny',
                 'view',
                 'create',
@@ -193,14 +202,14 @@ return [
         'subject' => 'class',
         'prefix' => 'view',
         'exclude' => [
-            \Filament\Pages\Dashboard::class,
+            Dashboard::class,
         ],
         'include' => [
-            \App\Filament\Pages\CoopSettings::class,
-            \App\Filament\Pages\ManageAboutPage::class,
-            \App\Filament\Pages\ManageContactPage::class,
-            \App\Filament\Pages\NewsEvents::class,
-            \App\Filament\Pages\SystemSettings::class,
+            CoopSettings::class,
+            ManageAboutPage::class,
+            ManageContactPage::class,
+            NewsEvents::class,
+            SystemSettings::class,
         ],
     ],
 
@@ -219,8 +228,8 @@ return [
         'subject' => 'class',
         'prefix' => 'view',
         'exclude' => [
-            \Filament\Widgets\AccountWidget::class,
-            \Filament\Widgets\FilamentInfoWidget::class,
+            AccountWidget::class,
+            FilamentInfoWidget::class,
         ],
     ],
 
