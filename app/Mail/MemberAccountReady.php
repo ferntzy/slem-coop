@@ -11,7 +11,6 @@ class MemberAccountReady extends Mailable
 {
     public function __construct(
         public User $user,
-        public string $username,
         public string $tempPassword
     ) {}
 
@@ -27,10 +26,9 @@ class MemberAccountReady extends Mailable
         return new Content(
             view: 'emails.member-account-ready',
             with: [
-                'user' => $this->user,
-                'username' => $this->username,
+                'fullName'     => $this->user->profile?->full_name ?? 'Member',
+                'email'        => $this->user->profile?->email ?? '',
                 'tempPassword' => $this->tempPassword,
-                'fullName' => $this->user->profile?->full_name ?? 'Member',
             ],
         );
     }
