@@ -22,6 +22,8 @@ use App\Http\Controllers\OrientationSettingsController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\MemberDetailsController;
+use App\Http\Controllers\Api\AccountMembersController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -33,6 +35,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/mobile-verify-pin', [Auth::class, 'verifyPin']);
 });
 
+Route::get('/active-all-loans', [MobileMemberGeneral::class, 'getNumberOfActiveLoans']);
+
 Route::get('/membership-types', [MembershipApplicationController::class, 'membershipTypes']);
 Route::get('/branches', [MembershipApplicationController::class, 'branches']);
 Route::post('/profiles', [ProfileController::class, 'store']);
@@ -43,25 +47,22 @@ Route::post('/membership-application', [MembershipApplicationController::class, 
 Route::post('/edit-profile', [ProfileController::class, 'editProfile']);
 
 
+//account officer apis
+//stat card data
+Route::get('/active-members', [Members::class, 'getActiveMembers']);
+Route::get('/inactive-members', [Members::class,  'inactiveMembers']);
+
+
 //loan officer apis
+//stat card data
 Route::get('/approved-loans', [Loans::class, 'getApprovedLoans']);
 Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
 
-Route::get('/active-members', [Members::class, 'getActiveMembers']);
-
-// loan mobile routes
-Route::put('/loan-officer/profile/{profileId}', [LoanOfficerProfileController::class, 'update']);
-Route::get('/loan-officer/profile/{profileId}', [LoanOfficerProfileController::class, 'show']);
-
-// loan officer notifications
-Route::prefix('loan-officer/notifications')->group(function () {
-    Route::get('', [LoanOfficerNotifController::class, 'index']);
-    Route::put('{notificationId}', [LoanOfficerNotifController::class, 'update']);
-    Route::delete('{notificationId}', [LoanOfficerNotifController::class, 'destroy']);
-});
-
 // loan applications
-Route::get('/loan-applications', [LoanOfficerApplicationController::class, 'index']);
+Route::get('/loan-applications', [Loans::class, 'getLoanApplications']);
+Route::post('/get-loan-application-detail', [Loans::class, 'getLoanApplication']);
+
+
 Route::get('/loan-applications/{id}', [LoanOfficerApplicationController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -88,6 +89,12 @@ Route::get('/account-officer/collections', [AccountDashboard::class, 'collection
 Route::get('/account-officer/loans', [AccountDashboard::class, 'activeLoanAccounts']);
 Route::get('/account-officer/pending-loans', [AccountDashboard::class, 'pendingLoanApplications']);
 Route::get('/account-officer/delinquent', [AccountDashboard::class, 'delinquentMembers']);
+// GET all active members
+Route::get('/members', [AccountMembersController::class, 'member']);
+// GET single member by ID
+Route::get('/members/{id}', [AccountMembersController::class, 'show']);
+
+    
 
 Route::get('/about', [AboutPageController::class, 'show']);
 
@@ -100,11 +107,6 @@ Route::post('/orientation/submit', [OrientationController::class, 'submit']);
 
 
 
-
-
-
-
-
 // member apis
 // member dashboard datas
 Route::post('/member/dashboard-data', [MobileMemberGeneral::class, 'getDashboardData']);
@@ -114,6 +116,14 @@ Route::post('/member/active-loans', [MobileMemberGeneral::class, 'getActiveLoans
 
 // member loan history
 Route::post('/member/loan-history', [MobileMemberGeneral::class, 'getLoanHistoryData']);
+
+Route::prefix('member-details')->group(function () {
+    Route::get('/', [MemberDetailsController::class, 'index']);
+    Route::get('/{id}', [MemberDetailsController::class, 'show']);
+    Route::post('/', [MemberDetailsController::class, 'store']);
+    Route::put('/{id}', [MemberDetailsController::class, 'update']);
+    Route::delete('/{id}', [MemberDetailsController::class, 'destroy']);
+});
 
 // member loan application
 Route::post('/send-application-form', [ControllersLoanApplication::class, 'applyLoan']);

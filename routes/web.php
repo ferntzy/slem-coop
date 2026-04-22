@@ -36,12 +36,13 @@ Route::get('/loan-applications/{loanApplication}/print', [LoanApplicationPrintCo
 Route::get('/loan-applications/{loanApplication}/pdf', [LoanApplicationPrintController::class, 'download'])
     ->name('loan-applications.pdf');
 
-
-Route::get('/{path?}', function () {
-    return view('welcome');
-})->where('path', '.*')->name('spa');
+Route::view('/500', 'welcome');
 
 Route::redirect('/coop/login', '/login');
+
+Route::get('/test-500', function () {
+    throw new \Exception('Test error');
+});
 
 Route::prefix('orientation')->group(function () {
 
@@ -51,3 +52,6 @@ Route::prefix('orientation')->group(function () {
     Route::post('/submit',          [OrientationController::class, 'submit']);
     Route::get('/certificate',      [OrientationController::class, 'downloadCertificate']);
 });
+Route::get('/{path?}', function () {
+    return view('welcome');
+})->where('path', '.*')->name('spa');

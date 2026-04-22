@@ -11,14 +11,10 @@ class Loans extends Controller
 {
     public function getApprovedLoans(){
         try{
-            $aLoans = LoanApplication::where('status', 'Approved')->count();
-
-            if(!$aLoans){
-                throw new Exception('There are no approved loans');
-            }
+            $noal = LoanApplication::where('status', 'Approved')->count();
 
             return response()->json([
-                'approvedLoans' => $aLoans
+                'noal' => $noal
             ]);
 
         }catch(Exception $e){
@@ -44,6 +40,38 @@ class Loans extends Controller
         }catch(Exception $e){
             return response()->json([
                 'message' => 'Unable to get Pending loans',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function getLoanApplications(){
+        try {
+            $lola = LoanApplication::with('member.profile.user')
+                ->where('status', 'Pending')
+                ->get();
+
+            return response()->json([
+                'lola' => $lola
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Unable to get loan applications',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function getLoanApplication(Request $request){
+        try{
+            $detail = LoanApplication::with('member.profile.user')->where('loan_application_id', $request->id)->first();
+
+            return response()->json([
+                'detail' => $detail
+            ]);
+        }catch(Exception $e){
+            return response()->json([
+                'message' => 'Unable to get loan application detail',
                 'error' => $e->getMessage()
             ]);
         }

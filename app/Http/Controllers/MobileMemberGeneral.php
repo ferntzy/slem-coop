@@ -34,7 +34,7 @@ class MobileMemberGeneral extends Controller
     }
 
     public function getActiveLoansData(Request $request)
-    {
+    { 
         try {
             $pid = $request->pid;
 
@@ -42,10 +42,6 @@ class MobileMemberGeneral extends Controller
                 ->where('status', 'Active')
                 ->latest()
                 ->get();
-
-            if ($activeLoans->isEmpty()) {
-                throw new Exception('No active loans');
-            }
 
             $loanIds = $activeLoans->pluck('loan_account_id');
 
@@ -101,4 +97,22 @@ class MobileMemberGeneral extends Controller
             ]);
         }
     }
+
+    public function getNumberOfActiveLoans(){
+        try{
+            $noal = LoanAccount::where('status', 'Active')
+                ->count();
+
+            return response()->json([
+                'noal' => $noal
+            ]);
+
+        }catch(Exception $e){
+            return response()->json([
+                'message' => 'Unable to get active loans',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
 }
