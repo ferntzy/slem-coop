@@ -6,8 +6,8 @@ use App\Models\CollectionAndPosting;
 use App\Models\LoanAccount;
 use App\Models\LoanApplication;
 use App\Models\MemberDetail;
-use App\Models\SavingsAccount;
 use App\Models\User;
+use App\Services\MemberSavingsBalanceService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
@@ -46,6 +46,7 @@ class StatsOverviewWidget extends BaseWidget
     {
         $profileId = $user->profile_id;
         $member = MemberDetail::where('profile_id', $profileId)->first();
+        $memberSavingsBalance = app(MemberSavingsBalanceService::class);
 
         // My Total Loan Balance — sum of all active loan balances
         $totalLoanBalance = $member
@@ -56,10 +57,7 @@ class StatsOverviewWidget extends BaseWidget
 
         // My Savings Balance — sum of all savings account balances
         $savingsBalance = $member
-            ? SavingsAccount::query()
-                ->where('profile_id', $profileId)
-                ->get()
-                ->sum(fn (SavingsAccount $account): float => (float) $account->balance)
+            ? $memberSavingsBalance->getRegularSavingsBalance($profileId)
             : 0;
 
         // My Total Payments — sum of all posted payments

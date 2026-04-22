@@ -6,6 +6,7 @@ use App\Filament\Resources\SavingsAccounts\SavingsAccountResource;
 use App\Models\MemberDetail;
 use App\Models\SavingsAccount;
 use App\Models\SavingsAccountTransaction;
+use App\Services\MemberSavingsBalanceService;
 use Filament\Actions\CreateAction;
 use Filament\Facades\Filament;
 use Filament\Resources\Pages\ListRecords;
@@ -62,6 +63,7 @@ class ListSavingsAccounts extends ListRecords
             ->get();
 
         $accountIds = $accounts->pluck('id');
+        $memberSavingsBalance = app(MemberSavingsBalanceService::class);
 
         /** @var Collection<int, SavingsAccountTransaction> $recentTransactions */
         $recentTransactions = $accountIds->isEmpty()
@@ -74,7 +76,7 @@ class ListSavingsAccounts extends ListRecords
                 ->limit(10)
                 ->get();
 
-        $totalBalance = $accounts->sum(fn (SavingsAccount $account): float => (float) $account->balance);
+        $totalBalance = $memberSavingsBalance->getRegularSavingsBalance($user->profile_id);
 
         return [
             ...parent::getViewData(),
