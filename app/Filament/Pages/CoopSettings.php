@@ -147,6 +147,14 @@ class CoopSettings extends Page
 
     public bool $member_status_auto_mark_delinquent = true;
 
+    public int $savings_dormancy_months_threshold = 24;
+
+    public bool $savings_auto_apply_dormancy_fee = true;
+
+    public float $savings_dormancy_fee_amount = 30.00;
+
+    public bool $savings_apply_interest_on_dormant = true;
+
     public int $payment_allocation_rule_count = 0;
 
     public bool $payment_apply_to_oldest_loan_first = true;
@@ -162,6 +170,10 @@ class CoopSettings extends Page
     public string $payment_share_capital_deduction_priority = 'after_loan';
 
     public string $payment_payment_receipt_prefix = 'OR';
+
+    public float $savings_regular_interest_rate_percent = 1.00;
+
+    public float $savings_time_deposit_interest_rate_percent = 2.00;
 
     // ORIENTATION
     public string $orientation_zoom_link = '';
@@ -230,6 +242,11 @@ class CoopSettings extends Page
         $this->member_status_delinquent_months_threshold = (int) CoopSetting::get('member_status.delinquent_months_threshold', 3);
         $this->member_status_auto_mark_delinquent = (bool) CoopSetting::get('member_status.auto_mark_delinquent', true);
 
+        $this->savings_dormancy_months_threshold = (int) CoopSetting::get('savings.dormancy_months_threshold', 24);
+        $this->savings_auto_apply_dormancy_fee = (bool) CoopSetting::get('savings.auto_apply_dormancy_fee', true);
+        $this->savings_dormancy_fee_amount = (float) CoopSetting::get('savings.dormancy_fee_amount', 30.00);
+        $this->savings_apply_interest_on_dormant = (bool) CoopSetting::get('savings.apply_interest_on_dormant', true);
+
         $this->payment_allocation_rule_count = PaymentAllocationSetting::getSingleton()->allocationRules()->count();
         $this->payment_apply_to_oldest_loan_first = (bool) CoopSetting::get('payment_allocation.apply_to_oldest_loan_first', true);
         $this->payment_allow_partial_payment = (bool) CoopSetting::get('payment_allocation.allow_partial_payment', true);
@@ -238,6 +255,9 @@ class CoopSettings extends Page
         $this->payment_auto_debit_share_capital = (bool) CoopSetting::get('payment_allocation.auto_debit_share_capital', true);
         $this->payment_share_capital_deduction_priority = CoopSetting::get('payment_allocation.share_capital_deduction_priority', 'after_loan') ?? 'after_loan';
         $this->payment_payment_receipt_prefix = CoopSetting::get('payment_allocation.payment_receipt_prefix', 'OR') ?? 'OR';
+
+        $this->savings_regular_interest_rate_percent = (float) CoopSetting::get('savings.regular_interest_rate_percent', 1.00);
+        $this->savings_time_deposit_interest_rate_percent = (float) CoopSetting::get('savings.time_deposit_interest_rate_percent', 2.00);
 
         // ORIENTATION
         $this->orientation_zoom_link = CoopSetting::get('orientation.zoom_link', '') ?? '';
@@ -303,7 +323,31 @@ class CoopSettings extends Page
                     Tab::make('Payment Allocation')
                         ->icon('heroicon-o-arrow-trending-up')
                         ->schema([
-                            Livewire::make(PaymentPriorityWidget::class)->columnSpanFull(),
+                            Livewire::make(\App\Filament\Widgets\PaymentPriorityWidget::class)->columnSpanFull(),
+                        ]),
+                       // Tab::make('Member Status')
+
+                    Tab::make('Savings')
+                        ->icon('heroicon-o-building-library')
+                        ->schema([
+                            Section::make('Savings Interest Settings')
+                                ->description('Set separate annual interest rates for regular savings and time deposits.')
+                                ->schema([
+                                    TextInput::make('savings_regular_interest_rate_percent')
+                                        ->label('Regular Savings Interest Rate')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->suffix('%')
+                                        ->required(),
+
+                                    TextInput::make('savings_time_deposit_interest_rate_percent')
+                                        ->label('Time Deposit Interest Rate')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->suffix('%')
+                                        ->required(),
+                                ])
+                                ->columns(2),
                         ]),
 
                     Tab::make('Loan Approval')
@@ -341,6 +385,36 @@ class CoopSettings extends Page
                                         ->label('Automatically Mark Members as Delinquent')
                                         ->helperText('When enabled, members will be automatically marked as delinquent after missing payments for the specified number of months.')
                                         ->default(true),
+                                ])
+                                ->columns(2),
+
+                            Section::make('Dormant Savings Settings')
+                                ->description('Set inactivity threshold, monthly dormancy fee, and interest behavior for dormant savings accounts.')
+                                ->schema([
+                                    TextInput::make('savings_dormancy_months_threshold')
+                                        ->label('Dormancy Inactivity Threshold')
+                                        ->numeric()
+                                        ->minValue(1)
+                                        ->maxValue(120)
+                                        ->suffix('months')
+                                        ->helperText('Accounts become dormant after this many months without customer-initiated deposits, withdrawals, or transfers.')
+                                        ->required(),
+
+                                    TextInput::make('savings_dormancy_fee_amount')
+                                        ->label('Monthly Dormancy Fee')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->prefix('₱')
+                                        ->helperText('Applied monthly while account remains dormant. Charging stops when balance reaches maintaining balance.')
+                                        ->required(),
+
+                                    Toggle::make('savings_auto_apply_dormancy_fee')
+                                        ->label('Automatically Apply Dormancy Fee')
+                                        ->helperText('When enabled, dormancy fee is charged monthly for dormant savings accounts.'),
+
+                                    Toggle::make('savings_apply_interest_on_dormant')
+                                        ->label('Apply Interest While Dormant')
+                                        ->helperText('When enabled, dormant savings accounts still receive monthly interest credits.'),
                                 ])
                                 ->columns(2),
                         ]),
@@ -470,6 +544,11 @@ class CoopSettings extends Page
         CoopSetting::set('member_status.delinquent_months_threshold', $this->member_status_delinquent_months_threshold);
         CoopSetting::set('member_status.auto_mark_delinquent', $this->member_status_auto_mark_delinquent ? 'true' : 'false');
 
+        CoopSetting::set('savings.dormancy_months_threshold', $this->savings_dormancy_months_threshold);
+        CoopSetting::set('savings.auto_apply_dormancy_fee', $this->savings_auto_apply_dormancy_fee, 'boolean');
+        CoopSetting::set('savings.dormancy_fee_amount', $this->savings_dormancy_fee_amount);
+        CoopSetting::set('savings.apply_interest_on_dormant', $this->savings_apply_interest_on_dormant, 'boolean');
+
         CoopSetting::set('payment_allocation.apply_to_oldest_loan_first', $this->payment_apply_to_oldest_loan_first ? 'true' : 'false');
         CoopSetting::set('payment_allocation.allow_partial_payment', $this->payment_allow_partial_payment ? 'true' : 'false');
         CoopSetting::set('payment_allocation.minimum_partial_payment_percent', $this->payment_minimum_partial_payment_percent);
@@ -477,6 +556,9 @@ class CoopSettings extends Page
         CoopSetting::set('payment_allocation.auto_debit_share_capital', $this->payment_auto_debit_share_capital ? 'true' : 'false');
         CoopSetting::set('payment_allocation.share_capital_deduction_priority', $this->payment_share_capital_deduction_priority);
         CoopSetting::set('payment_allocation.payment_receipt_prefix', $this->payment_payment_receipt_prefix);
+
+        CoopSetting::set('savings.regular_interest_rate_percent', $this->savings_regular_interest_rate_percent);
+        CoopSetting::set('savings.time_deposit_interest_rate_percent', $this->savings_time_deposit_interest_rate_percent);
 
         // ORIENTATION
         CoopSetting::set('orientation.zoom_link', $this->orientation_zoom_link, 'string');

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\MemberDetail;
 use Exception;
 
+
 class Members extends Controller
 {
     public function getActiveMembers()
@@ -24,4 +25,16 @@ class Members extends Controller
             ]);
         }
     }
+
+
+       public function inactiveMembers()
+    {
+        $inactive = MemberDetail::where('status', 'Inactive')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $inactive
+        ]);
+    }
+
 }

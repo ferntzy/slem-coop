@@ -6,38 +6,52 @@ use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    public function run(): void
-    {
-        $this->call([
-            RolesAndPermissionsSeeder::class,
-            BranchSeeder::class,
-            MembershipTypeSeeder::class,
-            LoanTypeSeeder::class,
-            SavingsTypeSeeder::class,
-            CoopFeeTypeSeeder::class,
+public function run(): void
+{
+    $this->call([
+        AccessTokenSeeder::class,
+        BranchSeeder::class,
 
-            SystemSettingsSeeder::class,
-            CoopIdSeeder::class,
+        CoopFeeSeeder::class,
+        CoopFeeTypeSeeder::class,
+        CoopIdSeeder::class,
 
-            UserSeeder::class,
-            MemberDetailSeeder::class,
-            MemberSpouseSeeder::class,
-            MemberCoMakerSeeder::class,
+        CollectionAndPostingLoanAccountBackfillSeeder::class,
+        CollectionAndPostingPenaltyTestSeeder::class,
+        CollectionAndPostingRestructureEligibleSeeder::class,
 
-            CoopFeeSeeder::class,
+        LoanApplicationPenaltyTestSeeder::class,
+        LoanApplicationRestructureEligibleSeeder::class,
+        LoanPaymentPenaltyTestSeeder::class,
 
-            PaymentAllocationSettingSeeder::class,
-            PaymentAllocationRuleSeeder::class,
-            PaymentAllocationConfigSeeder::class,
-            PenaltyRuleSeeder::class,
+        LoanTypeSeeder::class,
 
-            LoanApplicationPenaltyTestSeeder::class,
-            CollectionAndPostingPenaltyTestSeeder::class,
+        MemberCoMakerSeeder::class,
+        MemberDetailSeeder::class,
+        MemberSpouseSeeder::class,
 
-            LoanApplicationRestructureEligibleSeeder::class,
-            CollectionAndPostingRestructureEligibleSeeder::class,
+        MembershipTypeSeeder::class,
 
-            NewsEventsSeeder::class,
-        ]);
+        NewsEventsSeeder::class,
+        OrientationSettingsSeeder::class,
+
+        PaymentAllocationConfigSeeder::class,
+        PaymentAllocationRuleSeeder::class,
+        PaymentAllocationSettingSeeder::class,
+
+        PenaltyRuleSeeder::class,
+
+        RolesAndPermissionsSeeder::class,
+
+        SavingsTypeSeeder::class,
+        SystemSettingsSeeder::class,
+        TimeDepositSeeder::class,
+
+        UserQrCodeSeeder::class,
+        UserSeeder::class,
+
+        DormantSavingsDemoSeeder::class,
+    ]);
+
     }
 }

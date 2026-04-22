@@ -9,8 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Spatie\Permission\Exceptions\RoleDoesNotExist;
-
+use App\Mail\MemberAccountReady;
 class NotificationService
 {
     public function notifyUser(
@@ -132,24 +131,19 @@ class NotificationService
     }
 
     protected function sendPasswordEmail(User $user, string $password): void
-    {
-        $profile = $user->profile;
+{
+    $profile = $user->profile;
 
-        if (! $profile || empty($profile->email)) {
-            return;
-        }
-
-        $title = 'Your member account is ready';
-        $message = sprintf(
-            "Hello %s,\n\nYour account has been created.\nUsername: %s\nTemporary password: %s\n\nPlease login and change your password immediately.",
-            $profile->full_name,
-            $user->username,
-            $password,
-        );
-
-        $this->sendEmailNotification($profile->profile_id, $title, $message);
+    if (! $profile || empty($profile->email)) {
+        return;
     }
 
+    try {
+        Mail::to($profile->email)->send(new MemberAccountReady($user, $user->username, $password));
+    } catch (\Throwable $exception) {
+        Log::warning("Failed to send password email to {$profile->email}: " . $exception->getMessage());
+    }
+}
     public function sendPaymentConfirmation(int|string $profileId, float $amount, ?string $loanNumber = null): ?Notification
     {
         $title = 'Payment Confirmation';

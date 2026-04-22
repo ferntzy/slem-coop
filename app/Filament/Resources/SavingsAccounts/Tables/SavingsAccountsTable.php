@@ -133,19 +133,35 @@ class SavingsAccountsTable
                                 'approved_at' => now(),
                             ]);
 
-                            if ($record->type === 'deposit') {
-                                $type = 'deposit';
-                            } elseif ($record->type === 'withdrawal') {
-                                $type = 'withdrawal';
+                            $transactionDirection = strtolower((string) $record->type);
+
+                            if (! in_array($transactionDirection, ['deposit', 'withdrawal'], true)) {
+                                Notification::make()
+                                    ->title('Invalid savings transaction type.')
+                                    ->danger()
+                                    ->send();
+
+                                return;
                             }
 
-                            SavingsAccountTransaction::create([
-                                'savings_account_id' => $record->id,
-                                $type => $record->amount,
+                            $transactionPayload = [
+                                'profile_id' => $record->profile_id,
+                                'savings_type_id' => $record->savings_type_id,
+                                'type' => ucfirst($transactionDirection),
+                                'direction' => $transactionDirection,
+                                'amount' => (float) $record->amount,
                                 'transaction_date' => now(),
-                                'notes' => $data['notes'],
+                                'notes' => $data['notes'] ?? null,
                                 'posted_by_user_id' => auth()->id(),
-                            ]);
+                            ];
+
+                            if ($transactionDirection === 'deposit') {
+                                $transactionPayload['deposit'] = (float) $record->amount;
+                            } else {
+                                $transactionPayload['withdrawal'] = (float) $record->amount;
+                            }
+
+                            SavingsAccountTransaction::create($transactionPayload);
 
                             Notification::make()
                                 ->title('Savings Approved')

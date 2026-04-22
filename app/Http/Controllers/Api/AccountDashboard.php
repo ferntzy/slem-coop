@@ -30,7 +30,7 @@ class AccountDashboard extends Controller
         ]);
     }
 
-    public function loanDisbursements()
+      public function loanDisbursements()
     {
         // Define current period (e.g., this month)
         $start = Carbon::now()->startOfMonth();

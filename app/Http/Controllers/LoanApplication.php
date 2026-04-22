@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\LoanApplication as ModelsLoanApplication;
+use App\Models\LoanApplicationCashflow;
 use App\Models\LoanApplicationDocument;
 use App\Models\LoanType;
 use App\Models\MemberDetail;
@@ -52,13 +53,112 @@ class LoanApplication extends Controller
                 ]);
             }
 
-            // Send SMS to user
-            // $userPhoneNumber = $request->phone_number; // or get from database
-            // $this->smsService->sendBulkSms(
-            //     numbers: [$userPhoneNumber],
-            //     message: 'Your loan application has been received. We will review it shortly.',
-            //     senderId: 'CoopLoan'
-            // );
+            if ($request->hasFile('cashflow_document')) {
+                $cashflowDocumentPath = $request->file('cashflow_document')
+                    ->store('cashflow-documents', 'public');
+
+                $addloanapp->update([
+                    'cashflow_documents' => $cashflowDocumentPath ? json_encode([$cashflowDocumentPath]) : null
+                ]);
+            }
+
+            $salary = (float) $request->input('income_salary', 0);
+            $businessIncome = (float) $request->input('income_businessIncome', 0);
+            $remittances = (float) $request->input('income_remittances', 0);
+            $otherIncome = (float) $request->input('income_otherIncome', 0);
+
+            if($salary > 0){
+                LoanApplicationCashflow::create([
+                    'loan_application_id' => $addloanapp->loan_application_id,
+                    'row_type' => 'income',
+                    'category' => 'salary',
+                    'label' => 'Salary / Wages',
+                    'amount' => $salary,
+                    'notes' => 'Regular monthly salary',
+                ]);
+            }
+
+            if($businessIncome > 0){
+                LoanApplicationCashflow::create([
+                    'loan_application_id' => $addloanapp->loan_application_id,
+                    'row_type' => 'income',
+                    'category' => 'business_income',
+                    'label' => 'Business income',
+                    'amount' => $businessIncome,
+                    'notes' => 'Busines income'
+                ]);
+            }
+
+            if($remittances > 0){
+                LoanApplicationCashflow::create([
+                    'loan_application_id' => $addloanapp->loan_application_id,
+                    'row_type' => 'income',
+                    'category' => 'remittances',
+                    'label' => 'Remittances',
+                    'amount' => $remittances,
+                    'notes' => 'Remittances'
+                ]);
+            }
+
+            if($otherIncome > 0){
+                LoanApplicationCashflow::create([
+                    'loan_application_id' => $addloanapp->loan_application_id,
+                    'row_type' => 'income',
+                    'category' => 'other_income',
+                    'label' => 'Other income',
+                    'amount' => $otherIncome,
+                    'notes' => 'Other income'
+                ]);
+            }
+
+            $livingExpenses = (float) $request->input('expenses_livingExpenses', 0);
+            $businessExpenses = (float) $request->input('expenses_businessExpenses', 0);
+            $loanPayments = (float) $request->input('expenses_loanPayments', 0);
+            $otherExpenses = (float) $request->input('expenses_otherExpenses', 0);
+
+            if($livingExpenses > 0){
+                LoanApplicationCashflow::create([
+                    'loan_application_id' => $addloanapp->loan_application_id,
+                    'row_type' => 'expense',
+                    'category' => 'living_expenses',
+                    'label' => 'Living expenses',
+                    'amount' => $livingExpenses,
+                    'notes' => 'Living expenses'
+                ]);
+            }
+
+            if($businessExpenses > 0){
+                LoanApplicationCashflow::create([
+                    'loan_application_id' => $addloanapp->loan_application_id,
+                    'row_type' => 'expense',
+                    'category' => 'business_expenses',
+                    'label' => 'Business expenses',
+                    'amount' => $businessExpenses,
+                    'notes' => 'Business expenses'
+                ]);
+            }
+
+            if($loanPayments > 0){
+                LoanApplicationCashflow::create([
+                    'loan_application_id' => $addloanapp->loan_application_id,
+                    'row_type' => 'expense',
+                    'category' => 'existing_loan_payments',
+                    'label' => 'Existing loan payments',
+                    'amount' => $loanPayments,
+                    'notes' => 'existing loan payments'
+                ]);
+            }
+
+            if($otherExpenses > 0){
+                LoanApplicationCashflow::create([
+                    'loan_application_id' => $addloanapp->loan_application_id,
+                    'row_type' => 'expense',
+                    'category' => 'other_expenses',
+                    'label' => 'Other expenses',
+                    'amount' => $otherExpenses,
+                    'notes' => 'Other expenses'
+                ]);
+            }
 
             Notification::create([
                 'user_id' => $uid,
