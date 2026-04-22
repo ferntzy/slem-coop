@@ -2,22 +2,22 @@
 
 namespace App\Filament\Widgets;
 
-use Livewire\Attributes\On;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
-use Filament\Widgets\StatsOverviewWidget\Stat;
-use App\Models\MemberDetail;
-use App\Models\LoanApplication;
 use App\Models\CollectionAndPosting;
 use App\Models\LoanAccount;
+use App\Models\LoanApplication;
+use App\Models\MemberDetail;
+use App\Models\SavingsAccount;
 use App\Models\User;
-use Illuminate\Support\Carbon;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
 
 class StatsOverviewWidget extends BaseWidget
 {
     protected static ?int $sort = 1;
 
-    public function getColumnSpan(): int | string | array
+    public function getColumnSpan(): int|string|array
     {
         return 'full';
     }
@@ -45,7 +45,7 @@ class StatsOverviewWidget extends BaseWidget
     protected function getMemberStats(User $user): array
     {
         $profileId = $user->profile_id;
-        $member    = MemberDetail::where('profile_id', $profileId)->first();
+        $member = MemberDetail::where('profile_id', $profileId)->first();
 
         // My Total Loan Balance — sum of all active loan balances
         $totalLoanBalance = $member
@@ -54,13 +54,21 @@ class StatsOverviewWidget extends BaseWidget
                 ->sum('balance')
             : 0;
 
+        // My Savings Balance — sum of all savings account balances
+        $savingsBalance = $member
+            ? SavingsAccount::query()
+                ->where('profile_id', $profileId)
+                ->get()
+                ->sum(fn (SavingsAccount $account): float => (float) $account->balance)
+            : 0;
+
         // My Total Payments — sum of all posted payments
         $totalPayments = $member
             ? CollectionAndPosting::whereHas('loanAccount', function ($q) use ($profileId) {
                 $q->where('profile_id', $profileId);
             })
-            ->where('status', 'Posted')
-            ->sum('amount_paid')
+                ->where('status', 'Posted')
+                ->sum('amount_paid')
             : 0;
 
         // My Pending Applications — pending or under review
@@ -71,13 +79,19 @@ class StatsOverviewWidget extends BaseWidget
             : 0;
 
         return [
-            Stat::make('My Total Loan Balance', '₱' . number_format($totalLoanBalance, 2))
+            Stat::make('My Total Loan Balance', '₱'.number_format($totalLoanBalance, 2))
                 ->description('Outstanding balance on active loans')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color($totalLoanBalance > 0 ? 'warning' : 'success')
                 ->icon('heroicon-o-banknotes'),
 
-            Stat::make('My Total Payments', '₱' . number_format($totalPayments, 2))
+            Stat::make('My Savings Balance', '₱'.number_format($savingsBalance, 2))
+                ->description('Available balance across savings accounts')
+                ->descriptionIcon('heroicon-m-banknotes')
+                ->color($savingsBalance > 0 ? 'success' : 'gray')
+                ->icon('heroicon-o-banknotes'),
+
+            Stat::make('My Total Payments', '₱'.number_format($totalPayments, 2))
                 ->description('Total payments made to date')
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success')
@@ -95,11 +109,11 @@ class StatsOverviewWidget extends BaseWidget
 
     protected function getAdminStats(): array
     {
-        [$start, $end]         = $this->getPeriodRange();
+        [$start, $end] = $this->getPeriodRange();
         [$prevStart, $prevEnd] = $this->getPreviousPeriodRange();
 
         // Active Members
-        $activeMembers     = MemberDetail::where('status', 'Active')->count();
+        $activeMembers = MemberDetail::where('status', 'Active')->count();
         $prevActiveMembers = MemberDetail::where('status', 'Active')
             ->where('created_at', '<', $prevEnd)
             ->count();
@@ -108,7 +122,7 @@ class StatsOverviewWidget extends BaseWidget
             : 0;
 
         // Loan Disbursements this period
-        $disbursed     = LoanApplication::where('status', 'Approved')
+        $disbursed = LoanApplication::where('status', 'Approved')
             ->whereBetween('approved_at', [$start, $end])
             ->sum('amount_requested');
         $prevDisbursed = LoanApplication::where('status', 'Approved')
@@ -119,7 +133,7 @@ class StatsOverviewWidget extends BaseWidget
             : 0;
 
         // Collections this period
-        $collected     = CollectionAndPosting::where('status', 'Posted')
+        $collected = CollectionAndPosting::where('status', 'Posted')
             ->whereBetween('payment_date', [$start, $end])
             ->sum('amount_paid');
         $prevCollected = CollectionAndPosting::where('status', 'Posted')
@@ -130,7 +144,7 @@ class StatsOverviewWidget extends BaseWidget
             : 0;
 
         // Active Loan Accounts
-        $activeLoans     = LoanAccount::where('status', 'Active')->count();
+        $activeLoans = LoanAccount::where('status', 'Active')->count();
         $prevActiveLoans = LoanAccount::where('status', 'Active')
             ->where('created_at', '<', $prevEnd)
             ->count();
@@ -151,13 +165,13 @@ class StatsOverviewWidget extends BaseWidget
                 ->color($memberChange >= 0 ? 'success' : 'danger')
                 ->icon('heroicon-o-user-group'),
 
-            Stat::make('Loans Disbursed', '₱' . number_format($disbursed, 2))
+            Stat::make('Loans Disbursed', '₱'.number_format($disbursed, 2))
                 ->description($disbursedChange >= 0 ? "+{$disbursedChange}% vs last period" : "{$disbursedChange}% vs last period")
                 ->descriptionIcon($disbursedChange >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($disbursedChange >= 0 ? 'success' : 'danger')
                 ->icon('heroicon-o-banknotes'),
 
-            Stat::make('Collections', '₱' . number_format($collected, 2))
+            Stat::make('Collections', '₱'.number_format($collected, 2))
                 ->description($collectedChange >= 0 ? "+{$collectedChange}% vs last period" : "{$collectedChange}% vs last period")
                 ->descriptionIcon($collectedChange >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($collectedChange >= 0 ? 'success' : 'danger')
@@ -186,20 +200,20 @@ class StatsOverviewWidget extends BaseWidget
     protected function getPeriodRange(): array
     {
         return match ($this->period) {
-            'weekly'    => [now()->startOfWeek(),    now()->endOfWeek()],
+            'weekly' => [now()->startOfWeek(),    now()->endOfWeek()],
             'quarterly' => [now()->firstOfQuarter(), now()->lastOfQuarter()],
-            'annual'    => [now()->startOfYear(),    now()->endOfYear()],
-            default     => [now()->startOfMonth(),   now()->endOfMonth()],
+            'annual' => [now()->startOfYear(),    now()->endOfYear()],
+            default => [now()->startOfMonth(),   now()->endOfMonth()],
         };
     }
 
     protected function getPreviousPeriodRange(): array
     {
         return match ($this->period) {
-            'weekly'    => [now()->subWeek()->startOfWeek(),       now()->subWeek()->endOfWeek()],
+            'weekly' => [now()->subWeek()->startOfWeek(),       now()->subWeek()->endOfWeek()],
             'quarterly' => [now()->subQuarter()->firstOfQuarter(), now()->subQuarter()->lastOfQuarter()],
-            'annual'    => [now()->subYear()->startOfYear(),        now()->subYear()->endOfYear()],
-            default     => [now()->subMonth()->startOfMonth(),      now()->subMonth()->endOfMonth()],
+            'annual' => [now()->subYear()->startOfYear(),        now()->subYear()->endOfYear()],
+            default => [now()->subMonth()->startOfMonth(),      now()->subMonth()->endOfMonth()],
         };
     }
 }
