@@ -1,6 +1,11 @@
 <?php
+
+use App\Providers\AppServiceProvider;
+use App\Providers\Filament\AdminPanelProvider;
+use Barryvdh\DomPDF\ServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\Filament\AdminPanelProvider::class,
-    Barryvdh\DomPDF\ServiceProvider::class, // ← add this
+    AppServiceProvider::class,
+    AdminPanelProvider::class,
+    ServiceProvider::class, // ← add this
 ];

@@ -2,17 +2,17 @@
 
 namespace App\Filament\Widgets;
 
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Widgets\TableWidget as BaseWidget;
 use App\Models\LoanAccount;
 use Filament\Tables\Columns\TextColumn;
-use Illuminate\Support\Facades\Auth;
+use Filament\Tables\Table;
+use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class MemberUpcomingDueDatesWidget extends BaseWidget
 {
     protected static ?string $heading = 'Upcoming Due Dates';
+
     protected static ?int $sort = 6;
 
     public static function canView(): bool
@@ -20,13 +20,13 @@ class MemberUpcomingDueDatesWidget extends BaseWidget
         return Auth::user()->isMember();
     }
 
-    public function getColumnSpan(): int | string | array
+    public function getColumnSpan(): int|string|array
     {
         return [
             'default' => 1,
-            'sm'      => 2,
-            'md'      => 4,
-            'lg'      => 6,
+            'sm' => 2,
+            'md' => 4,
+            'lg' => 6,
         ];
     }
 
@@ -45,7 +45,7 @@ class MemberUpcomingDueDatesWidget extends BaseWidget
             ->columns([
                 TextColumn::make('loan_account_id')
                     ->label('Loan #')
-                    ->formatStateUsing(fn ($state) => 'LA-' . str_pad($state, 5, '0', STR_PAD_LEFT)),
+                    ->formatStateUsing(fn ($state) => 'LA-'.str_pad($state, 5, '0', STR_PAD_LEFT)),
 
                 TextColumn::make('monthly_amortization')
                     ->label('Monthly Due')
@@ -60,18 +60,17 @@ class MemberUpcomingDueDatesWidget extends BaseWidget
                     ->label('Maturity Date')
                     ->date('M d, Y')
                     ->sortable()
-                    ->color(fn ($record): string =>
-                        Carbon::parse($record->maturity_date)->isPast() ? 'danger' :
+                    ->color(fn ($record): string => Carbon::parse($record->maturity_date)->isPast() ? 'danger' :
                         (Carbon::parse($record->maturity_date)->diffInDays(now()) <= 30 ? 'warning' : 'success')
                     ),
 
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'Active'   => 'success',
-                        'Overdue'  => 'danger',
-                        'Closed'   => 'gray',
-                        default    => 'warning',
+                        'Active' => 'success',
+                        'Overdue' => 'danger',
+                        'Closed' => 'gray',
+                        default => 'warning',
                     }),
             ])
             ->striped()

@@ -179,4 +179,3 @@ class SavingsAccountTransactionsRelationManager extends RelationManager
             ->bulkActions([]);
     }
 }
-

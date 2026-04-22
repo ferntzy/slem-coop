@@ -3,8 +3,8 @@
 namespace App\Filament\Pages;
 
 use App\Models\HeroNewsEvent;
-use App\Models\NewsEvent;
 use App\Models\News;
+use App\Models\NewsEvent;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
@@ -25,8 +25,11 @@ class NewsEvents extends Page implements HasForms
     use InteractsWithForms;
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-calendar-days';
+
     protected static ?string $navigationLabel = 'News Events';
+
     protected static string|\UnitEnum|null $navigationGroup = 'Pages';
+
     protected static ?int $navigationSort = 12;
 
     public static function canAccess(): bool
@@ -35,25 +38,41 @@ class NewsEvents extends Page implements HasForms
     }
 
     protected string $view = 'filament.pages.news-events';
+
     protected static ?string $title = 'News Events';
 
     public ?string $activeTab = 'hero'; // Add this to track active tab
 
     public ?string $event_search = null;
+
     public ?int $editingEventId = null;
+
     public ?string $event_title = null;
+
     public ?string $event_date = null;
+
     public ?string $event_location = null;
+
     public ?string $event_description = null;
+
     public ?string $event_category = null;
+
     public $event_image = null;
+
     public ?string $hero_badge = null;
+
     public ?string $hero_header = null;
+
     public ?string $hero_paragraph = null;
+
     public ?string $news_search = null;
+
     public ?int $editingNewsId = null;
+
     public ?string $news_title = null;
+
     public ?string $news_excerpt = null;
+
     public ?string $news_date = null;
 
     public function mount(): void
@@ -100,8 +119,8 @@ class NewsEvents extends Page implements HasForms
                                         ->label('Save Hero Section')
                                         ->action('saveHero')
                                         ->color('primary')
-                                        ->button()
-                                ])
+                                        ->button(),
+                                ]),
                             ]),
 
                         Tab::make('Events')
@@ -181,7 +200,7 @@ class NewsEvents extends Page implements HasForms
                                             ->imagePreviewHeight('150')
                                             ->reorderable()
                                             ->multiple(false)
-                                            ->preserveFilenames()
+                                            ->preserveFilenames(),
                                     ]),
                                 Actions::make([
                                     Action::make('saveEvent')
@@ -193,9 +212,9 @@ class NewsEvents extends Page implements HasForms
                                         ->label('New Event')
                                         ->action('newEvent')
                                         ->color('secondary')
-                                        ->button()
+                                        ->button(),
                                 ])
-                                ->extraAttributes(['class' => 'mt-4 gap-2'])
+                                    ->extraAttributes(['class' => 'mt-4 gap-2']),
                             ]),
 
                         Tab::make('News')
@@ -254,10 +273,10 @@ class NewsEvents extends Page implements HasForms
                                         ->label('New News')
                                         ->action('newNews')
                                         ->color('secondary')
-                                        ->button()
+                                        ->button(),
                                 ])
-                                ->extraAttributes(['class' => 'mt-4 gap-2'])
-                            ])
+                                    ->extraAttributes(['class' => 'mt-4 gap-2']),
+                            ]),
                     ]),
             ]);
     }
@@ -303,7 +322,7 @@ class NewsEvents extends Page implements HasForms
         ]);
 
         $imagePath = null;
-        if (!empty($data['event_image'])) {
+        if (! empty($data['event_image'])) {
             if (is_array($data['event_image'])) {
                 $imagePath = $data['event_image'][0] ?? null;
             } else {
@@ -331,6 +350,7 @@ class NewsEvents extends Page implements HasForms
                     ->danger()
                     ->title($message)
                     ->send();
+
                 return;
             }
         } else {
@@ -384,6 +404,7 @@ class NewsEvents extends Page implements HasForms
                     ->danger()
                     ->title($message)
                     ->send();
+
                 return;
             }
         } else {

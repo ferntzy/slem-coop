@@ -9,6 +9,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListMemberDetails extends ListRecords
 {
     protected static string $resource = MemberDetailResource::class;
+
     protected function getDefaultTableRecordAction(): ?string
     {
         return 'view';

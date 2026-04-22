@@ -9,9 +9,9 @@ use App\Models\MemberDetail;
 use App\Models\Notification;
 use App\Models\User;
 use App\Services\NotificationService;
+use App\Services\SmsService;
 use Exception;
 use Illuminate\Http\Request;
-use App\Services\SmsService;
 
 class LoanApplication extends Controller
 {
@@ -30,10 +30,10 @@ class LoanApplication extends Controller
                 'application_type' => 'New',
                 'amount_requested' => $request->amountRequested,
                 'term_months' => $request->termMonths,
-                'status' => 'Pending'
+                'status' => 'Pending',
             ]);
 
-            if (!$addloanapp) {
+            if (! $addloanapp) {
                 throw new Exception('Unable to add loan application to database!');
             }
 
@@ -48,7 +48,7 @@ class LoanApplication extends Controller
                     'loan_application_id' => $laid,
                     'document_type' => $request->collateral_type,
                     'file_path' => $documentPath,
-                    'uploaded_by_user_id' => $uid
+                    'uploaded_by_user_id' => $uid,
                 ]);
             }
 
@@ -63,7 +63,7 @@ class LoanApplication extends Controller
             Notification::create([
                 'user_id' => $uid,
                 'title' => 'Loan Application',
-                'description' => 'Your request for loan application was sent for approval'
+                'description' => 'Your request for loan application was sent for approval',
             ]);
 
             $loanTitle = 'Loan application submitted';
@@ -83,13 +83,13 @@ class LoanApplication extends Controller
             return response()->json([
                 'message' => 'Loan application was successfully sent!',
                 'loan_application_id' => $laid,
-                'file_path' => $documentPath
+                'file_path' => $documentPath,
             ]);
 
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'Unable to send loan application',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -99,8 +99,8 @@ class LoanApplication extends Controller
         try {
             $mid = MemberDetail::where('profile_id', $request->memberId)->value('id');
 
-            if (!$mid) {
-                throw new Exception('Member not found');  
+            if (! $mid) {
+                throw new Exception('Member not found');
             }
 
             $loanApplications = ModelsLoanApplication::where('member_id', $mid)
@@ -109,17 +109,17 @@ class LoanApplication extends Controller
                 ->get();
 
             if ($loanApplications->isEmpty()) {
-                throw new Exception('There are no loan applications for this member!');  
+                throw new Exception('There are no loan applications for this member!');
             }
 
             return response()->json([
-                'loanApplications' => $loanApplications
+                'loanApplications' => $loanApplications,
             ], 200);
 
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'Unable to fetch loan applications',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -134,24 +134,24 @@ class LoanApplication extends Controller
             $update = ModelsLoanApplication::where('loan_application_id', $request->loanApplicationId)
                 ->update(['status' => 'Cancelled']);
 
-            if (!$update) {
+            if (! $update) {
                 throw new Exception('Unable to update loan application!');
             }
 
             Notification::create([
                 'user_id' => $uid,
                 'title' => 'Loan Application',
-                'description' => 'Loan Application was successfully cancelled!'
+                'description' => 'Loan Application was successfully cancelled!',
             ]);
 
             return response()->json([
-                'status' => 'Success'
+                'status' => 'Success',
             ], 200);
 
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'Unable to cancel loan application',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }

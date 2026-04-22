@@ -9,12 +9,12 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-   public function up()
-{
-    Schema::table('loan_applications', function (Blueprint $table) {
-        $table->string('collateral_status')->default('Pending'); // Pending, Approved, Needs Correction
-    });
-}
+    public function up()
+    {
+        Schema::table('loan_applications', function (Blueprint $table) {
+            $table->string('collateral_status')->default('Pending'); // Pending, Approved, Needs Correction
+        });
+    }
 
     /**
      * Reverse the migrations.

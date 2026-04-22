@@ -31,7 +31,7 @@ return new class extends Migration
                 'Under Review',
                 'Approved',
                 'Rejected',
-                'Cancelled'
+                'Cancelled',
             ])->default('Pending');
 
             // Staff evaluation notes

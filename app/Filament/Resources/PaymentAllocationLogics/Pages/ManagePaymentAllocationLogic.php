@@ -12,7 +12,7 @@ class ManagePaymentAllocationLogic extends EditRecord
 
     // No custom $view — let EditRecord use its default view
 
-    public function mount(int | string $record = null): void
+    public function mount(int|string|null $record = null): void
     {
         $singleton = PaymentAllocationSetting::getSingleton();
         parent::mount($singleton->getKey());
@@ -34,7 +34,7 @@ class ManagePaymentAllocationLogic extends EditRecord
     }
 
     protected function hasCancelAction(): bool
-{
-    return false;
-}
+    {
+        return false;
+    }
 }

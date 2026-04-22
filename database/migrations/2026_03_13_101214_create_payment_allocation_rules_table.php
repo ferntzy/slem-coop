@@ -12,8 +12,8 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('payment_allocation_setting_id')
-                  ->constrained('payment_allocation_settings')
-                  ->cascadeOnDelete();
+                ->constrained('payment_allocation_settings')
+                ->cascadeOnDelete();
 
             $table->string('component'); // 'interest', 'principal', 'penalty'
             $table->unsignedTinyInteger('priority'); // 1, 2, 3

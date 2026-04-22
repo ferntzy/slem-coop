@@ -18,7 +18,7 @@ return new class extends Migration
             // Membership info
             $table->unsignedBigInteger('membership_type_id');
             $table->date('application_date')->default(now());
-            $table->enum('status', ['pending','approved','rejected','needs_review'])->default('pending');
+            $table->enum('status', ['pending', 'approved', 'rejected', 'needs_review'])->default('pending');
             $table->timestamp('approved_at')->nullable();
             $table->timestamp('rejected_at')->nullable();
 
@@ -38,24 +38,24 @@ return new class extends Migration
         // Step 2: Add foreign keys after table creation
         Schema::table('membership_applications', function (Blueprint $table) {
             $table->foreign('profile_id')
-                  ->references('profile_id')
-                  ->on('profiles')
-                  ->onDelete('cascade');
+                ->references('profile_id')
+                ->on('profiles')
+                ->onDelete('cascade');
 
             $table->foreign('membership_type_id')
-                  ->references('membership_type_id')
-                  ->on('membership_types')
-                  ->onDelete('cascade');
+                ->references('membership_type_id')
+                ->on('membership_types')
+                ->onDelete('cascade');
 
             $table->foreign('created_by')
-                  ->references('user_id')
-                  ->on('users')
-                  ->onDelete('cascade');
+                ->references('user_id')
+                ->on('users')
+                ->onDelete('cascade');
 
             $table->foreign('updated_by')
-                  ->references('user_id')
-                  ->on('users')
-                  ->onDelete('cascade');
+                ->references('user_id')
+                ->on('users')
+                ->onDelete('cascade');
         });
     }
 

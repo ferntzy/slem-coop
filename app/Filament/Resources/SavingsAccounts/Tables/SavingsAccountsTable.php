@@ -2,31 +2,18 @@
 
 namespace App\Filament\Resources\SavingsAccounts\Tables;
 
-use App\Models\LoanAccount;
-use App\Models\LoanApplication;
-use App\Models\LoanApplicationCollstat;
 use App\Models\LoanApplicationStatusLog;
-use App\Models\PenaltyRule;
-use App\Models\SavingsAccountDetail;
 use App\Models\SavingsAccountTransaction;
-use App\Services\CoopFeeCalculatorService;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
-use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\RecordActionsPosition;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\HtmlString;
-
 
 class SavingsAccountsTable
 {
@@ -37,7 +24,7 @@ class SavingsAccountsTable
         return $table
             ->modifyQueryUsing(function (Builder $query) {
                 $user = auth()->user();
-                if (!($user?->hasAnyRole(['Admin', 'super_admin']) ?? false)) {
+                if (! ($user?->hasAnyRole(['Admin', 'super_admin']) ?? false)) {
                     $query->where('profile_id', $user?->profile_id);
                 }
 
@@ -49,8 +36,8 @@ class SavingsAccountsTable
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query->whereHas('member.profile', function (Builder $q) use ($search) {
                             $q->where('first_name', 'like', "%{$search}%")
-                            ->orWhere('middle_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%");
+                                ->orWhere('middle_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
                         });
                     })
                     ->sortable(query: function (Builder $query, string $direction): Builder {
@@ -91,9 +78,8 @@ class SavingsAccountsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-
             ])->bulkActions([])
-            ->recordActionsPosition(\Filament\Tables\Enums\RecordActionsPosition::BeforeColumns)
+            ->recordActionsPosition(RecordActionsPosition::BeforeColumns)
             ->defaultSort('created_at', 'desc')
             ->filters([
                 SelectFilter::make('status')
@@ -139,10 +125,11 @@ class SavingsAccountsTable
                                     ->title('Already approved')
                                     ->warning()
                                     ->send();
+
                                 return;
                             }
                             $record->update([
-                                'status'      => 'Approved',
+                                'status' => 'Approved',
                                 'approved_at' => now(),
                             ]);
 
@@ -154,10 +141,10 @@ class SavingsAccountsTable
 
                             SavingsAccountTransaction::create([
                                 'savings_account_id' => $record->id,
-                                $type           => $record->amount,
-                                'transaction_date'  => now(),
-                                'notes'          => $data['notes'],
-                                'posted_by_user_id' =>auth()->id(),
+                                $type => $record->amount,
+                                'transaction_date' => now(),
+                                'notes' => $data['notes'],
+                                'posted_by_user_id' => auth()->id(),
                             ]);
 
                             Notification::make()
@@ -234,10 +221,10 @@ class SavingsAccountsTable
 
                             LoanApplicationStatusLog::create([
                                 'loan_application_id' => $record->loan_application_id,
-                                'from_status'         => $from,
-                                'to_status'           => 'Cancelled',
-                                'changed_by_user_id'  => auth()->id(),
-                                'changed_at'          => now(),
+                                'from_status' => $from,
+                                'to_status' => 'Cancelled',
+                                'changed_by_user_id' => auth()->id(),
+                                'changed_at' => now(),
                             ]);
 
                             Notification::make()

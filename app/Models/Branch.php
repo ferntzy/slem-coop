@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Branch extends Model
 {
     protected $table = 'branches'; // important if not default
+
     protected $primaryKey = 'branch_id';
 
     protected $fillable = [
@@ -20,5 +21,4 @@ class Branch extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
-
 }

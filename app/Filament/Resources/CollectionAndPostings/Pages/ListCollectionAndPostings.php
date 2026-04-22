@@ -126,7 +126,7 @@ class ListCollectionAndPostings extends ListRecords
 
                                             return [
                                                 $member->id => ($member->member_no ? "[{$member->member_no}] " : '')
-                                                    . trim(($member->profile?->first_name ?? '') . ' ' . ($member->profile?->last_name ?? '')),
+                                                    .trim(($member->profile?->first_name ?? '').' '.($member->profile?->last_name ?? '')),
                                             ];
                                         }
 
@@ -141,7 +141,7 @@ class ListCollectionAndPostings extends ListRecords
                                             ->limit(20)->get()
                                             ->mapWithKeys(fn ($m) => [
                                                 $m->id => ($m->member_no ? "[{$m->member_no}] " : '')
-                                                    . trim(($m->profile?->first_name ?? '') . ' ' . ($m->profile?->last_name ?? '')),
+                                                    .trim(($m->profile?->first_name ?? '').' '.($m->profile?->last_name ?? '')),
                                             ]);
                                     })
                                     ->getOptionLabelUsing(function ($value) {
@@ -152,14 +152,14 @@ class ListCollectionAndPostings extends ListRecords
                                         }
 
                                         return ($m->member_no ? "[{$m->member_no}] " : '')
-                                            . trim(($m->profile?->first_name ?? '') . ' ' . ($m->profile?->last_name ?? ''));
+                                            .trim(($m->profile?->first_name ?? '').' '.($m->profile?->last_name ?? ''));
                                     })
                                     ->columnSpanFull(),
 
                                 Placeholder::make('loan_table')
                                     ->label('Loans')
                                     ->content(function (Get $get) {
-                                        $memberId   = $get('member_id');
+                                        $memberId = $get('member_id');
                                         $selectedId = $get('loan_account_id');
 
                                         if (! $memberId) {
@@ -203,7 +203,7 @@ class ListCollectionAndPostings extends ListRecords
                                         foreach ($loans as $loan) {
 
                                             $isRestructured = $loan->status === 'Restructured';
-                                            $isSelected     = $selectedId == $loan->loan_account_id;
+                                            $isSelected = $selectedId == $loan->loan_account_id;
 
                                             $rowBg = $isSelected
                                                 ? 'background:#eff6ff;'
@@ -215,19 +215,19 @@ class ListCollectionAndPostings extends ListRecords
                                                 ? Carbon::parse($loan->maturity_date)->format('M d, Y')
                                                 : '—';
 
-                                            $schedule       = app(LoanScheduleService::class)->build($loan);
-                                            $nextDueRow     = collect($schedule)->first(
+                                            $schedule = app(LoanScheduleService::class)->build($loan);
+                                            $nextDueRow = collect($schedule)->first(
                                                 fn ($row) => round((float) ($row['unpaid_amount'] ?? 0), 2) > 0
                                             );
 
                                             $currentDueAmt = $nextDueRow
-                                                ? '₱' . number_format((float) $nextDueRow['unpaid_amount'], 2)
-                                                : '₱' . number_format((float) $loan->balance, 2);
+                                                ? '₱'.number_format((float) $nextDueRow['unpaid_amount'], 2)
+                                                : '₱'.number_format((float) $loan->balance, 2);
 
                                             $dueTd = "<td style='padding:.7rem .9rem;font-size:.78rem;color:#9ca3af;'>—</td>";
                                             if ($nextDueRow && ! empty($nextDueRow['due_date'])) {
                                                 $parsedDue = Carbon::parse($nextDueRow['due_date']);
-                                                $dueLabel  = $parsedDue->format('M d, Y');
+                                                $dueLabel = $parsedDue->format('M d, Y');
                                                 if ($parsedDue->isPast()) {
                                                     $dueColor = '#ef4444';
                                                 } elseif ($parsedDue->diffInDays(now()) <= 7) {
@@ -266,23 +266,23 @@ class ListCollectionAndPostings extends ListRecords
 
                                             $rows .= "
                                                 <tr style='border-bottom:1px solid #f3f4f6;{$cursor}{$rowBg}transition:background .1s;'
-                                                    onclick=\"" . ($isRestructured ? '' : $clickJs) . "\">
+                                                    onclick=\"".($isRestructured ? '' : $clickJs)."\">
                                                     <td style='padding:.7rem .9rem;'>
                                                         <input type='radio' name='cp_loan_radio'
                                                             value='{$loan->loan_account_id}'
-                                                            " . ($isSelected ? 'checked' : '') . "
-                                                            " . ($isRestructured ? 'disabled' : '') . "
-                                                            style='" . ($isRestructured ? 'cursor:not-allowed;opacity:.4;' : 'cursor:pointer;') . "width:16px;height:16px;accent-color:#1e3a5f;'
+                                                            ".($isSelected ? 'checked' : '').'
+                                                            '.($isRestructured ? 'disabled' : '')."
+                                                            style='".($isRestructured ? 'cursor:not-allowed;opacity:.4;' : 'cursor:pointer;')."width:16px;height:16px;accent-color:#1e3a5f;'
                                                             onclick='event.stopPropagation();this.closest(\"tr\").click();'>
                                                     </td>
                                                     <td style='padding:.7rem .9rem;font-size:.78rem;font-weight:700;color:#1e3a5f;'>
                                                         LA-{$loan->loan_account_id}
                                                     </td>
                                                     <td style='padding:.7rem .9rem;font-size:.78rem;color:#111827;font-weight:600;'>
-                                                        ₱" . number_format($loan->balance, 2) . "
+                                                        ₱".number_format($loan->balance, 2)."
                                                     </td>
                                                     <td style='padding:.7rem .9rem;font-size:.78rem;color:#374151;font-weight:600;'>
-                                                        " . ($isRestructured ? '<span style="color:#9ca3af;">—</span>' : $currentDueAmt) . "
+                                                        ".($isRestructured ? '<span style="color:#9ca3af;">—</span>' : $currentDueAmt)."
                                                     </td>
                                                     <td style='padding:.7rem .9rem;font-size:.78rem;color:#6b7280;'>
                                                         {$maturity}
@@ -290,7 +290,7 @@ class ListCollectionAndPostings extends ListRecords
                                                     <td style='padding:.7rem .9rem;font-size:.78rem;color:#6b7280;'>
                                                         {$loan->term_months} mos.
                                                     </td>
-                                                    " . ($isRestructured ? "<td style='padding:.7rem .9rem;font-size:.78rem;color:#9ca3af;'>—</td>" : $dueTd) . "
+                                                    ".($isRestructured ? "<td style='padding:.7rem .9rem;font-size:.78rem;color:#9ca3af;'>—</td>" : $dueTd)."
                                                     <td style='padding:.7rem .9rem;'>
                                                         {$statusBadge}
                                                     </td>
@@ -442,21 +442,21 @@ class ListCollectionAndPostings extends ListRecords
                                         $rows = '';
 
                                         foreach ($schedule as $row) {
-                                            $period               = (int) ($row['period'] ?? 0);
-                                            $status               = (string) ($row['status'] ?? 'Unpaid');
-                                            $dueDate              = e($row['due_date'] ?? '—');
+                                            $period = (int) ($row['period'] ?? 0);
+                                            $status = (string) ($row['status'] ?? 'Unpaid');
+                                            $dueDate = e($row['due_date'] ?? '—');
                                             $scheduledAmortization = (float) ($row['scheduled_amortization'] ?? 0);
-                                            $penalty              = (float) ($row['penalty'] ?? 0);
-                                            $totalPaid            = (float) ($row['total_paid'] ?? 0);
-                                            $unpaidAmount         = (float) ($row['unpaid_amount'] ?? 0);
-                                            $isPaid               = $status === 'Paid' || $unpaidAmount <= 0;
+                                            $penalty = (float) ($row['penalty'] ?? 0);
+                                            $totalPaid = (float) ($row['total_paid'] ?? 0);
+                                            $unpaidAmount = (float) ($row['unpaid_amount'] ?? 0);
+                                            $isPaid = $status === 'Paid' || $unpaidAmount <= 0;
 
                                             $statusStyle = match ($status) {
-                                                'Paid'           => 'background:#dcfce7;color:#166534;',
-                                                'Partial'        => 'background:#fef3c7;color:#92400e;',
-                                                'Late'           => 'background:#fee2e2;color:#991b1b;',
+                                                'Paid' => 'background:#dcfce7;color:#166534;',
+                                                'Partial' => 'background:#fef3c7;color:#92400e;',
+                                                'Late' => 'background:#fee2e2;color:#991b1b;',
                                                 'Partial / Late' => 'background:#fde68a;color:#92400e;',
-                                                default          => 'background:#e5e7eb;color:#374151;',
+                                                default => 'background:#e5e7eb;color:#374151;',
                                             };
 
                                             $checkboxHtml = '';
@@ -542,10 +542,10 @@ class ListCollectionAndPostings extends ListRecords
                                                     <td style='padding:.7rem .9rem;'>{$checkboxHtml}</td>
                                                     <td style='padding:.7rem .9rem;font-size:.78rem;font-weight:700;color:#1e3a5f;'>{$period}</td>
                                                     <td style='padding:.7rem .9rem;font-size:.78rem;color:#374151;'>{$dueDate}</td>
-                                                    <td style='padding:.7rem .9rem;font-size:.78rem;text-align:right;'>₱" . number_format($scheduledAmortization, 2) . "</td>
-                                                    <td style='padding:.7rem .9rem;font-size:.78rem;text-align:right;'>₱" . number_format($penalty, 2) . "</td>
-                                                    <td style='padding:.7rem .9rem;font-size:.78rem;text-align:right;'>₱" . number_format($totalPaid, 2) . "</td>
-                                                    <td style='padding:.7rem .9rem;font-size:.78rem;text-align:right;font-weight:700;color:#111827;'>₱" . number_format($unpaidAmount, 2) . "</td>
+                                                    <td style='padding:.7rem .9rem;font-size:.78rem;text-align:right;'>₱".number_format($scheduledAmortization, 2)."</td>
+                                                    <td style='padding:.7rem .9rem;font-size:.78rem;text-align:right;'>₱".number_format($penalty, 2)."</td>
+                                                    <td style='padding:.7rem .9rem;font-size:.78rem;text-align:right;'>₱".number_format($totalPaid, 2)."</td>
+                                                    <td style='padding:.7rem .9rem;font-size:.78rem;text-align:right;font-weight:700;color:#111827;'>₱".number_format($unpaidAmount, 2)."</td>
                                                     <td style='padding:.7rem .9rem;'>
                                                         <span style='font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:999px;{$statusStyle}'>
                                                             {$status}
@@ -687,9 +687,9 @@ class ListCollectionAndPostings extends ListRecords
                         }
                     }
 
-                    $member     = MemberDetail::with('profile')->find($data['member_id']);
+                    $member = MemberDetail::with('profile')->find($data['member_id']);
                     $memberName = $member
-                        ? trim(($member->profile?->first_name ?? '') . ' ' . ($member->profile?->last_name ?? ''))
+                        ? trim(($member->profile?->first_name ?? '').' '.($member->profile?->last_name ?? ''))
                         : 'Unknown';
 
                     $loanNumber = $loan ? "LA-{$loan->loan_account_id}" : 'N/A';
@@ -712,13 +712,13 @@ class ListCollectionAndPostings extends ListRecords
                         return;
                     }
 
-                    $filePath     = $data['file_path'] ?? null;
+                    $filePath = $data['file_path'] ?? null;
                     $originalName = null;
-                    $mimeType     = null;
-                    $fileSize     = null;
+                    $mimeType = null;
+                    $fileSize = null;
 
                     if ($filePath && is_string($filePath)) {
-                        $disk         = Storage::disk('local');
+                        $disk = Storage::disk('local');
                         $originalName = basename($filePath);
 
                         if ($disk->exists($filePath)) {
@@ -728,27 +728,27 @@ class ListCollectionAndPostings extends ListRecords
                     }
 
                     $record = CollectionAndPosting::create([
-                        'loan_account_id'    => $data['loan_account_id'],
-                        'schedule_period'    => ! empty($selectedPeriods) ? json_encode($selectedPeriods) : null,
+                        'loan_account_id' => $data['loan_account_id'],
+                        'schedule_period' => ! empty($selectedPeriods) ? json_encode($selectedPeriods) : null,
                         'scheduled_due_date' => $data['scheduled_due_date'] ?? null,
-                        'loan_number'        => $loanNumber,
-                        'member_name'        => $memberName,
-                        'amount_paid'        => number_format($computedAmount, 2, '.', ''),
-                        'payment_date'       => $data['payment_date'],
-                        'payment_method'     => 'Cash',
-                        'notes'              => $data['notes'] ?? null,
-                        'file_path'          => $filePath,
+                        'loan_number' => $loanNumber,
+                        'member_name' => $memberName,
+                        'amount_paid' => number_format($computedAmount, 2, '.', ''),
+                        'payment_date' => $data['payment_date'],
+                        'payment_method' => 'Cash',
+                        'notes' => $data['notes'] ?? null,
+                        'file_path' => $filePath,
                         'original_file_name' => $originalName,
-                        'mime_type'          => $mimeType,
-                        'file_size'          => $fileSize,
-                        'document_type'      => $data['document_type'] ?? 'Official Receipt',
-                        'status'             => $isMember ? 'Draft' : 'Posted',
-                        'posted_by_user_id'  => Auth::id(),
-                        'audit_trail'        => [
-                            'action'    => $isMember ? 'Submitted' : 'Posted',
-                            'user_id'   => Auth::id(),
+                        'mime_type' => $mimeType,
+                        'file_size' => $fileSize,
+                        'document_type' => $data['document_type'] ?? 'Official Receipt',
+                        'status' => $isMember ? 'Draft' : 'Posted',
+                        'posted_by_user_id' => Auth::id(),
+                        'audit_trail' => [
+                            'action' => $isMember ? 'Submitted' : 'Posted',
+                            'user_id' => Auth::id(),
                             'timestamp' => now()->toISOString(),
-                            'loan_id'   => $data['loan_account_id'],
+                            'loan_id' => $data['loan_account_id'],
                             'member_id' => $data['member_id'],
                         ],
                     ]);
@@ -767,15 +767,15 @@ class ListCollectionAndPostings extends ListRecords
                         app(LoanAccountBalanceService::class)->update($loan);
                     }
 
-                    $freshLoan        = $loan ? $loan->fresh() : null;
+                    $freshLoan = $loan ? $loan->fresh() : null;
                     $remainingBalance = $freshLoan
-                        ? '₱' . number_format($freshLoan->balance, 2)
+                        ? '₱'.number_format($freshLoan->balance, 2)
                         : '—';
 
                     $nextDueDateLabel = '—';
                     if ($freshLoan) {
                         $freshSchedule = app(LoanScheduleService::class)->build($freshLoan);
-                        $freshNextDue  = collect($freshSchedule)->first(
+                        $freshNextDue = collect($freshSchedule)->first(
                             fn ($row) => round((float) ($row['unpaid_amount'] ?? 0), 2) > 0
                         );
                         if ($freshNextDue && ! empty($freshNextDue['due_date'])) {
@@ -784,13 +784,13 @@ class ListCollectionAndPostings extends ListRecords
                     }
 
                     $this->dispatch('show-receipt', [
-                        'member'       => $memberName,
-                        'loan'         => $loanNumber,
-                        'date'         => Carbon::parse($record->payment_date)->format('M d, Y'),
-                        'method'       => 'Cash',
-                        'posted_by'    => auth()->user()?->name ?? 'System',
-                        'amount'       => '₱' . number_format($record->amount_paid, 2),
-                        'balance'      => $remainingBalance,
+                        'member' => $memberName,
+                        'loan' => $loanNumber,
+                        'date' => Carbon::parse($record->payment_date)->format('M d, Y'),
+                        'method' => 'Cash',
+                        'posted_by' => auth()->user()?->name ?? 'System',
+                        'amount' => '₱'.number_format($record->amount_paid, 2),
+                        'balance' => $remainingBalance,
                         'next_due_date' => $nextDueDateLabel,
                         'generated_at' => now()->format('M d, Y h:i A'),
                     ]);
@@ -813,9 +813,9 @@ class ListCollectionAndPostings extends ListRecords
             $baseQuery->whereIn('loan_account_id', $loanIds);
         }
 
-        $todayTotal    = (clone $baseQuery)->whereDate('payment_date', today())->where('status', 'Posted')->sum('amount_paid');
-        $todayCount    = (clone $baseQuery)->whereDate('payment_date', today())->where('status', 'Posted')->count();
-        $pendingCount  = (clone $baseQuery)->where('status', 'Draft')->count();
+        $todayTotal = (clone $baseQuery)->whereDate('payment_date', today())->where('status', 'Posted')->sum('amount_paid');
+        $todayCount = (clone $baseQuery)->whereDate('payment_date', today())->where('status', 'Posted')->count();
+        $pendingCount = (clone $baseQuery)->where('status', 'Draft')->count();
         $pendingPayments = (clone $baseQuery)
             ->where('status', 'Draft')
             ->latest()
@@ -834,7 +834,7 @@ class ListCollectionAndPostings extends ListRecords
                     $user = $payments->first()->postedBy;
 
                     return [
-                        'name'  => $user?->name ?? 'Unknown',
+                        'name' => $user?->name ?? 'Unknown',
                         'total' => $payments->sum('amount_paid'),
                         'count' => $payments->count(),
                     ];
@@ -871,11 +871,11 @@ class ListCollectionAndPostings extends ListRecords
                     : json_decode($record->audit_trail, true);
 
                 return [
-                    'action'    => $trail['action'] ?? 'Posted',
+                    'action' => $trail['action'] ?? 'Posted',
                     'reference' => $record->loan_number,
-                    'member'    => $record->member_name,
-                    'amount'    => $record->amount_paid,
-                    'user'      => $record->postedBy?->name ?? 'System',
+                    'member' => $record->member_name,
+                    'amount' => $record->amount_paid,
+                    'user' => $record->postedBy?->name ?? 'System',
                     'timestamp' => $record->created_at,
                 ];
             });

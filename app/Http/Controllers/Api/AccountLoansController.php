@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\LoanApplication as ModelsLoanApplication;
 use App\Models\MemberDetail;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class AccountLoansController extends Controller
@@ -19,20 +19,20 @@ class AccountLoansController extends Controller
             // Get profile_id from query parameter
             $profileId = $request->query('profile_id');
 
-            if (!$profileId) {
+            if (! $profileId) {
                 return response()->json([
                     'message' => 'Unable to fetch loans',
-                    'error' => 'The profile_id query parameter is required.'
+                    'error' => 'The profile_id query parameter is required.',
                 ], 400);
             }
 
             // Get Member
             $member = MemberDetail::where('profile_id', $profileId)->first();
 
-            if (!$member) {
+            if (! $member) {
                 return response()->json([
                     'message' => 'Unable to fetch loans',
-                    'error' => 'Member not found.'
+                    'error' => 'Member not found.',
                 ], 404);
             }
 
@@ -48,7 +48,7 @@ class AccountLoansController extends Controller
                         'amount_requested' => number_format($loan->amount_requested, 2),
                         'loan_status' => $loan->status,
                         'term_months' => $loan->term_months,
-                        'release_date' => $loan->release_date ?? null
+                        'release_date' => $loan->release_date ?? null,
                     ];
                 });
 
@@ -57,7 +57,7 @@ class AccountLoansController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Unable to fetch loans',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -79,7 +79,7 @@ class AccountLoansController extends Controller
                         'amount_requested' => number_format($loan->amount_requested, 2),
                         'loan_status' => $loan->status,
                         'term_months' => $loan->term_months,
-                        'release_date' => $loan->release_date ?? null
+                        'release_date' => $loan->release_date ?? null,
                     ];
                 });
 
@@ -88,25 +88,26 @@ class AccountLoansController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Unable to fetch loans',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-    public function show($id)
-{
-    $loan = ModelsLoanApplication::with(['member', 'type'])
-        ->where('loan_application_id', $id)
-        ->firstOrFail();
 
-    return response()->json([
-        'loan_application_id' => $loan->loan_application_id,
-        'member_name' => $loan->member->full_name,
-        'loan_type' => $loan->type->name ?? null,
-        'amount_requested' => $loan->amount_requested,
-        'loan_status' => $loan->status,
-        'term_months' => $loan->term_months,
-        'release_date' => $loan->release_date,
-        'purpose' => $loan->purpose,
-    ]);
-}
+    public function show($id)
+    {
+        $loan = ModelsLoanApplication::with(['member', 'type'])
+            ->where('loan_application_id', $id)
+            ->firstOrFail();
+
+        return response()->json([
+            'loan_application_id' => $loan->loan_application_id,
+            'member_name' => $loan->member->full_name,
+            'loan_type' => $loan->type->name ?? null,
+            'amount_requested' => $loan->amount_requested,
+            'loan_status' => $loan->status,
+            'term_months' => $loan->term_months,
+            'release_date' => $loan->release_date,
+            'purpose' => $loan->purpose,
+        ]);
+    }
 }

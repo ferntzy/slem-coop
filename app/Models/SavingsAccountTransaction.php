@@ -44,4 +44,3 @@ class SavingsAccountTransaction extends Model
         return $this->belongsTo(User::class, 'posted_by_user_id', 'user_id');
     }
 }
-

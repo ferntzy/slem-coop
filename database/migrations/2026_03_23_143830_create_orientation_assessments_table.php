@@ -11,10 +11,10 @@ return new class extends Migration
         Schema::create('orientation_assessments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('membership_application_id')
-                  ->constrained('membership_applications')
-                  ->cascadeOnDelete();
+                ->constrained('membership_applications')
+                ->cascadeOnDelete();
             $table->foreignId('orientation_id')
-                  ->constrained('orientations');
+                ->constrained('orientations');
             $table->unsignedTinyInteger('attempt_number')->default(1);
             $table->unsignedTinyInteger('score')->nullable();        // 0–100 percentage
             $table->boolean('passed')->default(false);
