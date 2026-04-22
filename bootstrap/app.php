@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('app:send-payment-notifications')->dailyAt('09:00');
         $schedule->command('app:mark-delinquent-members')->dailyAt('10:00');
+        $schedule->command('app:process-savings-dormancy')->dailyAt('01:00');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->renderable(function (Throwable $exception, $request) {
