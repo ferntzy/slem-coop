@@ -239,13 +239,6 @@ class MembershipApplicationController extends Controller
                     }
                 }
 
-                $this->notificationService->notifyAdmins(
-                    'New membership application',
-                    "{$application->first_name} {$application->last_name} submitted a membership application.",
-                    notifiableType: 'membership_application',
-                    notifiableId: $application->id
-                );
-
                 // Notify the applicant if they have an existing user account
                 $user = User::where('profile_id', $profile->profile_id)->first();
 
