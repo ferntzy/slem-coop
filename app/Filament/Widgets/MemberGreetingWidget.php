@@ -55,4 +55,9 @@ class MemberGreetingWidget extends Widget
     {
         return route('filament.admin.resources.loan-applications.create');
     }
+
+    public function getSavingsPageUrl(): string
+    {
+        return route('filament.admin.resources.savings-accounts.index');
+    }
 }

@@ -72,6 +72,7 @@ class MemberDetailForm
                                     Select::make('status')
                                         ->options([
                                             'Active' => 'Active',
+                                            'Dormant' => 'Dormant',
                                             'Inactive' => 'Inactive',
                                             'Delinquent' => 'Delinquent',
                                         ])

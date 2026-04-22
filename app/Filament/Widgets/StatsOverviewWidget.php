@@ -6,6 +6,7 @@ use App\Models\CollectionAndPosting;
 use App\Models\LoanAccount;
 use App\Models\LoanApplication;
 use App\Models\MemberDetail;
+use App\Models\SavingsAccount;
 use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -53,6 +54,14 @@ class StatsOverviewWidget extends BaseWidget
                 ->sum('balance')
             : 0;
 
+        // My Savings Balance — sum of all savings account balances
+        $savingsBalance = $member
+            ? SavingsAccount::query()
+                ->where('profile_id', $profileId)
+                ->get()
+                ->sum(fn (SavingsAccount $account): float => (float) $account->balance)
+            : 0;
+
         // My Total Payments — sum of all posted payments
         $totalPayments = $member
             ? CollectionAndPosting::whereHas('loanAccount', function ($q) use ($profileId) {
@@ -74,6 +83,12 @@ class StatsOverviewWidget extends BaseWidget
                 ->description('Outstanding balance on active loans')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color($totalLoanBalance > 0 ? 'warning' : 'success')
+                ->icon('heroicon-o-banknotes'),
+
+            Stat::make('My Savings Balance', '₱'.number_format($savingsBalance, 2))
+                ->description('Available balance across savings accounts')
+                ->descriptionIcon('heroicon-m-banknotes')
+                ->color($savingsBalance > 0 ? 'success' : 'gray')
                 ->icon('heroicon-o-banknotes'),
 
             Stat::make('My Total Payments', '₱'.number_format($totalPayments, 2))

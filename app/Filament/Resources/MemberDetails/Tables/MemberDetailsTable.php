@@ -32,7 +32,7 @@ class MemberDetailsTable
     protected static ?int $dormancyMonthsThreshold = null;
 
     protected static array $profileDormancyStatusCache = [];
-    
+
     protected const MATURITY_ACTION_TRANSFER_TO_SAVINGS = 'transfer_to_savings';
 
     protected const MATURITY_ACTION_RENEW_TIME_DEPOSIT = 'renew_time_deposit';
@@ -190,7 +190,7 @@ class MemberDetailsTable
             ->lessThanOrEqualTo($cutoffDate)
             ? 'Dormant'
             : 'Active';
-    
+
         return static::$profileDormancyStatusCache[$profileId];
     }
 
@@ -258,7 +258,7 @@ class MemberDetailsTable
                         $dormancyStatus = static::getSavingsDormancyStatus((int) $record->profile_id);
 
                         return $dormancyStatus === 'Dormant'
-                            ? $memberStatus.' • Dormant'
+                            ? 'Dormant'
                             : $memberStatus;
                     })
                     ->badge()
