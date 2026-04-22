@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\MemberDetails\Tables;
 
 use App\Filament\Resources\MemberDetails\MemberDetailResource;
+use App\Models\CoopSetting;
 use App\Models\Profile;
 use App\Models\SavingsAccountTransaction;
 use App\Models\SavingsType;
@@ -26,6 +27,12 @@ use Illuminate\Support\Carbon;
 
 class MemberDetailsTable
 {
+    protected static ?array $transactionalSavingsTypeIds = null;
+
+    protected static ?int $dormancyMonthsThreshold = null;
+
+    protected static array $profileDormancyStatusCache = [];
+    
     protected const MATURITY_ACTION_TRANSFER_TO_SAVINGS = 'transfer_to_savings';
 
     protected const MATURITY_ACTION_RENEW_TIME_DEPOSIT = 'renew_time_deposit';
@@ -81,6 +88,110 @@ class MemberDetailsTable
         }
 
         return now()->greaterThanOrEqualTo($maturityDate);
+    }
+
+    protected static function getDormancyMonthsThreshold(): int
+    {
+        if (static::$dormancyMonthsThreshold !== null) {
+            return static::$dormancyMonthsThreshold;
+        }
+
+        static::$dormancyMonthsThreshold = max((int) CoopSetting::get('savings.dormancy_months_threshold', 24), 1);
+
+        return static::$dormancyMonthsThreshold;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected static function getTransactionalSavingsTypeIds(): array
+    {
+        if (static::$transactionalSavingsTypeIds !== null) {
+            return static::$transactionalSavingsTypeIds;
+        }
+
+        static::$transactionalSavingsTypeIds = SavingsType::query()
+            ->where('is_active', true)
+            ->where('deposit_allowed', true)
+            ->where('withdrawal_allowed', true)
+            ->pluck('id')
+            ->map(fn ($id): string => (string) $id)
+            ->all();
+
+        return static::$transactionalSavingsTypeIds;
+    }
+
+    protected static function getSavingsDormancyStatus(int $profileId): string
+    {
+        if ($profileId <= 0) {
+            return 'No Savings';
+        }
+
+        if (array_key_exists($profileId, static::$profileDormancyStatusCache)) {
+            return static::$profileDormancyStatusCache[$profileId];
+        }
+
+        $transactionalSavingsTypeIds = static::getTransactionalSavingsTypeIds();
+
+        if ($transactionalSavingsTypeIds === []) {
+            static::$profileDormancyStatusCache[$profileId] = 'No Savings';
+
+            return static::$profileDormancyStatusCache[$profileId];
+        }
+
+        $positiveBalanceSavingsTypeIds = SavingsAccountTransaction::query()
+            ->where('profile_id', $profileId)
+            ->whereIn('savings_type_id', $transactionalSavingsTypeIds)
+            ->selectRaw('savings_type_id, SUM(COALESCE(deposit, 0) - COALESCE(withdrawal, 0)) as balance')
+            ->groupBy('savings_type_id')
+            ->havingRaw('SUM(COALESCE(deposit, 0) - COALESCE(withdrawal, 0)) > 0')
+            ->pluck('savings_type_id')
+            ->map(fn ($id): string => (string) $id)
+            ->all();
+
+        if ($positiveBalanceSavingsTypeIds === []) {
+            static::$profileDormancyStatusCache[$profileId] = 'No Savings';
+
+            return static::$profileDormancyStatusCache[$profileId];
+        }
+
+        $lastCustomerInitiatedTransactionDate = SavingsAccountTransaction::query()
+            ->where('profile_id', $profileId)
+            ->whereIn('savings_type_id', $positiveBalanceSavingsTypeIds)
+            ->where(function ($query): void {
+                $query->whereIn('direction', ['deposit', 'withdrawal', 'transfer'])
+                    ->orWhere(function ($legacyQuery): void {
+                        $legacyQuery
+                            ->whereNull('direction')
+                            ->whereRaw('LOWER(type) in (?, ?, ?)', ['deposit', 'withdrawal', 'transfer']);
+                    });
+            })
+            ->selectRaw('MAX(COALESCE(transaction_date, DATE(created_at))) as last_customer_transaction_date')
+            ->value('last_customer_transaction_date');
+
+        if (! $lastCustomerInitiatedTransactionDate) {
+            $lastCustomerInitiatedTransactionDate = SavingsAccountTransaction::query()
+                ->where('profile_id', $profileId)
+                ->whereIn('savings_type_id', $positiveBalanceSavingsTypeIds)
+                ->selectRaw('MAX(COALESCE(transaction_date, DATE(created_at))) as last_transaction_date')
+                ->value('last_transaction_date');
+        }
+
+        if (! $lastCustomerInitiatedTransactionDate) {
+            static::$profileDormancyStatusCache[$profileId] = 'Active';
+
+            return static::$profileDormancyStatusCache[$profileId];
+        }
+
+        $cutoffDate = now()->copy()->subMonths(static::getDormancyMonthsThreshold())->startOfDay();
+
+        static::$profileDormancyStatusCache[$profileId] = Carbon::parse($lastCustomerInitiatedTransactionDate)
+            ->startOfDay()
+            ->lessThanOrEqualTo($cutoffDate)
+            ? 'Dormant'
+            : 'Active';
+    
+        return static::$profileDormancyStatusCache[$profileId];
     }
 
     protected static function isTimeDepositDecisionWindowOpen(?SavingsAccountTransaction $transaction): bool
@@ -141,7 +252,28 @@ class MemberDetailsTable
                     ->sortable(),
 
                 TextColumn::make('status')
+                    ->label('Status')
+                    ->state(function ($record): string {
+                        $memberStatus = (string) ($record->status ?? 'Unknown');
+                        $dormancyStatus = static::getSavingsDormancyStatus((int) $record->profile_id);
+
+                        return $dormancyStatus === 'Dormant'
+                            ? $memberStatus.' • Dormant'
+                            : $memberStatus;
+                    })
                     ->badge()
+                    ->color(function (string $state): string {
+                        if (str_contains($state, 'Dormant')) {
+                            return 'danger';
+                        }
+
+                        return match (strtolower($state)) {
+                            'active' => 'success',
+                            'delinquent' => 'warning',
+                            'inactive' => 'gray',
+                            default => 'gray',
+                        };
+                    })
                     ->sortable(),
 
                 ImageColumn::make('signature_path')
@@ -298,7 +430,9 @@ class MemberDetailsTable
                                 'profile_id' => $data['profile_id'],
                                 'savings_type_id' => $data['savings_type_id'],
                                 'type' => $data['type'],
+                                'direction' => 'deposit',
                                 'deposit' => $data['amount'],
+                                'amount' => $data['amount'],
                                 'transaction_date' => $data['transaction_date'],
                                 'notes' => $data['notes'] ?? null,
                                 'posted_by_user_id' => auth()->id(),
@@ -563,7 +697,9 @@ class MemberDetailsTable
                                 'profile_id' => $data['profile_id'],
                                 'savings_type_id' => $data['savings_type_id'],
                                 'deposit' => $data['amount'],
+                                'amount' => $data['amount'],
                                 'type' => $data['type'],
+                                'direction' => 'deposit',
                                 'status' => 'ongoing',
                                 'terms' => $data['terms'],
                                 'transaction_date' => $data['transaction_date'],
@@ -901,7 +1037,9 @@ class MemberDetailsTable
                                 'profile_id' => $data['profile_id'],
                                 'savings_type_id' => $data['savings_type_id'],
                                 'type' => $data['type'],
+                                'direction' => 'withdrawal',
                                 'withdrawal' => $amount,
+                                'amount' => $amount,
                                 'transaction_date' => now(),
                                 'notes' => $data['notes'] ?? null,
                                 'posted_by_user_id' => auth()->id(),
