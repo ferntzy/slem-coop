@@ -10,8 +10,6 @@ class ManagePaymentAllocationLogic extends EditRecord
 {
     protected static string $resource = PaymentAllocationLogicResource::class;
 
-    // No custom $view — let EditRecord use its default view
-
     public function mount(int | string $record = null): void
     {
         $singleton = PaymentAllocationSetting::getSingleton();
