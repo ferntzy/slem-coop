@@ -30,6 +30,7 @@ class AccountDashboard extends Controller
             'member_change_percentage' => $memberChange,
         ]);
     }
+
       public function loanDisbursements()
     {
         // Define current period (e.g., this month)
