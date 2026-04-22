@@ -325,9 +325,7 @@ class CoopSettings extends Page
                         ->schema([
                             Livewire::make(\App\Filament\Widgets\PaymentPriorityWidget::class)->columnSpanFull(),
                         ]),
-<<<<<<< Dormancy
-                        Tab::make('Member Status')
-=======
+                       // Tab::make('Member Status')
 
                     Tab::make('Savings')
                         ->icon('heroicon-o-building-library')
@@ -369,7 +367,6 @@ class CoopSettings extends Page
                         ]),
 
                     Tab::make('Member Status')
->>>>>>> main
                         ->icon('heroicon-o-user-minus')
                         ->schema([
                             Section::make('Delinquent Member Settings')
