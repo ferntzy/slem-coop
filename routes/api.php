@@ -24,6 +24,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\MemberDetailsController;
 use App\Http\Controllers\Api\AccountMembersController;
+use App\Http\Controllers\Api\AccountLoansController;
+use App\Http\Controllers\Api\AccountLoanEditController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -89,12 +91,14 @@ Route::get('/account-officer/collections', [AccountDashboard::class, 'collection
 Route::get('/account-officer/loans', [AccountDashboard::class, 'activeLoanAccounts']);
 Route::get('/account-officer/pending-loans', [AccountDashboard::class, 'pendingLoanApplications']);
 Route::get('/account-officer/delinquent', [AccountDashboard::class, 'delinquentMembers']);
-// GET all active members
 Route::get('/members', [AccountMembersController::class, 'member']);
-// GET single member by ID
 Route::get('/members/{id}', [AccountMembersController::class, 'show']);
+Route::get('/loans', [AccountLoansController::class, 'Loans']);
+Route::get('/all-loans', [AccountLoansController::class, 'allLoans']);
+Route::get('/loans/{id}', [AccountLoansController::class, 'show']);
+Route::get('/loan-edit', [AccountLoanEditController::class, 'index']);
+Route::get('/loan-edit/{id}', [AccountLoanEditController::class, 'show']);
 
-    
 
 Route::get('/about', [AboutPageController::class, 'show']);
 
