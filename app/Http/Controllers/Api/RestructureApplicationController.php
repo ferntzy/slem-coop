@@ -39,6 +39,9 @@ class RestructureApplicationController extends Controller
                 }
 
                 $eligibility = $this->getEligibilityMetrics($loanApplication, $activeLoanAccount);
+                $newPrincipal = (float) $activeLoanAccount->balance;
+                $newInterest = (float) ($loanApplication->type?->max_interest_rate ?? 0);
+                $fees = app(CoopFeeCalculatorService::class)->calculate('restructure', $newPrincipal);
 
                 return [
                     'loan_application_id' => $loanApplication->loan_application_id,
@@ -46,9 +49,16 @@ class RestructureApplicationController extends Controller
                     'loan_type' => $loanApplication->type?->name,
                     'loan_type_id' => $loanApplication->loan_type_id,
                     'max_term_months' => $loanApplication->type?->max_term_months,
-                    'interest_rate' => (float) ($loanApplication->type?->max_interest_rate ?? 0),
+                    'interest_rate' => $newInterest,
                     'active_loan_account_id' => $activeLoanAccount->loan_account_id,
-                    'remaining_balance' => (float) $activeLoanAccount->balance,
+                    'remaining_balance' => $newPrincipal,
+                    'new_principal' => $newPrincipal,
+                    'new_interest' => $newInterest,
+                    'shared_capital_fee' => $fees['shared_capital_fee'] ?? 0,
+                    'insurance_fee' => $fees['insurance_fee'] ?? 0,
+                    'processing_fee' => $fees['processing_fee'] ?? 0,
+                    'coop_fee_total' => $fees['coop_fee_total'] ?? 0,
+                    'net_release_amount' => $fees['net_release_amount'] ?? 0,
                     'eligibility' => $eligibility,
                 ];
             })

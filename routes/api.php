@@ -5,8 +5,6 @@ use App\Http\Controllers\Api\AccountDashboard;
 use App\Http\Controllers\Api\AccountOfficerController;
 use App\Http\Controllers\Api\ContactPageController;
 use App\Http\Controllers\Api\LoanApplicationController as LoanOfficerApplicationController;
-use App\Http\Controllers\Api\LoanOfficerNotifController;
-use App\Http\Controllers\Api\LoanOfficerProfileController;
 use App\Http\Controllers\Api\Loans;
 use App\Http\Controllers\Api\Members;
 use App\Http\Controllers\Api\RestructureApplicationController;
@@ -23,6 +21,10 @@ use App\Http\Controllers\OrientationSettingsController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\MemberDetailsController;
+use App\Http\Controllers\Api\AccountMembersController;
+use App\Http\Controllers\Api\AccountLoansController;
+use App\Http\Controllers\Api\AccountLoanEditController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -45,14 +47,14 @@ Route::post('/membership-application', [MembershipApplicationController::class, 
 // edit profile
 Route::post('/edit-profile', [ProfileController::class, 'editProfile']);
 
-
-//account officer apis
-//stat card data
+// account officer apis
+// stat card data
 Route::get('/active-members', [Members::class, 'getActiveMembers']);
+Route::get('/inactive-members', [Members::class,  'inactiveMembers']);
 
-//loan officer apis
-//stat card data
-// loan officer
+
+// loan officer apis
+// stat card data
 Route::get('/approved-loans', [Loans::class, 'getApprovedLoans']);
 Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
 
@@ -95,6 +97,14 @@ Route::get('/account-officer/collections', [AccountDashboard::class, 'collection
 Route::get('/account-officer/loans', [AccountDashboard::class, 'activeLoanAccounts']);
 Route::get('/account-officer/pending-loans', [AccountDashboard::class, 'pendingLoanApplications']);
 Route::get('/account-officer/delinquent', [AccountDashboard::class, 'delinquentMembers']);
+Route::get('/members', [AccountMembersController::class, 'member']);
+Route::get('/members/{id}', [AccountMembersController::class, 'show']);
+Route::get('/loans', [AccountLoansController::class, 'Loans']);
+Route::get('/all-loans', [AccountLoansController::class, 'allLoans']);
+Route::get('/loans/{id}', [AccountLoansController::class, 'show']);
+Route::get('/loan-edit', [AccountLoanEditController::class, 'index']);
+Route::get('/loan-edit/{id}', [AccountLoanEditController::class, 'show']);
+
 
 Route::get('/about', [AboutPageController::class, 'show']);
 
@@ -115,6 +125,14 @@ Route::post('/member/active-loans', [MobileMemberGeneral::class, 'getActiveLoans
 Route::post('/member/loan-history', [MobileMemberGeneral::class, 'getLoanHistoryData']);
 // member delinquent list
 Route::get('/member/delinquent-list', [MobileMemberGeneral::class, 'getDelinquentMembersList']);
+
+Route::prefix('member-details')->group(function () {
+    Route::get('/', [MemberDetailsController::class, 'index']);
+    Route::get('/{id}', [MemberDetailsController::class, 'show']);
+    Route::post('/', [MemberDetailsController::class, 'store']);
+    Route::put('/{id}', [MemberDetailsController::class, 'update']);
+    Route::delete('/{id}', [MemberDetailsController::class, 'destroy']);
+});
 
 // member loan application
 Route::post('/send-application-form', [ControllersLoanApplication::class, 'applyLoan']);
