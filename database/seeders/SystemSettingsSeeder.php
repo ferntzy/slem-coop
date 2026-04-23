@@ -10,11 +10,11 @@ class SystemSettingsSeeder extends Seeder
     public function run(): void
     {
         $defaults = [
-            'app_name'         => config('app.name', 'COOP'),
-            'logo'             => null,
-            'favicon'          => null,
-            'primary_color'    => '#0d9488',
-            'font'             => 'Rajdhani',
+            'app_name' => config('app.name', 'COOP'),
+            'logo' => null,
+            'favicon' => null,
+            'primary_color' => '#0d9488',
+            'font' => 'Rajdhani',
             'topbar_font_size' => '14',
         ];
 
@@ -22,7 +22,7 @@ class SystemSettingsSeeder extends Seeder
             DB::table('system_settings')->updateOrInsert(
                 ['key' => $key],
                 [
-                    'value'      => $value,
+                    'value' => $value,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]
@@ -30,14 +30,3 @@ class SystemSettingsSeeder extends Seeder
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-

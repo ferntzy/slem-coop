@@ -18,9 +18,30 @@ class ViewCollectionAndPosting extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+
+            // Download Receipt
+            Action::make('downloadReceipt')
+                ->label('Download Receipt')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('success')
+                ->visible(fn (): bool => $this->getRecord()->status === 'Posted')
+                ->url(fn (): string => route('receipt.download', $this->getRecord()))
+                ->openUrlInNewTab(),
+
+            // Print Receipt
+            Action::make('printReceipt')
+                ->label('Print Receipt')
+                ->icon('heroicon-o-printer')
+                ->color('gray')
+                ->visible(fn (): bool => $this->getRecord()->status !== 'Void')
+                ->url(fn (): string => route('receipt.print', $this->getRecord()))
+                ->openUrlInNewTab(),
+
+            // Edit
             EditAction::make()
                 ->visible(fn (): bool => ! auth()->user()?->hasRole('Member')),
 
+            // Approve
             Action::make('approve')
                 ->label('Approve')
                 ->icon('heroicon-o-check')
@@ -72,6 +93,7 @@ class ViewCollectionAndPosting extends ViewRecord
                     );
                 }),
 
+            // Reject
             Action::make('reject')
                 ->label('Reject')
                 ->icon('heroicon-o-x-mark')
@@ -121,7 +143,7 @@ class ViewCollectionAndPosting extends ViewRecord
 
                     app(NotificationService::class)->notifyAdmins(
                         'Payment voided',
-                        "Collection #{$record->id} (₱".number_format($record->amount_paid, 2).") has been voided. Reason: {$data['reason']}"
+                        "Collection #{$record->id} (PHP".number_format($record->amount_paid, 2).") has been voided. Reason: {$data['reason']}"
                     );
                 }),
         ];

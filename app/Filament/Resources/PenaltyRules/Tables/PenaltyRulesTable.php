@@ -3,9 +3,9 @@
 namespace App\Filament\Resources\PenaltyRules\Tables;
 
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -41,26 +41,26 @@ class PenaltyRulesTable
                     ->label('Base')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'principal' => 'Principal',
-                        'balance'   => 'Balance',
-                        default     => $state,
+                        'balance' => 'Balance',
+                        default => $state,
                     })
                     ->colors([
-                        'info'    => 'principal',
+                        'info' => 'principal',
                         'warning' => 'balance',
                     ]),
 
                 BadgeColumn::make('frequency')
                     ->label('Frequency')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'monthly'  => 'Monthly',
-                        'daily'    => 'Daily',
+                        'monthly' => 'Monthly',
+                        'daily' => 'Daily',
                         'one_time' => 'One-Time',
-                        default    => $state,
+                        default => $state,
                     })
                     ->colors([
                         'success' => 'monthly',
                         'warning' => 'daily',
-                        'gray'    => 'one_time',
+                        'gray' => 'one_time',
                     ]),
 
                 IconColumn::make('is_active')

@@ -15,19 +15,19 @@ class RestructureApplication extends Model
     protected $keyType = 'int';
 
     protected $fillable = [
-    'loan_application_id',
-    'old_loan_account_id',
-    'status',
-    'new_principal',
-    'new_interest',
-    'new_maturity_date',
-    'term_months',
-    'remarks',
-    'shared_capital_fee',
-    'insurance_fee',
-    'processing_fee',
-    'coop_fee_total',
-    'net_release_amount',
+        'loan_application_id',
+        'old_loan_account_id',
+        'status',
+        'new_principal',
+        'new_interest',
+        'new_maturity_date',
+        'term_months',
+        'remarks',
+        'shared_capital_fee',
+        'insurance_fee',
+        'processing_fee',
+        'coop_fee_total',
+        'net_release_amount',
     ];
 
     protected $casts = [
@@ -44,26 +44,34 @@ class RestructureApplication extends Model
     {
         return $this->belongsTo(LoanApplication::class, 'loan_application_id', 'loan_application_id');
     }
+
     public function loanPayments()
     {
         return $this->hasMany(
-            \App\Models\LoanPayment::class,
+            LoanPayment::class,
             'loan_application_id',
             'loan_application_id'
         );
     }
-    
+
     public function oldLoanAccount()
     {
-        return $this->belongsTo(\App\Models\LoanAccount::class, 'old_loan_account_id', 'loan_account_id');
+        return $this->belongsTo(LoanAccount::class, 'old_loan_account_id', 'loan_account_id');
     }
+
+    public function statusLogs()
+    {
+        return $this->hasMany(RestructureApplicationStatusLog::class, 'restructure_application_id', 'restructure_application_id')
+            ->orderByDesc('changed_at');
+    }
+
     public function totalPaid()
     {
         return $this->loanPayments()->sum('principal_paid');
     }
+
     public function getTotalPaidAttribute()
     {
         return $this->loanPayments()->sum('principal_paid');
     }
- 
 }

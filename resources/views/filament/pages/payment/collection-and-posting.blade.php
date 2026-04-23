@@ -616,6 +616,8 @@
 
     var cpSystemTotal = {{ $todayTotal ?? 0 }};
     var cpToastTimer;
+    var cpReceiptRecordId = null;
+    var cpReceiptDownloadUrl = null;
 
     window.cpTriggerRecordPayment = function () { Livewire.dispatch('open-record-payment'); };
     window.cpOpenModal  = function (id) { var el = document.getElementById(id); if (el) el.classList.add('cp-open'); };
@@ -668,6 +670,18 @@
     }
 
     window.cpDownloadReceipt = function () {
+        var downloadUrl = cpReceiptDownloadUrl;
+
+        if (!downloadUrl && cpReceiptRecordId) {
+            downloadUrl = '/receipts/' + encodeURIComponent(cpReceiptRecordId) + '/download';
+        }
+
+        if (downloadUrl) {
+            window.location.href = downloadUrl;
+            window.cpToast('Preparing PNG download...', 'success');
+            return;
+        }
+
         if (!window.html2canvas) { window.cpToast('Still loading, please try again.', 'warning'); return; }
         var btn      = document.getElementById('cp-btn-download');
         var original = btn.innerHTML;
@@ -695,6 +709,13 @@
         if (window.Livewire) {
             Livewire.on('show-receipt', function (payload) {
                 var d = Array.isArray(payload) ? payload[0] : payload;
+
+                if (d && d.detail && typeof d.detail === 'object') {
+                    d = d.detail;
+                }
+
+                cpReceiptRecordId = d.record_id || d.recordId || d.id || null;
+                cpReceiptDownloadUrl = d.download_url || d.downloadUrl || null;
                 document.getElementById('rcpt-member').textContent    = d.member        || '—';
                 document.getElementById('rcpt-loan').textContent      = d.loan          || '—';
                 document.getElementById('rcpt-date').textContent      = d.date          || '—';

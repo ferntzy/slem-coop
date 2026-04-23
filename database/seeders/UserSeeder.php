@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Profile;
 use App\Models\Role;
+use App\Models\User;
 use App\Services\QrCodeGeneratorService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -14,8 +14,8 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $roles = [
-            'Admin','Manager','Staff','Member',
-            'Cashier','Loan Officer','Account Officer','Teller'
+            'Admin', 'Manager', 'Staff', 'Member',
+            'Cashier', 'Loan Officer', 'Account Officer', 'Teller',
         ];
 
         $roleMap = [];
@@ -40,25 +40,25 @@ class UserSeeder extends Seeder
             $profile = Profile::updateOrCreate(
                 ['email' => $email],
                 [
-                    'first_name'   => $first,
-                    'middle_name'  => null,
-                    'last_name'    => $last,
-                    'roles_id'     => $roleMap[$roleName]->id,
+                    'first_name' => $first,
+                    'middle_name' => null,
+                    'last_name' => $last,
+                    'roles_id' => $roleMap[$roleName]->id,
                     'civil_status' => $civilStatus,
-                    'tin'          => $tin,
+                    'tin' => $tin,
                 ]
             );
 
-            $avatar = 'https://ui-avatars.com/api/?name=' .
-                urlencode($first . ' ' . $last) .
+            $avatar = 'https://ui-avatars.com/api/?name='.
+                urlencode($first.' '.$last).
                 '&background=random';
 
             $user = User::updateOrCreate(
                 ['username' => $username],
                 [
-                    'password'   => Hash::make($password),
+                    'password' => Hash::make($password),
                     'profile_id' => $profile->profile_id,
-                    'avatar'     => $avatar,
+                    'avatar' => $avatar,
                     'image_path' => 'images/user-profile-seed.jpg',
                 ]
             );
@@ -74,10 +74,10 @@ class UserSeeder extends Seeder
                 ->generateForUser($user);
         };
 
-        $upsertUser('admin@example.com',          'admin',          'Admin',           'Admin',   'User');
-        $upsertUser('manager@example.com',        'manager',        'Manager',         'Manager', 'User');
-        $upsertUser('member@example.com',         'member',         'Member',          'Member',  'User');
-        $upsertUser('loanofficer@example.com',    'loanofficer',    'Loan Officer',    'Loan',    'Officer');
+        $upsertUser('admin@example.com', 'admin', 'Admin', 'Admin', 'User');
+        $upsertUser('manager@example.com', 'manager', 'Manager', 'Manager', 'User');
+        $upsertUser('member@example.com', 'member', 'Member', 'Member', 'User');
+        $upsertUser('loanofficer@example.com', 'loanofficer', 'Loan Officer', 'Loan', 'Officer');
         $upsertUser('accountofficer@example.com', 'accountofficer', 'Account Officer', 'Account', 'Officer');
     }
 }

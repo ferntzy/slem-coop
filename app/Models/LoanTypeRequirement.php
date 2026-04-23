@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class LoanTypeRequirement extends Model
 {
-     protected $table = 'loan_type_requirements';
+    protected $table = 'loan_type_requirements';
+
     protected $primaryKey = 'loan_type_requirement_id';
 
     protected $fillable = [

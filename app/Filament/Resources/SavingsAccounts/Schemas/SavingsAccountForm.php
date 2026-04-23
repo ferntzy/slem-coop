@@ -26,7 +26,7 @@ class SavingsAccountForm
 
     protected static function money(?float $amount): string
     {
-        return $amount !== null ? '₱' . number_format($amount, 2) : '—';
+        return $amount !== null ? '₱'.number_format($amount, 2) : '—';
     }
 
     public static function configure(Schema $schema): Schema
@@ -40,16 +40,17 @@ class SavingsAccountForm
                             ->label('Member')
                             ->options(function () {
                                 return Profile::where(function ($query) {
-                                        $query->whereHas('memberDetail', function (Builder $q) {
-                                            $q->where('status', 'Active');
-                                        })->orWhereDoesntHave('memberDetail');
-                                    })
+                                    $query->whereHas('memberDetail', function (Builder $q) {
+                                        $q->where('status', 'Active');
+                                    })->orWhereDoesntHave('memberDetail');
+                                })
                                     ->whereHas('user', function (Builder $q) {
                                         $q->where('is_active', true);
                                     })
                                     ->get()
                                     ->mapWithKeys(function ($profile) {
-                                        $label = $profile->full_name . ' — ' . ($profile->memberDetail?->member_no ?? 'N/A');
+                                        $label = $profile->full_name.' — '.($profile->memberDetail?->member_no ?? 'N/A');
+
                                         return [$profile->profile_id => $label];
                                     })
                                     ->toArray();
@@ -57,10 +58,11 @@ class SavingsAccountForm
                             ->searchable()
                             ->preload()
                             ->required()
-                            ->default(function() {
+                            ->default(function () {
                                 if (auth()->check() && auth()->user()->profile_id) {
                                     return auth()->user()->profile_id;
                                 }
+
                                 return null;
                             })
                             ->disabled()
@@ -157,7 +159,7 @@ class SavingsAccountForm
 
                                 $min = (float) ($type->minimum_initial_deposit ?? 0);
 
-                                return $min > 0 ? 'Minimum initial deposit: ' . static::money($min) : null;
+                                return $min > 0 ? 'Minimum initial deposit: '.static::money($min) : null;
                             })
                             ->required(),
                         TextInput::make('status')
@@ -182,4 +184,3 @@ class SavingsAccountForm
             ]);
     }
 }
-

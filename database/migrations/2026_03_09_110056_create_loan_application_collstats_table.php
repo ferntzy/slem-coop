@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('loan_application_collstats')) {
+        if (! Schema::hasTable('loan_application_collstats')) {
 
             Schema::create('loan_application_collstats', function (Blueprint $table) {
                 $table->id('collstat_id');
@@ -28,4 +28,3 @@ return new class extends Migration
         Schema::dropIfExists('loan_application_collstats');
     }
 };
-

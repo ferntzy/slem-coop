@@ -6,12 +6,13 @@ use App\Models\MemberDetail;
 use App\Models\Profile;
 use App\Models\User;
 use Carbon\Carbon;
+use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
-use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\RecordActionsPosition;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
@@ -37,11 +38,12 @@ class MembershipApplicationsTable
                                     ->title('Already approved')
                                     ->warning()
                                     ->send();
+
                                 return;
                             }
 
                             $record->update([
-                                'status'     => 'approved',
+                                'status' => 'approved',
                                 'updated_by' => auth()->id(),
                             ]);
 
@@ -80,7 +82,7 @@ class MembershipApplicationsTable
                                         'pin' => Hash::make($pin),
                                         'profile_id' => $record->profile_id,
                                         'is_active' => 1,
-                                        'username' => $profile->first_name . ' ' . $profile->last_name,
+                                        'username' => $profile->first_name.' '.$profile->last_name,
                                     ]);
                                 }
 
@@ -100,10 +102,10 @@ class MembershipApplicationsTable
                         ->form([Textarea::make('reason')->label('Reason for Rejection')->required()])
                         ->action(function ($record, array $data) {
                             $record->update([
-                                'status'      => 'rejected',
+                                'status' => 'rejected',
                                 'rejected_at' => now(),
-                                'remarks'     => $data['reason'],
-                                'updated_by'  => auth()->id(),
+                                'remarks' => $data['reason'],
+                                'updated_by' => auth()->id(),
                             ]);
 
                             Notification::make()
@@ -112,13 +114,13 @@ class MembershipApplicationsTable
                                 ->send();
                         }),
                 ])->tooltip('Actions'),
-            ], position: \Filament\Tables\Enums\RecordActionsPosition::BeforeCells)
+            ], position: RecordActionsPosition::BeforeCells)
             ->columns([
                 TextColumn::make('full_name')
                     ->label('Applicant')
                     ->getStateUsing(fn ($record) => trim(
-                        $record->first_name . ' ' .
-                        ($record->middle_name ? $record->middle_name . ' ' : '') .
+                        $record->first_name.' '.
+                        ($record->middle_name ? $record->middle_name.' ' : '').
                         $record->last_name
                     ))
                     ->searchable(['first_name', 'last_name']),
@@ -135,10 +137,10 @@ class MembershipApplicationsTable
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'approved'     => 'success',
-                        'rejected'     => 'danger',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
                         'under_review' => 'warning',
-                        default        => 'gray',
+                        default => 'gray',
                     }),
 
                 TextColumn::make('remarks')
@@ -157,9 +159,9 @@ class MembershipApplicationsTable
             ->filters([
                 SelectFilter::make('status')
                     ->options([
-                        'pending'      => 'Pending',
+                        'pending' => 'Pending',
                         'under_review' => 'Under Review',
-                        'rejected'     => 'Rejected',
+                        'rejected' => 'Rejected',
                     ]),
 
                 SelectFilter::make('membership_type_id')

@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class MemberDetail extends Model
 {
     // protected $primaryKey = 'member_id';
-
 
     protected $fillable = [
         'profile_id',
@@ -50,16 +49,16 @@ class MemberDetail extends Model
     public function fullName(): Attribute
     {
         return Attribute::make(
-            get: fn() => $this->profile?->full_name ?? 'Unknown Member'
+            get: fn () => $this->profile?->full_name ?? 'Unknown Member'
         );
     }
 
     public function spouse()
     {
-        return $this->hasOne(\App\Models\MemberSpouse::class, 'member_detail_id');
+        return $this->hasOne(MemberSpouse::class, 'member_detail_id');
     }
 
-        public function profile()
+    public function profile()
     {
         return $this->belongsTo(Profile::class, 'profile_id', 'profile_id');
     }
@@ -83,22 +82,27 @@ class MemberDetail extends Model
     {
         return $this->isRegular() ? 'Regular' : 'Associate';
     }
+
     public function loanApplications(): HasMany
     {
         return $this->hasMany(LoanApplication::class, 'member_id', 'id');
     }
+
     public function coMakers()
     {
-        return $this->hasMany(\App\Models\MemberCoMaker::class, 'member_detail_id');
+        return $this->hasMany(MemberCoMaker::class, 'member_detail_id');
     }
+
     public function sharedCapitalTransactions(): HasMany
     {
-        return $this->hasMany(\App\Models\ShareCapitalTransaction::class, 'profile_id', 'profile_id');
+        return $this->hasMany(ShareCapitalTransaction::class, 'profile_id', 'profile_id');
     }
+
     public function savingsAccountTransactions(): HasMany
     {
         return $this->hasmany(SavingsAccountTransaction::class, 'profile_id', 'profile_id');
     }
+
     public function savingsType(): HasMany
     {
         return $this->hasMany(SavingsType::class, 'savings_type_id', 'savings_type_id');
