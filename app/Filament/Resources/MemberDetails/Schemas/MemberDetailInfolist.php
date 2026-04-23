@@ -14,6 +14,7 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class MemberDetailInfolist
 {
@@ -89,10 +90,23 @@ class MemberDetailInfolist
 
     protected static function getBalance(Collection $transactions): float
     {
-        return round((float) $transactions->sum('deposit') - (float) $transactions->sum('withdrawal'), 2);
+        return round($transactions->sum(function (SavingsAccountTransaction $transaction): float {
+            return static::getTransactionDepositAmount($transaction) - static::getTransactionWithdrawalAmount($transaction);
+        }), 2);
     }
 
     protected static function getTransactionAmount(SavingsAccountTransaction $transaction): float
+    {
+        $depositAmount = static::getTransactionDepositAmount($transaction);
+
+        if ($depositAmount > 0) {
+            return $depositAmount;
+        }
+
+        return static::getTransactionWithdrawalAmount($transaction);
+    }
+
+    protected static function getTransactionDepositAmount(SavingsAccountTransaction $transaction): float
     {
         $depositAmount = (float) ($transaction->deposit ?? 0);
 
@@ -100,7 +114,32 @@ class MemberDetailInfolist
             return round($depositAmount, 2);
         }
 
-        return round((float) ($transaction->withdrawal ?? 0), 2);
+        $type = Str::lower((string) ($transaction->type ?? ''));
+        $direction = Str::lower((string) ($transaction->direction ?? ''));
+
+        if (in_array($type, ['deposit', 'credit'], true) || in_array($direction, ['credit', 'inflow'], true)) {
+            return round((float) ($transaction->amount ?? 0), 2);
+        }
+
+        return 0.0;
+    }
+
+    protected static function getTransactionWithdrawalAmount(SavingsAccountTransaction $transaction): float
+    {
+        $withdrawalAmount = (float) ($transaction->withdrawal ?? 0);
+
+        if ($withdrawalAmount > 0) {
+            return round($withdrawalAmount, 2);
+        }
+
+        $type = Str::lower((string) ($transaction->type ?? ''));
+        $direction = Str::lower((string) ($transaction->direction ?? ''));
+
+        if (in_array($type, ['withdrawal', 'debit'], true) || in_array($direction, ['debit', 'outflow'], true)) {
+            return round((float) ($transaction->amount ?? 0), 2);
+        }
+
+        return 0.0;
     }
 
     /**

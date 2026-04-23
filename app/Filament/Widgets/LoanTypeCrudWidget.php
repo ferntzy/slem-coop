@@ -9,8 +9,8 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Tables;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BooleanColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Widgets\TableWidget as BaseWidget;
 
 class LoanTypeCrudWidget extends BaseWidget
@@ -37,17 +37,17 @@ class LoanTypeCrudWidget extends BaseWidget
                     Forms\Components\TextInput::make('min_amount')->numeric()->required(),
                     Forms\Components\TextInput::make('max_amount')->numeric()->required(),
                     Forms\Components\TextInput::make('max_interest_rate')
-                                                ->numeric()
-                                                ->required()
-                                                ->label('Max Interest Rate'),
+                        ->numeric()
+                        ->required()
+                        ->label('Max Interest Rate'),
                     Forms\Components\Select::make('amount_calculation_type')
-                    ->options([
-                        'fixed' => 'Fixed',
-                        'multiplier' => 'Multiplier',
-                        // add other types as needed
-                    ])
-                    ->required()
-                    ->label('Amount Calculation Type'),
+                        ->options([
+                            'fixed' => 'Fixed',
+                            'multiplier' => 'Multiplier',
+                            // add other types as needed
+                        ])
+                        ->required()
+                        ->label('Amount Calculation Type'),
                     Forms\Components\TextInput::make('max_term_months')->numeric()->required(),
                     Forms\Components\Toggle::make('requires_collateral')->label('Requires Collateral')->default(false),
                     Forms\Components\TextInput::make('collateral_threshold')->numeric(),
@@ -61,17 +61,17 @@ class LoanTypeCrudWidget extends BaseWidget
                     Forms\Components\TextInput::make('min_amount')->numeric()->required(),
                     Forms\Components\TextInput::make('max_amount')->numeric()->required(),
                     Forms\Components\TextInput::make('max_interest_rate')
-                                                ->numeric()
-                                                ->required()
-                                                ->label('Max Interest Rate'),
+                        ->numeric()
+                        ->required()
+                        ->label('Max Interest Rate'),
                     Forms\Components\Select::make('amount_calculation_type')
-                    ->options([
-                        'fixed' => 'Fixed',
-                        'multiplier' => 'Multiplier',
-                        // add other types as needed
-                    ])
-                    ->required()
-                    ->label('Amount Calculation Type'),
+                        ->options([
+                            'fixed' => 'Fixed',
+                            'multiplier' => 'Multiplier',
+                            // add other types as needed
+                        ])
+                        ->required()
+                        ->label('Amount Calculation Type'),
                     Forms\Components\TextInput::make('max_term_months')->numeric()->required(),
                     Forms\Components\Toggle::make('requires_collateral')->label('Requires Collateral'),
                     Forms\Components\TextInput::make('collateral_threshold')->numeric(),

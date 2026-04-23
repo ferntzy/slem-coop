@@ -33,14 +33,30 @@ class EditLoanApplications extends EditRecord
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->requiresConfirmation()
-                ->visible(fn (): bool => auth()->user()?->hasAnyRole(['super_admin', 'Admin', 'Manager', 'Account Officer', 'Loan Officer', 'HQ Loan Officer', 'hq_loan_officer']) && in_array($this->record->status, ['Pending', 'Under Review']))
+                ->visible(fn (): bool => in_array($this->record->status, ['Pending', 'Under Review']) && ((auth()->user()?->canApproveAnyLoanAmount() ?? false) || auth()->user()?->hasAnyRole(['Account Officer', 'Loan Officer', 'HQ Loan Officer', 'hq_loan_officer'])))
                 ->action(function (): void {
                     $user = auth()->user();
                     $notificationService = app(NotificationService::class);
                     $approvalLimit = $this->loanOfficerApprovalLimit();
                     $requiresDualApproval = (float) $this->record->amount_requested > $approvalLimit;
+                    $canApproveAnyLoanAmount = $user?->canApproveAnyLoanAmount() ?? false;
+                    $isLoanOfficerApprover = $user?->hasAnyRole([
+                        'Loan Officer',
+                        'loan_officer',
+                        'HQ Loan Officer',
+                        'hq_loan_officer',
+                    ]) ?? false;
 
-                    if ($requiresDualApproval && ($user?->isLoanOfficerApprover() ?? false)) {
+                    if ($requiresDualApproval && ! $canApproveAnyLoanAmount) {
+                        if (! $isLoanOfficerApprover) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Unauthorized for high-value approval')
+                                ->send();
+
+                            return;
+                        }
+
                         $from = $this->record->status;
                         $this->record->update(['status' => 'Under Review']);
 
@@ -75,45 +91,6 @@ class EditLoanApplications extends EditRecord
                             ->send();
 
                         return;
-                    }
-
-                    if ($requiresDualApproval) {
-                        $isManagerApprover = $user?->isManagerApprover() ?? false;
-                        $isAdminApprover = $user?->isAdminOrSuperAdmin() ?? false;
-
-                        if (! $isManagerApprover && ! $isAdminApprover) {
-                            Notification::make()
-                                ->danger()
-                                ->title('Unauthorized for high-value approval')
-                                ->send();
-
-                            return;
-                        }
-
-                        $updates = ['status' => 'Under Review'];
-
-                        if ($isManagerApprover && ! $this->record->manager_approved_at) {
-                            $updates['manager_approved_at'] = now();
-                            $updates['manager_approved_by_user_id'] = auth()->id();
-                        }
-
-                        if ($isAdminApprover && ! $this->record->admin_approved_at) {
-                            $updates['admin_approved_at'] = now();
-                            $updates['admin_approved_by_user_id'] = auth()->id();
-                        }
-
-                        $this->record->update($updates);
-                        $this->record->refresh();
-
-                        if (! $this->record->manager_approved_at || ! $this->record->admin_approved_at) {
-                            Notification::make()
-                                ->info()
-                                ->title('Approval recorded')
-                                ->body('Waiting for both Manager and Admin approvals before final approval.')
-                                ->send();
-
-                            return;
-                        }
                     }
 
                     $this->record->update([

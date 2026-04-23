@@ -31,6 +31,6 @@ class OrientationQuestion extends Model
     public function correctChoice()
     {
         return $this->hasOne(OrientationChoice::class, 'question_id')
-                    ->where('is_correct', true);
+            ->where('is_correct', true);
     }
 }

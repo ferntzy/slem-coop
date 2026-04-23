@@ -5,12 +5,11 @@ use App\Http\Controllers\Api\AccountDashboard;
 use App\Http\Controllers\Api\AccountOfficerController;
 use App\Http\Controllers\Api\ContactPageController;
 use App\Http\Controllers\Api\LoanApplicationController as LoanOfficerApplicationController;
-use App\Http\Controllers\Api\LoanOfficerProfileController;
 use App\Http\Controllers\Api\Loans;
 use App\Http\Controllers\Api\Members;
+use App\Http\Controllers\Api\RestructureApplicationController;
 use App\Http\Controllers\HeroNewsEventController;
 use App\Http\Controllers\LoanApplication as ControllersLoanApplication;
-use App\Http\Controllers\Api\LoanOfficerNotifController;
 use App\Http\Controllers\MembershipApplicationController;
 use App\Http\Controllers\MobileAuth\Auth;
 use App\Http\Controllers\MobileMemberGeneral;
@@ -24,6 +23,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\MemberDetailsController;
 use App\Http\Controllers\Api\AccountMembersController;
+use App\Http\Controllers\Api\AccountLoansController;
+use App\Http\Controllers\Api\AccountLoanEditController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -46,15 +47,14 @@ Route::post('/membership-application', [MembershipApplicationController::class, 
 // edit profile
 Route::post('/edit-profile', [ProfileController::class, 'editProfile']);
 
-
-//account officer apis
-//stat card data
+// account officer apis
+// stat card data
 Route::get('/active-members', [Members::class, 'getActiveMembers']);
 Route::get('/inactive-members', [Members::class,  'inactiveMembers']);
 
 
-//loan officer apis
-//stat card data
+// loan officer apis
+// stat card data
 Route::get('/approved-loans', [Loans::class, 'getApprovedLoans']);
 Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
 
@@ -62,7 +62,7 @@ Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
 Route::get('/loan-applications', [Loans::class, 'getLoanApplications']);
 Route::post('/get-loan-application-detail', [Loans::class, 'getLoanApplication']);
 
-
+Route::get('/loan-applications-list', [LoanOfficerApplicationController::class, 'index']);
 Route::get('/loan-applications/{id}', [LoanOfficerApplicationController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -73,7 +73,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/loan-applications/{id}/under-review', [LoanOfficerApplicationController::class, 'markUnderReview']);
     Route::get('/loan-applications/{id}/download-form', [LoanOfficerApplicationController::class, 'downloadLoanForm']);
     Route::post('/loan-applications/{id}/reject', [LoanOfficerApplicationController::class, 'reject']);
-    Route::post('/loan-applications/{id}/cancel', [LoanOfficerApplicationController::class, 'cancel']);
+
+    // restructure applications
+    Route::get('/restructure-applications/eligible-loans', [RestructureApplicationController::class, 'eligibleLoans']);
+    Route::get('/restructure-applications', [RestructureApplicationController::class, 'index']);
+    Route::post('/restructure-applications', [RestructureApplicationController::class, 'store']);
+    Route::get('/restructure-applications/{id}', [RestructureApplicationController::class, 'show']);
+    Route::post('/restructure-applications/{id}/under-review', [RestructureApplicationController::class, 'markUnderReview']);
+    Route::post('/restructure-applications/{id}/approve', [RestructureApplicationController::class, 'approve']);
+    Route::post('/restructure-applications/{id}/reject', [RestructureApplicationController::class, 'reject']);
 });
 
 // account officer
@@ -89,12 +97,23 @@ Route::get('/account-officer/collections', [AccountDashboard::class, 'collection
 Route::get('/account-officer/loans', [AccountDashboard::class, 'activeLoanAccounts']);
 Route::get('/account-officer/pending-loans', [AccountDashboard::class, 'pendingLoanApplications']);
 Route::get('/account-officer/delinquent', [AccountDashboard::class, 'delinquentMembers']);
-// GET all active members
 Route::get('/members', [AccountMembersController::class, 'member']);
-// GET single member by ID
 Route::get('/members/{id}', [AccountMembersController::class, 'show']);
+Route::get('/loans', [AccountLoansController::class, 'Loans']);
+Route::get('/all-loans', [AccountLoansController::class, 'allLoans']);
+Route::get('/loans/{id}', [AccountLoansController::class, 'show']);
+Route::get('/loan-edit', [AccountLoanEditController::class, 'index']);
+Route::get('/loan-edit/{id}', [AccountLoanEditController::class, 'show']);
 
-    
+Route::prefix('member-details')->group(function () {
+    Route::get('/', [MemberDetailsController::class, 'index']);
+    Route::get('/{id}', [MemberDetailsController::class, 'show']);
+    Route::post('/', [MemberDetailsController::class, 'store']);
+    Route::put('/{id}', [MemberDetailsController::class, 'update']);
+    Route::delete('/{id}', [MemberDetailsController::class, 'destroy']);
+});
+
+
 
 Route::get('/about', [AboutPageController::class, 'show']);
 
@@ -105,25 +124,18 @@ Route::get('/orientation', [OrientationController::class, 'show']);
 Route::post('/orientation/video-watched', [OrientationController::class, 'markVideoWatched']);
 Route::post('/orientation/submit', [OrientationController::class, 'submit']);
 
-
-
 // member apis
 // member dashboard datas
 Route::post('/member/dashboard-data', [MobileMemberGeneral::class, 'getDashboardData']);
 
 // member active-loans
 Route::post('/member/active-loans', [MobileMemberGeneral::class, 'getActiveLoansData']);
-
 // member loan history
 Route::post('/member/loan-history', [MobileMemberGeneral::class, 'getLoanHistoryData']);
+// member delinquent list
+Route::get('/member/delinquent-list', [MobileMemberGeneral::class, 'getDelinquentMembersList']);
 
-Route::prefix('member-details')->group(function () {
-    Route::get('/', [MemberDetailsController::class, 'index']);
-    Route::get('/{id}', [MemberDetailsController::class, 'show']);
-    Route::post('/', [MemberDetailsController::class, 'store']);
-    Route::put('/{id}', [MemberDetailsController::class, 'update']);
-    Route::delete('/{id}', [MemberDetailsController::class, 'destroy']);
-});
+
 
 // member loan application
 Route::post('/send-application-form', [ControllersLoanApplication::class, 'applyLoan']);

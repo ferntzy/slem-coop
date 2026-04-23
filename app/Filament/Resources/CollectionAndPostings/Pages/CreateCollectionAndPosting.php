@@ -3,9 +3,9 @@
 namespace App\Filament\Resources\CollectionAndPostings\Pages;
 
 use App\Filament\Resources\CollectionAndPostings\CollectionAndPostingResource;
-use Filament\Resources\Pages\CreateRecord;
 use App\Models\LoanAccount;
 use App\Services\LoanAccountBalanceService;
+use Filament\Resources\Pages\CreateRecord;
 
 class CreateCollectionAndPosting extends CreateRecord
 {

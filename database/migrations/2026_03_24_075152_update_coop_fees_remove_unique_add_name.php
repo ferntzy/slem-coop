@@ -12,12 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('coop_fees', function (Blueprint $table) {
-        // Drop the old unique constraint
-        $table->dropUnique(['type', 'group', 'status']);
+            // Drop the old unique constraint
+            $table->dropUnique(['type', 'group', 'status']);
 
-        // Add optional name column to differentiate same-type fees
-        $table->string('name')->nullable()->after('type');
-    });
+            // Add optional name column to differentiate same-type fees
+            $table->string('name')->nullable()->after('type');
+        });
     }
 
     /**

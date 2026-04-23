@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class LoanApplicationCollstat extends Model
 {
     protected $table = 'loan_application_collstats';
+
     public $timestamps = false;
 
     protected $fillable = [

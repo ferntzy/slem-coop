@@ -74,6 +74,38 @@
             {{-- Right side --}}
             <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
 
+                {{-- View Savings Button --}}
+                <a
+                    href="{{ $this->getSavingsPageUrl() }}"
+                    style="
+                        display: inline-flex; align-items: center; gap: 8px;
+                        background: #ffffff;
+                        color: #0f766e;
+                        border-radius: 10px;
+                        padding: 10px 20px;
+                        font-size: 14px;
+                        font-weight: 700;
+                        letter-spacing: 0.2px;
+                        text-decoration: none;
+                        white-space: nowrap;
+                        box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+                    "
+                    onmouseover="this.style.opacity='0.88'"
+                    onmouseout="this.style.opacity='1'"
+                >
+                    <span style="
+                        display: inline-flex; align-items: center; justify-content: center;
+                        width: 16px; height: 16px;
+                        border-radius: 999px;
+                        background: rgba(15, 118, 110, 0.12);
+                        color: currentColor;
+                        font-size: 11px;
+                        font-weight: 800;
+                        line-height: 1;
+                    ">₱</span>
+                    View Savings
+                </a>
+
                 {{-- Apply Loan Button --}}
                 <a
                     href="{{ $this->getLoanApplicationUrl() }}"

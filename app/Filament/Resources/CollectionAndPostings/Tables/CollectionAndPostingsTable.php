@@ -25,8 +25,6 @@ class CollectionAndPostingsTable
 
             ->columns([
 
-               
-
                 TextColumn::make('member_name')
                     ->label('Member')
                     ->searchable()

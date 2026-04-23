@@ -18,5 +18,4 @@ class ListRestructureApplications extends ListRecords
             CreateAction::make(),
         ];
     }
-
 }

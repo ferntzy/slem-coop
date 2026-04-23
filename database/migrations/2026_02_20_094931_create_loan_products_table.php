@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('loan_products', function (Blueprint $table) {
+        Schema::create('loan_products', function (Blueprint $table) {
             $table->id('loan_product_id');
 
             $table->string('name', 150);
@@ -30,7 +30,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
 
             $table->timestamps();
-});
+        });
     }
 
     /**

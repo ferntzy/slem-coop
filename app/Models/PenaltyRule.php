@@ -23,13 +23,14 @@ class PenaltyRule extends Model
     ];
 
     protected $casts = [
-        'is_escalating'        => 'boolean',
-        'value'                => 'decimal:2',
-        'max_penalty_cap'      => 'decimal:2',
+        'is_escalating' => 'boolean',
+        'value' => 'decimal:2',
+        'max_penalty_cap' => 'decimal:2',
         'escalation_increment' => 'decimal:2',
         'escalation_max_value' => 'decimal:2',
-        'is_default'           => 'boolean',
+        'is_default' => 'boolean',
     ];
+
     protected static function booted(): void
     {
         static::saving(function ($rule) {
@@ -48,7 +49,7 @@ class PenaltyRule extends Model
     {
         $rate = (float) $this->value;
 
-        if (!$this->is_escalating || !$this->escalation_interval || !$this->escalation_increment) {
+        if (! $this->is_escalating || ! $this->escalation_interval || ! $this->escalation_increment) {
             return $rate;
         }
 

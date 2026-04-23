@@ -2,8 +2,6 @@
 
 return [
 
-
-
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
@@ -26,8 +24,8 @@ return [
     ],
 
     'philsms' => [
-        'base'           => env('PHILSMS_API_BASE', 'https://dashboard.philsms.com/api/v3/'),
-        'token'          => env('PHILSMS_API_TOKEN'),
+        'base' => env('PHILSMS_API_BASE', 'https://dashboard.philsms.com/api/v3/'),
+        'token' => env('PHILSMS_API_TOKEN'),
         'default_sender' => env('PHILSMS_DEFAULT_SENDER'),
     ],
 

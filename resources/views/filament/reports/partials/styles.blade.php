@@ -13,17 +13,17 @@
         .report-dashboard {
             --report-surface: rgb(255 255 255);
             --report-surface-alt: rgb(248 250 252);
-            --report-border: rgb(226 232 240);
-            --report-border-strong: rgb(203 213 225);
+            --report-border: rgba(22, 101, 52, 0.12);
+            --report-border-strong: rgba(22, 101, 52, 0.20);
             --report-text: rgb(15 23 42);
             --report-muted: rgb(100 116 139);
-            --report-accent: rgb(13 148 136);
-            --report-accent-soft: rgb(236 253 245);
+            --report-accent: rgb(22 163 74);
+            --report-accent-soft: rgba(22, 163, 74, 0.10);
             --report-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
-            --report-table-head-start: rgb(15 23 42);
-            --report-table-head-end: rgb(30 41 59);
-            --report-table-row-hover: rgb(248 250 252);
-            --report-table-footer-bg: rgba(16, 185, 129, 0.06);
+            --report-table-head-start: rgb(22 101 52);
+            --report-table-head-end: rgb(21 128 61);
+            --report-table-row-hover: rgb(240 253 244);
+            --report-table-footer-bg: rgba(22, 163, 74, 0.08);
             isolation: isolate;
             position: relative;
         }
@@ -31,17 +31,17 @@
         .dark .report-dashboard {
             --report-surface: rgb(15 23 42);
             --report-surface-alt: rgb(2 6 23);
-            --report-border: rgb(30 41 59);
-            --report-border-strong: rgb(51 65 85);
+            --report-border: rgba(52, 211, 153, 0.18);
+            --report-border-strong: rgba(52, 211, 153, 0.25);
             --report-text: rgb(226 232 240);
             --report-muted: rgb(148 163 184);
-            --report-accent: rgb(45 212 191);
-            --report-accent-soft: rgb(15 118 110 / 0.18);
-            --report-shadow: 0 16px 40px rgba(2, 6, 23, 0.38);
-            --report-table-head-start: rgb(15 23 42);
-            --report-table-head-end: rgb(30 41 59);
-            --report-table-row-hover: rgb(15 23 42);
-            --report-table-footer-bg: rgb(6 78 59 / 0.22);
+            --report-accent: rgb(52 211 153);
+            --report-accent-soft: rgba(16, 185, 129, 0.18);
+            --report-shadow: 0 16px 40px rgba(2, 6, 23, 0.35);
+            --report-table-head-start: rgb(22 101 52);
+            --report-table-head-end: rgb(21 128 61);
+            --report-table-row-hover: rgba(16, 185, 129, 0.08);
+            --report-table-footer-bg: rgba(16, 185, 129, 0.14);
         }
 
         .report-dashboard::before,
@@ -51,7 +51,7 @@
             position: absolute;
             border-radius: 9999px;
             filter: blur(28px);
-            opacity: 0.7;
+            opacity: 0.55;
             z-index: -1;
         }
 
@@ -59,22 +59,14 @@
             inset: -2rem auto auto -4rem;
             width: 16rem;
             height: 16rem;
-            background: radial-gradient(circle, rgba(13, 148, 136, 0.16), transparent 68%);
+            background: radial-gradient(circle, rgba(22, 163, 74, 0.12), transparent 68%);
         }
 
         .report-dashboard::after {
             inset: 8rem -5rem auto auto;
             width: 18rem;
             height: 18rem;
-            background: radial-gradient(circle, rgba(59, 130, 246, 0.08), transparent 68%);
-        }
-
-        .dark .report-dashboard::before {
-            background: radial-gradient(circle, rgba(45, 212, 191, 0.18), transparent 68%);
-        }
-
-        .dark .report-dashboard::after {
-            background: radial-gradient(circle, rgba(148, 163, 184, 0.12), transparent 68%);
+            background: radial-gradient(circle, rgba(34, 197, 94, 0.10), transparent 68%);
         }
 
         .report-surface {
@@ -92,6 +84,11 @@
             overflow: hidden;
             padding: 1.5rem;
             position: relative;
+            background:
+                radial-gradient(circle at top right, rgba(255,255,255,.10), transparent 18%),
+                radial-gradient(circle at 30% 100%, rgba(255,255,255,.06), transparent 14%),
+                linear-gradient(135deg, rgb(22 101 52), rgb(21 128 61), rgb(20 83 45));
+            color: white;
         }
 
         .report-hero::after {
@@ -102,7 +99,7 @@
             width: 12rem;
             height: 12rem;
             border-radius: 9999px;
-            background: radial-gradient(circle, var(--report-accent-soft), transparent 70%);
+            background: radial-gradient(circle, rgba(255,255,255,.10), transparent 70%);
             opacity: 0.85;
         }
 
@@ -121,10 +118,10 @@
 
         .report-badge {
             align-self: flex-start;
-            border: 1px solid var(--report-accent);
+            border: 1px solid rgba(255,255,255,.20);
             border-radius: 9999px;
-            background: var(--report-accent-soft);
-            color: var(--report-accent);
+            background: rgba(255,255,255,.10);
+            color: rgb(220 252 231);
             display: inline-flex;
             font-size: 0.72rem;
             font-weight: 800;
@@ -135,7 +132,7 @@
         }
 
         .report-hero__title {
-            color: var(--report-text);
+            color: white;
             font-size: clamp(1.6rem, 2vw, 2.3rem);
             font-weight: 800;
             letter-spacing: -0.045em;
@@ -143,26 +140,27 @@
             margin: 0;
         }
 
-        .report-hero__description {
-            color: var(--report-muted);
+        .report-hero__description,
+        .report-hero__note {
+            color: rgba(220, 252, 231, 0.85);
             font-size: 0.98rem;
             line-height: 1.7;
             margin: 0;
-            max-width: 52rem;
         }
 
         .report-meta {
             align-self: start;
-            border: 1px solid var(--report-border);
+            border: 1px solid rgba(255,255,255,.14);
             border-radius: 1.35rem;
-            background: var(--report-surface);
-            box-shadow: var(--report-shadow);
+            background: rgba(0,0,0,.10);
+            box-shadow: 0 10px 30px rgba(0,0,0,.12);
             display: grid;
             gap: 0.85rem;
             min-width: 280px;
             padding: 1rem;
             position: relative;
             z-index: 1;
+            backdrop-filter: blur(8px);
         }
 
         .report-meta__row {
@@ -173,7 +171,7 @@
         }
 
         .report-meta__label {
-            color: var(--report-muted);
+            color: rgba(220,252,231,.75);
             font-size: 0.68rem;
             font-weight: 700;
             letter-spacing: 0.18em;
@@ -181,7 +179,7 @@
         }
 
         .report-meta__value {
-            color: var(--report-text);
+            color: white;
             font-size: 0.95rem;
             font-weight: 700;
             min-width: 0;
@@ -189,65 +187,16 @@
             text-align: right;
         }
 
-        .report-hero__note {
-            color: var(--report-muted);
-            font-size: 0.95rem;
-            line-height: 1.7;
-            margin: 0;
-            grid-column: 1 / -1;
-            position: relative;
-            z-index: 1;
-        }
-
         .report-filters {
             padding: 1.25rem;
         }
 
-        @media (max-width: 1024px) {
-            .report-hero {
-                grid-template-columns: 1fr;
-            }
-
-            .report-meta {
-                min-width: 0;
-            }
-        }
-
         .report-panel {
-            --report-surface: rgb(255 255 255);
-            --report-surface-alt: rgb(248 250 252);
-            --report-border: rgb(226 232 240);
-            --report-border-strong: rgb(203 213 225);
-            --report-text: rgb(15 23 42);
-            --report-muted: rgb(100 116 139);
-            --report-accent: rgb(13 148 136);
-            --report-accent-soft: rgb(236 253 245);
-            --report-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
-            --report-table-head-start: rgb(15 23 42);
-            --report-table-head-end: rgb(30 41 59);
-            --report-table-row-hover: rgb(248 250 252);
-            --report-table-footer-bg: rgba(16, 185, 129, 0.06);
             border: 1px solid var(--report-border);
             border-radius: 1.5rem;
             background: var(--report-surface);
             box-shadow: var(--report-shadow);
             overflow: hidden;
-        }
-
-        .dark .report-panel {
-            --report-surface: rgb(15 23 42);
-            --report-surface-alt: rgb(2 6 23);
-            --report-border: rgb(30 41 59);
-            --report-border-strong: rgb(51 65 85);
-            --report-text: rgb(226 232 240);
-            --report-muted: rgb(148 163 184);
-            --report-accent: rgb(45 212 191);
-            --report-accent-soft: rgb(15 118 110 / 0.18);
-            --report-shadow: 0 12px 32px rgba(2, 6, 23, 0.35);
-            --report-table-head-start: rgb(15 23 42);
-            --report-table-head-end: rgb(30 41 59);
-            --report-table-row-hover: rgb(15 23 42);
-            --report-table-footer-bg: rgb(6 78 59 / 0.22);
         }
 
         .report-panel__body {
@@ -261,15 +210,15 @@
         }
 
         .report-summary-card {
-            border: 1px solid var(--report-border);
+            border: 1px solid rgba(22, 163, 74, 0.18);
             border-radius: 1rem;
-            background: linear-gradient(180deg, var(--report-surface), var(--report-surface-alt));
+            background: linear-gradient(135deg, rgb(6 78 59), rgb(20 83 45));
             padding: 1rem;
-            box-shadow: var(--report-shadow);
+            box-shadow: 0 14px 30px rgba(21, 128, 61, 0.12);
         }
 
         .report-summary-label {
-            color: var(--report-muted);
+            color: rgb(187 247 208);
             font-size: 0.68rem;
             font-weight: 700;
             letter-spacing: 0.18em;
@@ -277,7 +226,7 @@
         }
 
         .report-summary-value {
-            color: var(--report-text);
+            color: white;
             font-size: 1.5rem;
             font-weight: 800;
             letter-spacing: -0.03em;
@@ -288,6 +237,16 @@
             display: grid;
             gap: 1rem;
             grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        @media (max-width: 1024px) {
+            .report-hero {
+                grid-template-columns: 1fr;
+            }
+
+            .report-meta {
+                min-width: 0;
+            }
         }
 
         @media (max-width: 767px) {
@@ -357,10 +316,6 @@
             white-space: nowrap;
         }
 
-        .dark .report-table__head {
-            background: rgb(30 41 59);
-        }
-
         .report-table__head--right,
         .report-table__cell--right,
         .report-table__footer--right {
@@ -394,10 +349,7 @@
             font-weight: 700;
         }
 
-        .report-table__footer--label {
-            color: var(--report-text);
-        }
-
+        .report-table__footer--label,
         .report-table__footer--muted {
             color: var(--report-text);
         }

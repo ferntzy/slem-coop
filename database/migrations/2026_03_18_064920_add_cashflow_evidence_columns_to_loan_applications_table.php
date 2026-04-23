@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-   public function up(): void
+    public function up(): void
     {
         Schema::table('loan_applications', function (Blueprint $table) {
             $table->json('cashflow_documents')->nullable();

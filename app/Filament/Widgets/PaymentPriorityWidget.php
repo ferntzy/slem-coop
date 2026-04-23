@@ -16,12 +16,12 @@ use Illuminate\Database\Eloquent\Builder;
 class PaymentPriorityWidget extends TableWidget
 {
     // Make the widget take up the full width of the dashboard
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table
     {
         return $table
-            ->query(fn(): Builder => PaymentAllocationConfig::query())
+            ->query(fn (): Builder => PaymentAllocationConfig::query())
             ->heading('Payment Allocation Priority')
             ->description('Drag and drop rows to set the order of payment (top to bottom).')
 
@@ -52,7 +52,7 @@ class PaymentPriorityWidget extends TableWidget
                     ->trueIcon('heroicon-o-check-circle') // The circular checkmark
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success') // Green
-                    ->falseColor('danger') // Red
+                    ->falseColor('danger'), // Red
             ])
 
             ->actions([

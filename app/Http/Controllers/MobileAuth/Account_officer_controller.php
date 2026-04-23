@@ -3,11 +3,8 @@
 namespace App\Http\Controllers\MobileAuth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\User;
 use App\Models\Profile;
-use Exception;
-
+use App\Models\User;
 
 class Account_officer_controller extends Controller
 {
@@ -26,7 +23,7 @@ class Account_officer_controller extends Controller
     {
         $user = User::with('profile')->find($userId);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['error' => 'User not found'], 404);
         }
 

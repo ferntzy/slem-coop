@@ -22,12 +22,12 @@ class DailyCollectionEntry extends Model
     ];
 
     protected $casts = [
-        'system_total'    => 'decimal:2',
-        'cash_on_hand'    => 'decimal:2',
-        'variance'        => 'decimal:2',
+        'system_total' => 'decimal:2',
+        'cash_on_hand' => 'decimal:2',
+        'variance' => 'decimal:2',
         'collection_date' => 'date',
-        'submitted_at'    => 'datetime',
-        'verified_at'     => 'datetime',
+        'submitted_at' => 'datetime',
+        'verified_at' => 'datetime',
     ];
 
     public function ao(): BelongsTo

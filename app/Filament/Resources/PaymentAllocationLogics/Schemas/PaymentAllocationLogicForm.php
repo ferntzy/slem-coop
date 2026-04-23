@@ -2,14 +2,14 @@
 
 namespace App\Filament\Resources\PaymentAllocationLogics\Schemas;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
+use Carbon\Carbon;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Placeholder;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Illuminate\Support\HtmlString;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class PaymentAllocationLogicForm
 {
@@ -32,9 +32,9 @@ class PaymentAllocationLogicForm
                                 Select::make('component')
                                     ->label('Component')
                                     ->options([
-                                        'interest'  => 'Interest',
+                                        'interest' => 'Interest',
                                         'principal' => 'Principal',
-                                        'penalty'   => 'Penalty',
+                                        'penalty' => 'Penalty',
                                     ])
                                     ->required()
                                     ->native(false)
@@ -162,7 +162,7 @@ class PaymentAllocationLogicForm
 
                                 } catch (\Throwable $e) {
                                     return new HtmlString(
-                                        '<p style="font-size:.8rem;color:#ef4444">Error loading audit log: ' . e($e->getMessage()) . '</p>'
+                                        '<p style="font-size:.8rem;color:#ef4444">Error loading audit log: '.e($e->getMessage()).'</p>'
                                     );
                                 }
 
@@ -175,43 +175,44 @@ class PaymentAllocationLogicForm
                                 $rows = $logs->map(function ($log) {
 
                                     $actionColor = $log->action === 'void' ? '#dc2626' : '#d97706';
-                                    $actionBg    = $log->action === 'void' ? '#fef2f2' : '#fffbeb';
+                                    $actionBg = $log->action === 'void' ? '#fef2f2' : '#fffbeb';
                                     $actionLabel = strtoupper($log->action);
 
                                     $diffHtml = '';
                                     try {
-                                        $before  = json_decode($log->before ?? '{}', true) ?? [];
-                                        $after   = json_decode($log->after  ?? '{}', true) ?? [];
+                                        $before = json_decode($log->before ?? '{}', true) ?? [];
+                                        $after = json_decode($log->after ?? '{}', true) ?? [];
                                         $allKeys = array_unique(array_merge(array_keys($before), array_keys($after)));
-                                        $diffs   = [];
+                                        $diffs = [];
 
                                         foreach ($allKeys as $key) {
                                             $bVal = $before[$key] ?? '—';
-                                            $aVal = $after[$key]  ?? '—';
+                                            $aVal = $after[$key] ?? '—';
                                             if ($bVal !== $aVal) {
                                                 $diffs[] = "<span style='color:var(--color-text-secondary)'>{$key}:</span> "
-                                                         . "<span style='color:#dc2626;text-decoration:line-through'>{$bVal}</span> "
-                                                         . "<span style='color:var(--color-text-secondary)'>→</span> "
-                                                         . "<span style='color:#059669'>{$aVal}</span>";
+                                                         ."<span style='color:#dc2626;text-decoration:line-through'>{$bVal}</span> "
+                                                         ."<span style='color:var(--color-text-secondary)'>→</span> "
+                                                         ."<span style='color:#059669'>{$aVal}</span>";
                                             }
                                         }
 
                                         if ($diffs) {
                                             $diffHtml = '<div style="margin-top:4px;font-size:.72rem;line-height:1.8">'
-                                                      . implode('<br>', $diffs)
-                                                      . '</div>';
+                                                      .implode('<br>', $diffs)
+                                                      .'</div>';
                                         }
-                                    } catch (\Throwable) {}
+                                    } catch (\Throwable) {
+                                    }
 
                                     $reason = $log->reason
                                         ? '<div style="font-size:.75rem;color:var(--color-text-primary);margin-top:3px">
-                                               <span style="color:var(--color-text-secondary)">Reason:</span> ' . e($log->reason) . '
+                                               <span style="color:var(--color-text-secondary)">Reason:</span> '.e($log->reason).'
                                            </div>'
                                         : '';
 
-                                    $date   = \Carbon\Carbon::parse($log->created_at)->format('M d, Y h:i A');
-                                    $user   = e($log->user_name ?? 'Unknown');
-                                    $payRef = $log->loan_payment_id ? '#' . $log->loan_payment_id : '—';
+                                    $date = Carbon::parse($log->created_at)->format('M d, Y h:i A');
+                                    $user = e($log->user_name ?? 'Unknown');
+                                    $payRef = $log->loan_payment_id ? '#'.$log->loan_payment_id : '—';
 
                                     return "
                                         <tr style='border-bottom:0.5px solid var(--color-border-tertiary)'>

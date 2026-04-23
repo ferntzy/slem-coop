@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class CoopSetting extends Model
 {
@@ -54,7 +55,7 @@ class CoopSetting extends Model
         );
     }
 
-    public static function group(string $group): \Illuminate\Support\Collection
+    public static function group(string $group): Collection
     {
         return static::where('group', $group)
             ->get()

@@ -2,17 +2,17 @@
 
 namespace App\Filament\Widgets;
 
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Widgets\TableWidget as BaseWidget;
 use App\Models\CollectionAndPosting;
 use App\Models\LoanAccount;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Support\Facades\Auth;
 
 class MemberRecentTransactionsWidget extends BaseWidget
 {
     protected static ?string $heading = 'Recent Transactions';
+
     protected static ?int $sort = 5;
 
     public static function canView(): bool
@@ -20,19 +20,19 @@ class MemberRecentTransactionsWidget extends BaseWidget
         return Auth::user()->isMember();
     }
 
-    public function getColumnSpan(): int | string | array
+    public function getColumnSpan(): int|string|array
     {
         return [
             'default' => 1,
-            'sm'      => 2,
-            'md'      => 4,
-            'lg'      => 6,
+            'sm' => 2,
+            'md' => 4,
+            'lg' => 6,
         ];
     }
 
     public function table(Table $table): Table
     {
-        $profileId      = Auth::user()->profile_id;
+        $profileId = Auth::user()->profile_id;
         $loanAccountIds = LoanAccount::where('profile_id', $profileId)
             ->pluck('loan_account_id');
 
@@ -50,7 +50,7 @@ class MemberRecentTransactionsWidget extends BaseWidget
 
                 TextColumn::make('loanAccount.loan_account_id')
                     ->label('Loan #')
-                    ->formatStateUsing(fn ($state) => 'LA-' . str_pad($state, 5, '0', STR_PAD_LEFT)),
+                    ->formatStateUsing(fn ($state) => 'LA-'.str_pad($state, 5, '0', STR_PAD_LEFT)),
 
                 TextColumn::make('amount_paid')
                     ->label('Amount')
@@ -65,9 +65,9 @@ class MemberRecentTransactionsWidget extends BaseWidget
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'Posted'  => 'success',
+                        'Posted' => 'success',
                         'Pending' => 'warning',
-                        default   => 'gray',
+                        default => 'gray',
                     }),
             ])
             ->defaultSort('payment_date', 'desc')

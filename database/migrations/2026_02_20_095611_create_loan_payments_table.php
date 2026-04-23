@@ -11,24 +11,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('loan_payments', function (Blueprint $table) {
-    $table->id('loan_payment_id');
-    
-   $table->foreignId('loan_application_id')
-      ->constrained('loan_applications', 'loan_application_id');
+        Schema::create('loan_payments', function (Blueprint $table) {
+            $table->id('loan_payment_id');
 
-    $table->date('payment_date');
+            $table->foreignId('loan_application_id')
+                ->constrained('loan_applications', 'loan_application_id');
 
-    $table->decimal('amount_paid', 14, 2);
-    $table->decimal('principal_paid', 14, 2);
-    $table->decimal('interest_paid', 14, 2);
+            $table->date('payment_date');
 
-    $table->decimal('penalty_paid', 14, 2)->default(0);
+            $table->decimal('amount_paid', 14, 2);
+            $table->decimal('principal_paid', 14, 2);
+            $table->decimal('interest_paid', 14, 2);
 
-    $table->decimal('remaining_balance', 14, 2);
+            $table->decimal('penalty_paid', 14, 2)->default(0);
 
-    $table->timestamps();
-});
+            $table->decimal('remaining_balance', 14, 2);
+
+            $table->timestamps();
+        });
     }
 
     /**
