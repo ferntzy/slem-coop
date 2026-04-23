@@ -99,6 +99,15 @@ Route::get('/loans/{id}', [AccountLoansController::class, 'show']);
 Route::get('/loan-edit', [AccountLoanEditController::class, 'index']);
 Route::get('/loan-edit/{id}', [AccountLoanEditController::class, 'show']);
 
+Route::prefix('member-details')->group(function () {
+    Route::get('/', [MemberDetailsController::class, 'index']);
+    Route::get('/{id}', [MemberDetailsController::class, 'show']);
+    Route::post('/', [MemberDetailsController::class, 'store']);
+    Route::put('/{id}', [MemberDetailsController::class, 'update']);
+    Route::delete('/{id}', [MemberDetailsController::class, 'destroy']);
+});
+
+
 
 Route::get('/about', [AboutPageController::class, 'show']);
 
@@ -121,13 +130,7 @@ Route::post('/member/active-loans', [MobileMemberGeneral::class, 'getActiveLoans
 // member loan history
 Route::post('/member/loan-history', [MobileMemberGeneral::class, 'getLoanHistoryData']);
 
-Route::prefix('member-details')->group(function () {
-    Route::get('/', [MemberDetailsController::class, 'index']);
-    Route::get('/{id}', [MemberDetailsController::class, 'show']);
-    Route::post('/', [MemberDetailsController::class, 'store']);
-    Route::put('/{id}', [MemberDetailsController::class, 'update']);
-    Route::delete('/{id}', [MemberDetailsController::class, 'destroy']);
-});
+
 
 // member loan application
 Route::post('/send-application-form', [ControllersLoanApplication::class, 'applyLoan']);
