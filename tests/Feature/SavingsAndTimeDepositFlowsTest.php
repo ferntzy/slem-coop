@@ -4,6 +4,9 @@ use App\Models\CoopSetting;
 use App\Models\Profile;
 use App\Models\SavingsAccountTransaction;
 use App\Models\SavingsType;
+use App\Services\MemberSavingsBalanceService;
+use App\Services\SavingsDormancyService;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 function createSavingsTestProfile(string $email = 'member@example.com'): Profile
@@ -169,4 +172,60 @@ it('re-times matured deposits when the maturity option is renew time deposit', f
     expect((float) $renewedDeposit->deposit)->toBe(12120.00);
     expect($renewedDeposit->status)->toBe('ongoing');
     expect($renewedDeposit->terms)->toBe(6);
+});
+
+it('charges dormancy fees monthly and returns to active after customer activity', function () {
+    $profile = createSavingsTestProfile('dormancy-cycle@example.com');
+    [, $regularSavingsType] = createSavingsTypes();
+    $regularSavingsType->update(['interest_rate' => 0]);
+
+    CoopSetting::set('savings.dormancy_months_threshold', 24);
+    CoopSetting::set('savings.dormancy_fee_amount', 30.00);
+    CoopSetting::set('savings.auto_apply_dormancy_fee', true, 'boolean');
+    CoopSetting::set('savings.apply_interest_on_dormant', false, 'boolean');
+
+    SavingsAccountTransaction::query()->create([
+        'profile_id' => $profile->profile_id,
+        'savings_type_id' => (string) $regularSavingsType->getKey(),
+        'type' => 'Deposit',
+        'direction' => 'deposit',
+        'deposit' => 1000,
+        'amount' => 1000,
+        'status' => 'completed',
+        'transaction_date' => '2024-01-15 09:00:00',
+        'notes' => 'Opening deposit',
+    ]);
+
+    $service = app(SavingsDormancyService::class);
+
+    $monthOne = $service->processMonthly(Carbon::parse('2026-04-15'));
+
+    expect($monthOne['evaluated_accounts'])->toBe(1);
+    expect($monthOne['dormant_accounts'])->toBe(1);
+    expect($monthOne['dormancy_fees_posted'])->toBe(1);
+    expect(app(MemberSavingsBalanceService::class)->getRegularSavingsBalance($profile->profile_id))->toBe(970.0);
+
+    $monthTwo = $service->processMonthly(Carbon::parse('2026-05-15'));
+
+    expect($monthTwo['dormant_accounts'])->toBe(1);
+    expect($monthTwo['dormancy_fees_posted'])->toBe(1);
+    expect(app(MemberSavingsBalanceService::class)->getRegularSavingsBalance($profile->profile_id))->toBe(940.0);
+
+    SavingsAccountTransaction::query()->create([
+        'profile_id' => $profile->profile_id,
+        'savings_type_id' => (string) $regularSavingsType->getKey(),
+        'type' => 'Deposit',
+        'direction' => 'deposit',
+        'deposit' => 500,
+        'amount' => 500,
+        'status' => 'completed',
+        'transaction_date' => '2026-06-01 10:00:00',
+        'notes' => 'Customer deposit after dormancy',
+    ]);
+
+    $reactivated = $service->processMonthly(Carbon::parse('2026-06-15'));
+
+    expect($reactivated['dormant_accounts'])->toBe(0);
+    expect($reactivated['dormancy_fees_posted'])->toBe(0);
+    expect(app(MemberSavingsBalanceService::class)->getRegularSavingsBalance($profile->profile_id))->toBe(1440.0);
 });
