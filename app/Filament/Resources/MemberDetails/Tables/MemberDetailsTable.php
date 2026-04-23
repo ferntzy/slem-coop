@@ -4,6 +4,7 @@ namespace App\Filament\Resources\MemberDetails\Tables;
 
 use App\Filament\Resources\MemberDetails\MemberDetailResource;
 use App\Models\CoopSetting;
+use App\Models\MemberDetail;
 use App\Models\Profile;
 use App\Models\SavingsAccountTransaction;
 use App\Models\SavingsType;
@@ -24,6 +25,7 @@ use Filament\Tables\Enums\RecordActionsPosition;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 
 class MemberDetailsTable
 {
@@ -110,10 +112,22 @@ class MemberDetailsTable
             return static::$transactionalSavingsTypeIds;
         }
 
-        static::$transactionalSavingsTypeIds = SavingsType::query()
-            ->where('is_active', true)
-            ->where('deposit_allowed', true)
-            ->where('withdrawal_allowed', true)
+        $query = SavingsType::query();
+
+        if (Schema::hasColumn('savings_types', 'is_active')) {
+            $query->where('is_active', true);
+        }
+
+        $hasDepositAllowed = Schema::hasColumn('savings_types', 'deposit_allowed');
+        $hasWithdrawalAllowed = Schema::hasColumn('savings_types', 'withdrawal_allowed');
+
+        if ($hasDepositAllowed && $hasWithdrawalAllowed) {
+            $query
+                ->where('deposit_allowed', true)
+                ->where('withdrawal_allowed', true);
+        }
+
+        static::$transactionalSavingsTypeIds = $query
             ->pluck('id')
             ->map(fn ($id): string => (string) $id)
             ->all();
@@ -166,14 +180,14 @@ class MemberDetailsTable
                             ->whereRaw('LOWER(type) in (?, ?, ?)', ['deposit', 'withdrawal', 'transfer']);
                     });
             })
-            ->selectRaw('MAX(COALESCE(transaction_date, DATE(created_at))) as last_customer_transaction_date')
+            ->selectRaw('MAX(GREATEST(created_at, COALESCE(transaction_date, created_at))) as last_customer_transaction_date')
             ->value('last_customer_transaction_date');
 
         if (! $lastCustomerInitiatedTransactionDate) {
             $lastCustomerInitiatedTransactionDate = SavingsAccountTransaction::query()
                 ->where('profile_id', $profileId)
                 ->whereIn('savings_type_id', $positiveBalanceSavingsTypeIds)
-                ->selectRaw('MAX(COALESCE(transaction_date, DATE(created_at))) as last_transaction_date')
+                ->selectRaw('MAX(GREATEST(created_at, COALESCE(transaction_date, created_at))) as last_transaction_date')
                 ->value('last_transaction_date');
         }
 
@@ -212,6 +226,15 @@ class MemberDetailsTable
             static::MATURITY_ACTION_TRANSFER_TO_SAVINGS => 'Transfer to Regular Savings',
             default => 'Auto-transfer to Regular Savings',
         };
+    }
+
+    protected static function markMemberActive(int $profileId): void
+    {
+        MemberDetail::query()
+            ->where('profile_id', $profileId)
+            ->update(['status' => 'Active']);
+
+        unset(static::$profileDormancyStatusCache[$profileId]);
     }
 
     public static function configure(Table $table): Table
@@ -503,13 +526,17 @@ class MemberDetailsTable
 
                             SavingsAccountTransaction::create($transactionData);
 
+                            static::markMemberActive((int) $data['profile_id']);
+                            static::$transactionalSavingsTypeIds = null;
+
                             Notification::make()
                                 ->title((int) $data['savings_type_id'] === 1
                                     ? 'Time Deposit Added Successfully'
                                     : 'Savings Approved')
                                 ->success()
                                 ->send();
-                        }),
+                        })
+                        ->after(fn ($livewire) => $livewire->dispatch('$refresh')),
 
                     Action::make('add_share_capital')
                         ->label('Add Share Capital')
@@ -582,124 +609,6 @@ class MemberDetailsTable
 
                             Notification::make()
                                 ->title('Share capital added successfully')
-                                ->success()
-                                ->send();
-                        }),
-
-                    Action::make('set_time_deposit_maturity_action')
-                        ->label('Set Time Deposit Maturity Option')
-                        ->icon('heroicon-o-arrow-path-rounded-square')
-                        ->color('warning')
-                        ->form([
-                            Select::make('profile_id')
-                                ->label('Member')
-                                ->options(function ($record) {
-                                    return Profile::where('profile_id', $record->profile_id)
-                                        ->get()
-                                        ->mapWithKeys(function ($profile) {
-                                            return [$profile->profile_id => $profile->full_name];
-                                        })
-                                        ->toArray();
-                                })
-                                ->default(fn ($record) => $record->profile_id)
-                                ->disabled()
-                                ->dehydrated(true)
-                                ->required(),
-
-                            Select::make('time_deposit_transaction_id')
-                                ->label('Time Deposit')
-                                ->options(function ($record): array {
-                                    return SavingsAccountTransaction::query()
-                                        ->where('profile_id', $record->profile_id)
-                                        ->where('savings_type_id', 1)
-                                        ->where('type', 'Deposit')
-                                        ->where('status', 'ongoing')
-                                        ->whereNull('maturity_action')
-                                        ->get()
-                                        ->filter(fn (SavingsAccountTransaction $transaction): bool => static::isTimeDepositDecisionWindowOpen($transaction))
-                                        ->mapWithKeys(function (SavingsAccountTransaction $transaction): array {
-                                            $maturityDate = static::getTimeDepositMaturityDate($transaction);
-
-                                            return [
-                                                $transaction->id => 'Time Deposit: '.static::money((float) ($transaction->deposit ?? 0))
-                                                    .' | Term: '.($transaction->terms ?? 'N/A').' month(s)'
-                                                    .' | Maturity: '.($maturityDate?->format('Y-m-d') ?? 'N/A')
-                                                    .' | Current Option: '.static::getMaturityActionLabel($transaction->maturity_action),
-                                            ];
-                                        })
-                                        ->toArray();
-                                })
-                                ->searchable()
-                                ->preload()
-                                ->required()
-                                ->helperText('Only ongoing time deposits that are within 7 days of maturity are shown here.'),
-
-                            Select::make('maturity_action')
-                                ->label('Maturity Option')
-                                ->options([
-                                    static::MATURITY_ACTION_RENEW_TIME_DEPOSIT => 'Re-Time Deposit',
-                                    static::MATURITY_ACTION_TRANSFER_TO_SAVINGS => 'Transfer to Regular Savings',
-                                ])
-                                ->required()
-                                ->helperText('If no option is selected before maturity, the system will automatically transfer the amount to Regular Savings.'),
-                        ])
-                        ->action(function ($record, array $data): void {
-                            if (! (auth()->user()?->hasAnyRole(['Admin', 'super_admin']) ?? false)) {
-                                Notification::make()
-                                    ->title('Unauthorized')
-                                    ->danger()
-                                    ->send();
-
-                                return;
-                            }
-
-                            $timeDepositTransaction = SavingsAccountTransaction::query()
-                                ->where('id', $data['time_deposit_transaction_id'] ?? null)
-                                ->where('profile_id', $record->profile_id)
-                                ->where('savings_type_id', 1)
-                                ->where('type', 'Deposit')
-                                ->where('status', 'ongoing')
-                                ->first();
-
-                            if (! $timeDepositTransaction) {
-                                Notification::make()
-                                    ->title('Time deposit transaction not found.')
-                                    ->danger()
-                                    ->send();
-
-                                return;
-                            }
-
-                            if (! static::isTimeDepositDecisionWindowOpen($timeDepositTransaction)) {
-                                $maturityDate = static::getTimeDepositMaturityDate($timeDepositTransaction);
-
-                                Notification::make()
-                                    ->title('Option not available yet')
-                                    ->body('This option can only be set within 7 days before maturity. Maturity date: '.($maturityDate?->format('Y-m-d') ?? 'N/A'))
-                                    ->danger()
-                                    ->send();
-
-                                return;
-                            }
-
-                            if (filled($timeDepositTransaction->maturity_action)) {
-                                Notification::make()
-                                    ->title('Maturity option already selected')
-                                    ->body('Current option: '.static::getMaturityActionLabel($timeDepositTransaction->maturity_action))
-                                    ->warning()
-                                    ->send();
-
-                                return;
-                            }
-
-                            $timeDepositTransaction->update([
-                                'maturity_action' => $data['maturity_action'],
-                                'maturity_action_selected_at' => now(),
-                            ]);
-
-                            Notification::make()
-                                ->title('Maturity option saved successfully')
-                                ->body('Selected option: '.static::getMaturityActionLabel($data['maturity_action']))
                                 ->success()
                                 ->send();
                         }),
@@ -805,17 +714,22 @@ class MemberDetailsTable
                                 'profile_id' => $data['profile_id'],
                                 'savings_type_id' => $data['savings_type_id'],
                                 'type' => $data['type'],
+                                'direction' => 'withdrawal',
                                 'withdrawal' => (float) ($data['amount'] ?? 0),
                                 'transaction_date' => now(),
                                 'notes' => $data['notes'] ?? null,
                                 'posted_by_user_id' => auth()->id(),
                             ]);
 
+                            static::markMemberActive((int) $data['profile_id']);
+                            static::$transactionalSavingsTypeIds = null;
+
                             Notification::make()
                                 ->title('Withdrawal saved successfully')
                                 ->success()
                                 ->send();
-                        }),
+                        })
+                        ->after(fn ($livewire) => $livewire->dispatch('$refresh')),
                 ])
                     ->visible(fn () => ! auth()->user()?->isMember()),
             ])
