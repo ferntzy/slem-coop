@@ -44,11 +44,26 @@ class LoanApplicationController extends Controller
             'loan_officer',
             'HQ Loan Officer',
             'hq_loan_officer',
-            'Admin',
-            'admin',
-            'super_admin',
-            'Super Admin',
-        ]);
+        ]) || $user->canApproveAnyLoanAmount();
+    }
+
+    private function canApproveAnyLoanAmount(): bool
+    {
+        $user = auth()->user();
+
+        return $user?->canApproveAnyLoanAmount() ?? false;
+    }
+
+    private function isLoanOfficerApprovalRole(): bool
+    {
+        $user = auth()->user();
+
+        return $user?->hasAnyRole([
+            'Loan Officer',
+            'loan_officer',
+            'HQ Loan Officer',
+            'hq_loan_officer',
+        ]) ?? false;
     }
 
     private function getUserRoleInfo(): array
@@ -102,7 +117,7 @@ class LoanApplicationController extends Controller
     {
         if (! $this->isLoanOfficer()) {
             return response()->json([
-                'message' => 'Unauthorized. You need Loan Officer or Admin access to approve loans.',
+                'message' => 'Unauthorized. You need Loan Officer, HQ Loan Officer, Manager, HQ Manager, or Admin access to approve loans.',
                 'user_info' => $this->getUserRoleInfo(),
             ], 403);
         }
@@ -120,7 +135,13 @@ class LoanApplicationController extends Controller
         }
 
         $approvalLimit = $this->loanOfficerApprovalLimit();
-        if ((float) $record->amount_requested > $approvalLimit) {
+        if ((float) $record->amount_requested > $approvalLimit && ! $this->canApproveAnyLoanAmount()) {
+            if (! $this->isLoanOfficerApprovalRole()) {
+                return response()->json([
+                    'message' => 'Unauthorized. Only loan officers can escalate high-value loans.',
+                ], 403);
+            }
+
             $from = $record->status;
 
             if ($from !== 'Under Review') {
