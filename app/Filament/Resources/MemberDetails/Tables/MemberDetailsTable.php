@@ -24,6 +24,7 @@ use Filament\Tables\Enums\RecordActionsPosition;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 
 class MemberDetailsTable
 {
@@ -110,10 +111,22 @@ class MemberDetailsTable
             return static::$transactionalSavingsTypeIds;
         }
 
-        static::$transactionalSavingsTypeIds = SavingsType::query()
-            ->where('is_active', true)
-            ->where('deposit_allowed', true)
-            ->where('withdrawal_allowed', true)
+        $query = SavingsType::query();
+
+        if (Schema::hasColumn('savings_types', 'is_active')) {
+            $query->where('is_active', true);
+        }
+
+        $hasDepositAllowed = Schema::hasColumn('savings_types', 'deposit_allowed');
+        $hasWithdrawalAllowed = Schema::hasColumn('savings_types', 'withdrawal_allowed');
+
+        if ($hasDepositAllowed && $hasWithdrawalAllowed) {
+            $query
+                ->where('deposit_allowed', true)
+                ->where('withdrawal_allowed', true);
+        }
+
+        static::$transactionalSavingsTypeIds = $query
             ->pluck('id')
             ->map(fn ($id): string => (string) $id)
             ->all();
