@@ -7,9 +7,9 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
 
 class CoopFeesTable
 {
@@ -33,10 +33,9 @@ class CoopFeesTable
                         'processing_fee' => 'info',
                         default => 'gray',
                     })
-                    ->getStateUsing(fn (CoopFee $record) =>
-                        $record->is_percentage
-                            ? $record->percentage . '%'
-                            : '₱' . number_format($record->amount, 2)
+                    ->getStateUsing(fn (CoopFee $record) => $record->is_percentage
+                            ? $record->percentage.'%'
+                            : '₱'.number_format($record->amount, 2)
                     ),
 
                 TextColumn::make('description')

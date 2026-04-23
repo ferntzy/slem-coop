@@ -2,14 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\User;
-use App\Models\Profile;
-use App\Models\MemberDetail;
-use App\Models\LoanApplication;
-use App\Models\LoanAccount;
 use App\Models\CollectionAndPosting;
+use App\Models\LoanAccount;
+use App\Models\LoanApplication;
+use App\Models\MemberDetail;
+use App\Models\Profile;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class CollectionAndPostingPenaltyTestSeeder extends Seeder
 {
@@ -19,6 +19,7 @@ class CollectionAndPostingPenaltyTestSeeder extends Seeder
 
         if (! $adminUser) {
             $this->command?->warn('Admin user not found.');
+
             return;
         }
 
@@ -26,6 +27,7 @@ class CollectionAndPostingPenaltyTestSeeder extends Seeder
 
         if (! $profile) {
             $this->command?->warn('Profile not found for regularmember@example.com');
+
             return;
         }
 
@@ -33,6 +35,7 @@ class CollectionAndPostingPenaltyTestSeeder extends Seeder
 
         if (! $memberDetail) {
             $this->command?->warn("MemberDetail not found for profile_id {$profile->profile_id}");
+
             return;
         }
 
@@ -42,6 +45,7 @@ class CollectionAndPostingPenaltyTestSeeder extends Seeder
 
         if (! $loanApplication) {
             $this->command?->warn('Penalty test loan application not found.');
+
             return;
         }
 
@@ -49,11 +53,12 @@ class CollectionAndPostingPenaltyTestSeeder extends Seeder
 
         if (! $loanAccount) {
             $this->command?->warn('Penalty test loan account not found.');
+
             return;
         }
 
-        $loanNumber = 'LA-' . $loanAccount->loan_account_id;
-        $memberName = trim($profile->first_name . ' ' . $profile->last_name);
+        $loanNumber = 'LA-'.$loanAccount->loan_account_id;
+        $memberName = trim($profile->first_name.' '.$profile->last_name);
 
         $releaseDate = Carbon::parse($loanAccount->release_date);
 

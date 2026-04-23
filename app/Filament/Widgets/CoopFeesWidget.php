@@ -2,10 +2,10 @@
 
 namespace App\Filament\Widgets;
 
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
-use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Models\CoopFee;
 use App\Models\CoopFeeType;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class CoopFeesWidget extends BaseWidget
 {
@@ -26,11 +26,11 @@ class CoopFeesWidget extends BaseWidget
             } elseif ($activeFees->count() === 1) {
                 $fee = $activeFees->first();
                 $value = $fee->is_percentage
-                    ? number_format($fee->percentage, 2) . '%'
-                    : '₱' . number_format($fee->amount, 2);
+                    ? number_format($fee->percentage, 2).'%'
+                    : '₱'.number_format($fee->amount, 2);
             } else {
                 // Multiple fees of same type — show count + breakdown
-                $value = $activeFees->count() . ' fees';
+                $value = $activeFees->count().' fees';
             }
 
             $stats[] = Stat::make($type->name, $value)

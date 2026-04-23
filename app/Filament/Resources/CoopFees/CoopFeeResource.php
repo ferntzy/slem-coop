@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\CoopFeeResource\Pages;
 use App\Filament\Resources\CoopFeeResource\Forms\CoopFeeForm;
+use App\Filament\Resources\CoopFeeResource\Pages;
 use App\Filament\Resources\CoopFeeResource\Tables\CoopFeesTable;
 use App\Models\CoopFee;
 use Filament\Resources\Resource;
@@ -16,6 +16,7 @@ class CoopFeeResource extends Resource
 
     // protected static ?string $navigationIcon = 'heroicon-o-receipt-percent';
     protected static ?string $navigationLabel = 'Coop Fees';
+
     protected static ?string $pluralLabel = 'Coop Fees';
 
     public static function form(Schema $schema): Schema

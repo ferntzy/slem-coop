@@ -2,34 +2,38 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Page;
-use Filament\Schemas\Schema;
+use App\Models\ContactPageSetting;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ViewField;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Notifications\Notification;
+use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Repeater;
-use Filament\Actions\Action;
-use Filament\Notifications\Notification;
-use App\Models\ContactPageSetting;
+use Filament\Schemas\Schema;
 
 class ManageContactPage extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static string|\BackedEnum|null $navigationIcon  = 'heroicon-o-phone';
-    protected static ?string                 $navigationLabel = 'Contact ';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-phone';
+
+    protected static ?string $navigationLabel = 'Contact ';
+
     protected static string|\UnitEnum|null $navigationGroup = 'Pages';
-    protected static ?int                    $navigationSort  = 11;
+
+    protected static ?int $navigationSort = 11;
 
     public static function canAccess(): bool
     {
         return auth()->user()?->can('View:ManageContactPage') ?? false;
     }
-    protected string                         $view            = 'filament.pages.manage-contact-page';
+
+    protected string $view = 'filament.pages.manage-contact-page';
 
     public array $data = [];
 
@@ -38,21 +42,21 @@ class ManageContactPage extends Page implements HasForms
         $s = ContactPageSetting::getSetting();
 
         $this->form->fill([
-            'hero_badge'     => $s->hero_badge,
-            'hero_title'     => $s->hero_title,
-            'hero_subtitle'  => $s->hero_subtitle,
-            'phone'          => $s->phone,
-            'email'          => $s->email,
-            'address'        => $s->address,
-            'hours'          => $s->hours,
-            'facebook_url'   => $s->facebook_url,
-            'twitter_url'    => $s->twitter_url,
-            'instagram_url'  => $s->instagram_url,
-            'linkedin_url'   => $s->linkedin_url,
+            'hero_badge' => $s->hero_badge,
+            'hero_title' => $s->hero_title,
+            'hero_subtitle' => $s->hero_subtitle,
+            'phone' => $s->phone,
+            'email' => $s->email,
+            'address' => $s->address,
+            'hours' => $s->hours,
+            'facebook_url' => $s->facebook_url,
+            'twitter_url' => $s->twitter_url,
+            'instagram_url' => $s->instagram_url,
+            'linkedin_url' => $s->linkedin_url,
             'maps_embed_url' => $s->maps_embed_url,
-            'maps_lat'       => $s->maps_lat,
-            'maps_lng'       => $s->maps_lng,
-            'branches'       => $s->branches ?? [],
+            'maps_lat' => $s->maps_lat,
+            'maps_lng' => $s->maps_lng,
+            'branches' => $s->branches ?? [],
         ]);
     }
 
@@ -163,7 +167,7 @@ class ManageContactPage extends Page implements HasForms
                                             ->suffixIcon('heroicon-o-magnifying-glass')
                                             ->dehydrated(false), // not saved — just drives the map
 
-                                        \Filament\Forms\Components\ViewField::make('map_picker')
+                                        ViewField::make('map_picker')
                                             ->label('')
                                             ->view('filament.forms.components.map-picker')
                                             ->columnSpanFull(),
@@ -214,7 +218,7 @@ class ManageContactPage extends Page implements HasForms
                                             ->columns(2)
                                             ->reorderable()
                                             ->collapsible()
-                                            ->itemLabel(fn(array $state): ?string => $state['name'] ?? 'Branch')
+                                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Branch')
                                             ->addActionLabel('Add Branch')
                                             ->defaultItems(0),
                                     ]),

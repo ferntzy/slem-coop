@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\SavingsAccountTransaction;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class TimeDepositSeeder extends Seeder
 {
@@ -13,9 +13,7 @@ class TimeDepositSeeder extends Seeder
 
         $profileId = 6;
 
-
         $timeDepositTypeId = 1;
-
 
         SavingsAccountTransaction::create([
             'profile_id' => $profileId,
@@ -27,7 +25,6 @@ class TimeDepositSeeder extends Seeder
             'transaction_date' => Carbon::now()->subMonths(2), // 2 months pa
             'notes' => 'Test - Not yet matured',
         ]);
-
 
         SavingsAccountTransaction::create([
             'profile_id' => $profileId,

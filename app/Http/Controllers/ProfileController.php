@@ -9,7 +9,6 @@ use App\Services\NotificationService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class ProfileController extends Controller
 {
@@ -107,7 +106,7 @@ class ProfileController extends Controller
 
             $info = [
                 'user' => $user,
-                'profile'   => $user->profile,
+                'profile' => $user->profile,
             ];
 
             return response()->json([

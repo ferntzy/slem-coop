@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\CoopFeeType;
+use Illuminate\Database\Seeder;
 
 class CoopFeeTypeSeeder extends Seeder
 {

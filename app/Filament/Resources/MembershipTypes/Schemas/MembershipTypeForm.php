@@ -2,11 +2,10 @@
 
 namespace App\Filament\Resources\MembershipTypes\Schemas;
 
-use Filament\Schemas\Schema;
-use Filament\Forms\Form;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 
 class MembershipTypeForm
 {
@@ -15,15 +14,15 @@ class MembershipTypeForm
         return $schema
             ->components([
                 Section::make('Membership Type')
-                ->schema([
-                    TextInput::make('name')
-                        ->required()
-                        ->maxLength(45),
+                    ->schema([
+                        TextInput::make('name')
+                            ->required()
+                            ->maxLength(45),
 
-                    Textarea::make('description')
-                        ->rows(3)
-                        ->columnSpanFull(),
-                ]),
+                        Textarea::make('description')
+                            ->rows(3)
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 }

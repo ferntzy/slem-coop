@@ -22,9 +22,9 @@ class OrientationAssessment extends Model
     ];
 
     protected $casts = [
-        'passed'                   => 'boolean',
-        'video_watched_at'         => 'datetime',
-        'completed_at'             => 'datetime',
+        'passed' => 'boolean',
+        'video_watched_at' => 'datetime',
+        'completed_at' => 'datetime',
         'certificate_generated_at' => 'datetime',
     ];
 

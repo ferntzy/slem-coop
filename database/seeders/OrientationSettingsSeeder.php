@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\CoopSetting;
+use Illuminate\Database\Seeder;
 
 class OrientationSettingsSeeder extends Seeder
 {

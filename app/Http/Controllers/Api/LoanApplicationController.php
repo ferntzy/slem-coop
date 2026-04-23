@@ -44,11 +44,26 @@ class LoanApplicationController extends Controller
             'loan_officer',
             'HQ Loan Officer',
             'hq_loan_officer',
-            'Admin',
-            'admin',
-            'super_admin',
-            'Super Admin',
-        ]);
+        ]) || $user->canApproveAnyLoanAmount();
+    }
+
+    private function canApproveAnyLoanAmount(): bool
+    {
+        $user = auth()->user();
+
+        return $user?->canApproveAnyLoanAmount() ?? false;
+    }
+
+    private function isLoanOfficerApprovalRole(): bool
+    {
+        $user = auth()->user();
+
+        return $user?->hasAnyRole([
+            'Loan Officer',
+            'loan_officer',
+            'HQ Loan Officer',
+            'hq_loan_officer',
+        ]) ?? false;
     }
 
     private function getUserRoleInfo(): array
@@ -102,7 +117,7 @@ class LoanApplicationController extends Controller
     {
         if (! $this->isLoanOfficer()) {
             return response()->json([
-                'message' => 'Unauthorized. You need Loan Officer or Admin access to approve loans.',
+                'message' => 'Unauthorized. You need Loan Officer, HQ Loan Officer, Manager, HQ Manager, or Admin access to approve loans.',
                 'user_info' => $this->getUserRoleInfo(),
             ], 403);
         }
@@ -120,7 +135,13 @@ class LoanApplicationController extends Controller
         }
 
         $approvalLimit = $this->loanOfficerApprovalLimit();
-        if ((float) $record->amount_requested > $approvalLimit) {
+        if ((float) $record->amount_requested > $approvalLimit && ! $this->canApproveAnyLoanAmount()) {
+            if (! $this->isLoanOfficerApprovalRole()) {
+                return response()->json([
+                    'message' => 'Unauthorized. Only loan officers can escalate high-value loans.',
+                ], 403);
+            }
+
             $from = $record->status;
 
             if ($from !== 'Under Review') {
@@ -500,66 +521,5 @@ class LoanApplicationController extends Controller
         });
 
         return response()->json(['message' => 'Loan application rejected.']);
-    }
-
-    public function cancel(Request $request, $id): JsonResponse
-    {
-        if (! $this->isLoanOfficer()) {
-            return response()->json([
-                'message' => 'Unauthorized. You need Loan Officer or Admin access to cancel loans.',
-                'user_info' => $this->getUserRoleInfo(),
-            ], 403);
-        }
-
-        $record = LoanApplication::with(['member.profile.user'])
-            ->where('loan_application_id', $id)
-            ->firstOrFail();
-
-        if (! in_array($record->status, ['Pending', 'Under Review'], true)) {
-            return response()->json(['message' => 'Only Pending or Under Review applications can be cancelled.'], 422);
-        }
-
-        $profileId = $record->member?->profile_id ?? null;
-        $from = $record->status;
-
-        DB::transaction(function () use ($record, $from, $profileId) {
-
-            $record->update(['status' => 'Cancelled']);
-
-            LoanApplicationStatusLog::create([
-                'loan_application_id' => $record->loan_application_id,
-                'from_status' => $from,
-                'to_status' => 'Cancelled',
-                'changed_by_user_id' => auth()->id(),
-                'changed_at' => now(),
-            ]);
-
-            ModelsNotification::create([
-                'user_id' => $record->member->profile->user->user_id,
-                'title' => 'Loan Application',
-                'description' => 'Your loan application was successfully cancelled!',
-                'notifiable_type' => 'loan_application',
-                'notifiable_id' => $record->loan_application_id,
-            ]);
-
-            if ($profileId) {
-                app(NotificationService::class)->notifyProfile(
-                    $profileId,
-                    'Loan application cancelled',
-                    "Your loan application #{$record->loan_application_id} has been cancelled.",
-                    notifiableType: 'loan_application',
-                    notifiableId: $record->loan_application_id
-                );
-            }
-
-            app(NotificationService::class)->notifyAdmins(
-                'Loan application cancelled',
-                "Loan application #{$record->loan_application_id} is cancelled.",
-                notifiableType: 'loan_application',
-                notifiableId: $record->loan_application_id
-            );
-        });
-
-        return response()->json(['message' => 'Loan application cancelled successfully.']);
     }
 }

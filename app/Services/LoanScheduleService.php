@@ -22,7 +22,7 @@ class LoanScheduleService
         ) {
             return [];
         }
-        
+
         $baseRows = $this->amortizationService->generate(
             loanAmount: (float) $loanAccount->principal_amount,
             monthlyInterestRatePercent: (float) $loanAccount->interest_rate,
@@ -60,17 +60,17 @@ class LoanScheduleService
         );
 
         $paymentsQuery = CollectionAndPosting::query()
-                ->where('loan_account_id', $loanAccount->loan_account_id)
-                ->whereIn('status', ['Posted', 'Draft']);
+            ->where('loan_account_id', $loanAccount->loan_account_id)
+            ->whereIn('status', ['Posted', 'Draft']);
 
-            if ($loanAccount->restructured_at) {
-                $paymentsQuery->whereDate('payment_date', '>=', $loanAccount->restructured_at);
-            }
+        if ($loanAccount->restructured_at) {
+            $paymentsQuery->whereDate('payment_date', '>=', $loanAccount->restructured_at);
+        }
 
-            $payments = $paymentsQuery
-                ->orderBy('payment_date')
-                ->orderBy('id')
-                ->get();
+        $payments = $paymentsQuery
+            ->orderBy('payment_date')
+            ->orderBy('id')
+            ->get();
 
         foreach ($payments as $payment) {
             $schedule = $this->applyPayment(
@@ -332,7 +332,7 @@ class LoanScheduleService
     protected function getActivePenaltyRule(): ?PenaltyRule
     {
         return PenaltyRule::query()
-            ->where('status', 'active')    
+            ->where('status', 'active')
             ->latest('id')
             ->first();
     }

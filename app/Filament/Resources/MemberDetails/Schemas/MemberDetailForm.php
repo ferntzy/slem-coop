@@ -72,6 +72,7 @@ class MemberDetailForm
                                     Select::make('status')
                                         ->options([
                                             'Active' => 'Active',
+                                            'Dormant' => 'Dormant',
                                             'Inactive' => 'Inactive',
                                             'Delinquent' => 'Delinquent',
                                         ])
@@ -117,7 +118,7 @@ class MemberDetailForm
                                         ->label('Birthdate')
                                         ->required()
                                         ->maxDate(now()->subYears(18))
-                                        ->rule('before_or_equal:' . now()->subYears(18)->toDateString()),
+                                        ->rule('before_or_equal:'.now()->subYears(18)->toDateString()),
 
                                     Select::make('sex')
                                         ->label('Sex')

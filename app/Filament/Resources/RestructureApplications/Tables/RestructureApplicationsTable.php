@@ -55,8 +55,6 @@ class RestructureApplicationsTable
                             ->select('restructure_applications.*');
                     }),
 
-           
-
                 TextColumn::make('loanApplication.type.name')
                     ->label('Loan Type')
                     ->sortable(),

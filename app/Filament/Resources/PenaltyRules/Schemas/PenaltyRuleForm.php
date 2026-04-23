@@ -3,9 +3,9 @@
 namespace App\Filament\Resources\PenaltyRules\Schemas;
 
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Schema;
 
 class PenaltyRuleForm
@@ -60,7 +60,7 @@ class PenaltyRuleForm
                     ->helperText('The amount the penalty rate is applied against.')
                     ->options([
                         'principal' => 'Principal Interest (outstanding principal)',
-                        'balance'   => 'Outstanding Balance (principal + interest)',
+                        'balance' => 'Outstanding Balance (principal + interest)',
                     ])
                     ->default('principal')
                     ->prefixIcon('heroicon-o-calculator')
@@ -72,8 +72,8 @@ class PenaltyRuleForm
                     ->helperText('How often the penalty is charged on the overdue account.')
                     ->options([
                         'one_time' => 'One-Time (charged once at grace period breach)',
-                        'daily'    => 'Daily',
-                        'monthly'  => 'Monthly',
+                        'daily' => 'Daily',
+                        'monthly' => 'Monthly',
                     ])
                     ->default('monthly')
                     ->prefixIcon('heroicon-o-arrow-path')

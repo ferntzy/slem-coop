@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class StaffDetail extends Model
 {
     protected $table = 'staff_details';
+
     protected $primaryKey = 'staff_id';
 
     protected $fillable = [

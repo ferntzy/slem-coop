@@ -7,11 +7,11 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     public function up(): void
-{
-    Schema::table('loan_applications', function (Blueprint $table) {
-        $table->string('collateral_document')->nullable();
-    });
-}
+    {
+        Schema::table('loan_applications', function (Blueprint $table) {
+            $table->string('collateral_document')->nullable();
+        });
+    }
 
     public function down(): void
     {

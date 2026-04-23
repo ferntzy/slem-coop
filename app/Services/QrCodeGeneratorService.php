@@ -15,7 +15,7 @@ class QrCodeGeneratorService
     public function generate(string $data): string
     {
         $result = Builder::create()
-            ->writer(new PngWriter())
+            ->writer(new PngWriter)
             ->data($data)
             ->size(200)
             ->margin(10)
@@ -33,7 +33,7 @@ class QrCodeGeneratorService
 
         $qrCodePng = $this->generate($qrContent);
 
-        $fileName = 'qr_codes/user_' . $user->user_id . '.png';
+        $fileName = 'qr_codes/user_'.$user->user_id.'.png';
 
         Storage::disk('public')->put($fileName, $qrCodePng);
 
