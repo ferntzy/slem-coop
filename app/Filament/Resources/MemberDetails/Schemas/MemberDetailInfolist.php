@@ -290,11 +290,7 @@ class MemberDetailInfolist
                                             ->color(fn ($state) => $state === 'Active' ? 'success' : 'warning'),
                                     ])
                                     ->columns(3),
-                            ]),
 
-                        Tab::make('Spouse & Co-Makers')
-                            ->icon('heroicon-o-users')
-                            ->schema([
                                 Section::make('Spouse Information')
                                     ->schema([
                                         TextEntry::make('spouse.full_name')
