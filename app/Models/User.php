@@ -160,6 +160,22 @@ class User extends Authenticatable implements HasAvatar
         return $this->isAdmin() || $this->isSuperAdmin();
     }
 
+    public function canApproveAnyLoanAmount(): bool
+    {
+        return $this->hasAnyRole([
+            'super_admin',
+            'Super Admin',
+            'super admin',
+            'Admin',
+            'admin',
+            'Manager',
+            'manager',
+            'HQ Manager',
+            'hq_manager',
+            'hqmanager',
+        ]);
+    }
+
     public function isHQManager(): bool
     {
         return $this->hasAnyRole([
