@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Resources\MemberDetails\MemberDetailResource;
 use App\Models\Profile;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
@@ -58,6 +59,13 @@ class MemberGreetingWidget extends Widget
 
     public function getSavingsPageUrl(): string
     {
-        return route('filament.admin.resources.savings-accounts.index');
+        $profile = Auth::user()?->profile;
+        $memberDetail = $profile?->memberDetail;
+
+        if ($memberDetail) {
+            return MemberDetailResource::getUrl('view', ['record' => $memberDetail]);
+        }
+
+        return MemberDetailResource::getUrl('index');
     }
 }
