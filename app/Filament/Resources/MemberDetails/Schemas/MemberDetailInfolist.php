@@ -4,8 +4,10 @@ namespace App\Filament\Resources\MemberDetails\Schemas;
 
 use App\Models\SavingsAccountTransaction;
 use App\Models\SavingsType;
+use Filament\Actions\Action;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -44,6 +46,26 @@ class MemberDetailInfolist
             ->where('name', 'Time Deposit')
             ->orWhere('code', 'SA 01')
             ->first();
+    }
+
+    protected static function clearTransactionCaches(int $profileId): void
+    {
+        if ($profileId <= 0) {
+            return;
+        }
+
+        unset(static::$timeDepositDisplayCache[$profileId]);
+
+        $regularSavingsType = static::getRegularSavingsType();
+        $timeDepositType = static::getTimeDepositType();
+
+        if ($regularSavingsType) {
+            unset(static::$transactionsCache[$profileId.':'.$regularSavingsType->getKey()]);
+        }
+
+        if ($timeDepositType) {
+            unset(static::$transactionsCache[$profileId.':'.$timeDepositType->getKey()]);
+        }
     }
 
     /**
@@ -110,6 +132,99 @@ class MemberDetailInfolist
         }
 
         return $transaction->transaction_date->copy()->addMonths((int) $transaction->terms);
+    }
+
+    protected static function isTimeDepositDecisionWindowOpen(SavingsAccountTransaction $transaction): bool
+    {
+        $maturityDate = static::getTimeDepositMaturityDate($transaction);
+
+        if (! $maturityDate || ($transaction->status !== 'ongoing')) {
+            return false;
+        }
+
+        return now()->greaterThanOrEqualTo($maturityDate->copy()->subWeek());
+    }
+
+    protected static function getMaturityActionLabel(?string $maturityAction): string
+    {
+        return match ($maturityAction) {
+            'renew_time_deposit' => 'Re-Time Deposit',
+            'transfer_to_savings' => 'Transfer to Regular Savings',
+            default => 'Auto-transfer to Regular Savings',
+        };
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected static function getEligibleTimeDepositOptions(int $profileId): array
+    {
+        $timeDepositType = static::getTimeDepositType();
+
+        if (! $timeDepositType || $profileId <= 0) {
+            return [];
+        }
+
+        return SavingsAccountTransaction::query()
+            ->where('profile_id', $profileId)
+            ->where('savings_type_id', (string) $timeDepositType->getKey())
+            ->where('type', 'Deposit')
+            ->where('status', 'ongoing')
+            ->whereNull('maturity_action')
+            ->get()
+            ->filter(fn (SavingsAccountTransaction $transaction): bool => static::isTimeDepositDecisionWindowOpen($transaction))
+            ->mapWithKeys(function (SavingsAccountTransaction $transaction): array {
+                $maturityDate = static::getTimeDepositMaturityDate($transaction);
+
+                return [
+                    $transaction->id => 'Time Deposit: PHP '.number_format((float) ($transaction->deposit ?? 0), 2)
+                        .' | Term: '.($transaction->terms ?? 'N/A').' month(s)'
+                        .' | Maturity: '.($maturityDate?->format('Y-m-d') ?? 'N/A')
+                        .' | Current Option: '.static::getMaturityActionLabel($transaction->maturity_action),
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected static function getEligibleTimeDepositDisplayTransactions(int $profileId): array
+    {
+        $timeDepositType = static::getTimeDepositType();
+
+        if (! $timeDepositType || $profileId <= 0) {
+            return [];
+        }
+
+        return SavingsAccountTransaction::query()
+            ->where('profile_id', $profileId)
+            ->where('savings_type_id', (string) $timeDepositType->getKey())
+            ->where('type', 'Deposit')
+            ->where('status', 'ongoing')
+            ->whereNull('maturity_action')
+            ->get()
+            ->filter(fn (SavingsAccountTransaction $transaction): bool => static::isTimeDepositDecisionWindowOpen($transaction))
+            ->map(function (SavingsAccountTransaction $transaction): array {
+                $maturityDate = static::getTimeDepositMaturityDate($transaction);
+
+                return [
+                    'id' => (int) $transaction->id,
+                    'amount' => round((float) ($transaction->deposit ?? 0), 2),
+                    'terms' => $transaction->terms,
+                    'status' => $transaction->status,
+                    'maturity_action' => $transaction->maturity_action,
+                    'transaction_date' => $transaction->transaction_date,
+                    'maturity_date' => $maturityDate,
+                ];
+            })
+            ->sortByDesc(fn (array $transaction): string => sprintf(
+                '%s-%010d',
+                optional($transaction['transaction_date'])->format('Y-m-d H:i:s.u') ?? '',
+                $transaction['id']
+            ))
+            ->values()
+            ->all();
     }
 
     /**
@@ -591,6 +706,114 @@ class MemberDetailInfolist
 
                                 Section::make('Time Deposit Transactions')
                                     ->schema([
+                                        Section::make('Eligible for Maturity Option')
+                                            ->description('Only time deposits within 7 days before maturity are listed here. If no action is taken, the system will automatically transfer the amount to Regular Savings on the maturity date.')
+                                            ->schema([
+                                                RepeatableEntry::make('eligible_time_deposit_transactions')
+                                                    ->label('Eligible Time Deposits')
+                                                    ->state(function ($record): array {
+                                                        return static::getEligibleTimeDepositDisplayTransactions((int) $record->profile_id);
+                                                    })
+                                                    ->schema([
+                                                        TextEntry::make('amount')
+                                                            ->label('Amount')
+                                                            ->money('PHP'),
+
+                                                        TextEntry::make('terms')
+                                                            ->label('Term')
+                                                            ->formatStateUsing(fn ($state) => $state ? $state.' month(s)' : '-'),
+
+                                                        TextEntry::make('transaction_date')
+                                                            ->label('Deposit Date')
+                                                            ->dateTime('M d, Y h:i A'),
+
+                                                        TextEntry::make('maturity_date')
+                                                            ->label('Maturity Date')
+                                                            ->date('M d, Y')
+                                                            ->placeholder('-'),
+
+                                                        TextEntry::make('id')
+                                                            ->label('Action')
+                                                            ->formatStateUsing(fn () => '')
+                                                            ->afterContent(fn ($state): Action => Action::make('re_time_deposit_'.$state)
+                                                                ->label('Re-Time Deposit')
+                                                                ->icon('heroicon-o-arrow-path-rounded-square')
+                                                                ->button()
+                                                                ->requiresConfirmation()
+                                                                ->visible(fn (): bool => ! auth()->user()?->isMember())
+                                                                ->action(function () use ($state): void {
+                                                                    if (! (auth()->user()?->hasAnyRole(['Admin', 'super_admin']) ?? false)) {
+                                                                        Notification::make()
+                                                                            ->title('Unauthorized')
+                                                                            ->danger()
+                                                                            ->send();
+
+                                                                        return;
+                                                                    }
+
+                                                                    $timeDepositType = static::getTimeDepositType();
+
+                                                                    $timeDepositTransaction = SavingsAccountTransaction::query()
+                                                                        ->where('id', $state)
+                                                                        ->where('savings_type_id', (string) ($timeDepositType?->getKey() ?? ''))
+                                                                        ->where('type', 'Deposit')
+                                                                        ->where('status', 'ongoing')
+                                                                        ->whereNull('maturity_action')
+                                                                        ->first();
+
+                                                                    if (! $timeDepositTransaction) {
+                                                                        Notification::make()
+                                                                            ->title('Time deposit transaction not found.')
+                                                                            ->danger()
+                                                                            ->send();
+
+                                                                        return;
+                                                                    }
+
+                                                                    if (! static::isTimeDepositDecisionWindowOpen($timeDepositTransaction)) {
+                                                                        $maturityDate = static::getTimeDepositMaturityDate($timeDepositTransaction);
+
+                                                                        Notification::make()
+                                                                            ->title('Option not available yet')
+                                                                            ->body('This option can only be set within 7 days before maturity. Maturity date: '.($maturityDate?->format('Y-m-d') ?? 'N/A'))
+                                                                            ->danger()
+                                                                            ->send();
+
+                                                                        return;
+                                                                    }
+
+                                                                    if (filled($timeDepositTransaction->maturity_action)) {
+                                                                        Notification::make()
+                                                                            ->title('Maturity option already selected')
+                                                                            ->body('Current option: '.static::getMaturityActionLabel($timeDepositTransaction->maturity_action))
+                                                                            ->warning()
+                                                                            ->send();
+
+                                                                        return;
+                                                                    }
+
+                                                                    $timeDepositTransaction->update([
+                                                                        'maturity_action' => 'renew_time_deposit',
+                                                                        'maturity_action_selected_at' => now(),
+                                                                    ]);
+
+                                                                    static::clearTransactionCaches((int) $timeDepositTransaction->profile_id);
+
+                                                                    Notification::make()
+                                                                        ->title('Maturity option saved successfully')
+                                                                        ->body('Selected option: Re-Time Deposit')
+                                                                        ->success()
+                                                                        ->send();
+                                                                })),
+                                                    ])
+                                                    ->columns(5)
+                                                    ->contained()
+                                                    ->columnSpanFull(),
+                                            ])
+                                            ->visible(function ($record): bool {
+                                                return static::getEligibleTimeDepositDisplayTransactions((int) $record->profile_id) !== [];
+                                            }),
+
                                         RepeatableEntry::make('time_deposit_transactions')
                                             ->label('Latest 3 Transactions')
                                             ->state(function ($record): array {

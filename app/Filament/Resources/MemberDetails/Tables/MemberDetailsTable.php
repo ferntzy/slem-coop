@@ -441,123 +441,123 @@ class MemberDetailsTable
                                 ->send();
                         }),
 
-                    Action::make('set_time_deposit_maturity_action')
-                        ->label('Set Time Deposit Maturity Option')
-                        ->icon('heroicon-o-arrow-path-rounded-square')
-                        ->color('warning')
-                        ->form([
-                            Select::make('profile_id')
-                                ->label('Member')
-                                ->options(function ($record) {
-                                    return Profile::where('profile_id', $record->profile_id)
-                                        ->get()
-                                        ->mapWithKeys(function ($profile) {
-                                            return [$profile->profile_id => $profile->full_name];
-                                        })
-                                        ->toArray();
-                                })
-                                ->default(fn ($record) => $record->profile_id)
-                                ->disabled()
-                                ->dehydrated(true)
-                                ->required(),
+                    // Action::make('set_time_deposit_maturity_action')
+                    //     ->label('Set Time Deposit Maturity Option')
+                    //     ->icon('heroicon-o-arrow-path-rounded-square')
+                    //     ->color('warning')
+                    //     ->form([
+                    //         Select::make('profile_id')
+                    //             ->label('Member')
+                    //             ->options(function ($record) {
+                    //                 return Profile::where('profile_id', $record->profile_id)
+                    //                     ->get()
+                    //                     ->mapWithKeys(function ($profile) {
+                    //                         return [$profile->profile_id => $profile->full_name];
+                    //                     })
+                    //                     ->toArray();
+                    //             })
+                    //             ->default(fn ($record) => $record->profile_id)
+                    //             ->disabled()
+                    //             ->dehydrated(true)
+                    //             ->required(),
 
-                            Select::make('time_deposit_transaction_id')
-                                ->label('Time Deposit')
-                                ->options(function ($record): array {
-                                    return SavingsAccountTransaction::query()
-                                        ->where('profile_id', $record->profile_id)
-                                        ->where('savings_type_id', 1)
-                                        ->where('type', 'Deposit')
-                                        ->where('status', 'ongoing')
-                                        ->whereNull('maturity_action')
-                                        ->get()
-                                        ->filter(fn (SavingsAccountTransaction $transaction): bool => static::isTimeDepositDecisionWindowOpen($transaction))
-                                        ->mapWithKeys(function (SavingsAccountTransaction $transaction): array {
-                                            $maturityDate = static::getTimeDepositMaturityDate($transaction);
+                    //         Select::make('time_deposit_transaction_id')
+                    //             ->label('Time Deposit')
+                    //             ->options(function ($record): array {
+                    //                 return SavingsAccountTransaction::query()
+                    //                     ->where('profile_id', $record->profile_id)
+                    //                     ->where('savings_type_id', 1)
+                    //                     ->where('type', 'Deposit')
+                    //                     ->where('status', 'ongoing')
+                    //                     ->whereNull('maturity_action')
+                    //                     ->get()
+                    //                     ->filter(fn (SavingsAccountTransaction $transaction): bool => static::isTimeDepositDecisionWindowOpen($transaction))
+                    //                     ->mapWithKeys(function (SavingsAccountTransaction $transaction): array {
+                    //                         $maturityDate = static::getTimeDepositMaturityDate($transaction);
 
-                                            return [
-                                                $transaction->id => 'Time Deposit: '.static::money((float) ($transaction->deposit ?? 0))
-                                                    .' | Term: '.($transaction->terms ?? 'N/A').' month(s)'
-                                                    .' | Maturity: '.($maturityDate?->format('Y-m-d') ?? 'N/A')
-                                                    .' | Current Option: '.static::getMaturityActionLabel($transaction->maturity_action),
-                                            ];
-                                        })
-                                        ->toArray();
-                                })
-                                ->searchable()
-                                ->preload()
-                                ->required()
-                                ->helperText('Only ongoing time deposits that are within 7 days of maturity are shown here.'),
+                    //                         return [
+                    //                             $transaction->id => 'Time Deposit: '.static::money((float) ($transaction->deposit ?? 0))
+                    //                                 .' | Term: '.($transaction->terms ?? 'N/A').' month(s)'
+                    //                                 .' | Maturity: '.($maturityDate?->format('Y-m-d') ?? 'N/A')
+                    //                                 .' | Current Option: '.static::getMaturityActionLabel($transaction->maturity_action),
+                    //                         ];
+                    //                     })
+                    //                     ->toArray();
+                    //             })
+                    //             ->searchable()
+                    //             ->preload()
+                    //             ->required()
+                    //             ->helperText('Only ongoing time deposits that are within 7 days of maturity are shown here.'),
 
-                            Select::make('maturity_action')
-                                ->label('Maturity Option')
-                                ->options([
-                                    static::MATURITY_ACTION_RENEW_TIME_DEPOSIT => 'Re-Time Deposit',
-                                    static::MATURITY_ACTION_TRANSFER_TO_SAVINGS => 'Transfer to Regular Savings',
-                                ])
-                                ->required()
-                                ->helperText('If no option is selected before maturity, the system will automatically transfer the amount to Regular Savings.'),
-                        ])
-                        ->action(function ($record, array $data): void {
-                            if (! (auth()->user()?->hasAnyRole(['Admin', 'super_admin']) ?? false)) {
-                                Notification::make()
-                                    ->title('Unauthorized')
-                                    ->danger()
-                                    ->send();
+                    //         Select::make('maturity_action')
+                    //             ->label('Maturity Option')
+                    //             ->options([
+                    //                 static::MATURITY_ACTION_RENEW_TIME_DEPOSIT => 'Re-Time Deposit',
+                    //                 static::MATURITY_ACTION_TRANSFER_TO_SAVINGS => 'Transfer to Regular Savings',
+                    //             ])
+                    //             ->required()
+                    //             ->helperText('If no option is selected before maturity, the system will automatically transfer the amount to Regular Savings.'),
+                    //     ])
+                    //     ->action(function ($record, array $data): void {
+                    //         if (! (auth()->user()?->hasAnyRole(['Admin', 'super_admin']) ?? false)) {
+                    //             Notification::make()
+                    //                 ->title('Unauthorized')
+                    //                 ->danger()
+                    //                 ->send();
 
-                                return;
-                            }
+                    //             return;
+                    //         }
 
-                            $timeDepositTransaction = SavingsAccountTransaction::query()
-                                ->where('id', $data['time_deposit_transaction_id'] ?? null)
-                                ->where('profile_id', $record->profile_id)
-                                ->where('savings_type_id', 1)
-                                ->where('type', 'Deposit')
-                                ->where('status', 'ongoing')
-                                ->first();
+                    //         $timeDepositTransaction = SavingsAccountTransaction::query()
+                    //             ->where('id', $data['time_deposit_transaction_id'] ?? null)
+                    //             ->where('profile_id', $record->profile_id)
+                    //             ->where('savings_type_id', 1)
+                    //             ->where('type', 'Deposit')
+                    //             ->where('status', 'ongoing')
+                    //             ->first();
 
-                            if (! $timeDepositTransaction) {
-                                Notification::make()
-                                    ->title('Time deposit transaction not found.')
-                                    ->danger()
-                                    ->send();
+                    //         if (! $timeDepositTransaction) {
+                    //             Notification::make()
+                    //                 ->title('Time deposit transaction not found.')
+                    //                 ->danger()
+                    //                 ->send();
 
-                                return;
-                            }
+                    //             return;
+                    //         }
 
-                            if (! static::isTimeDepositDecisionWindowOpen($timeDepositTransaction)) {
-                                $maturityDate = static::getTimeDepositMaturityDate($timeDepositTransaction);
+                    //         if (! static::isTimeDepositDecisionWindowOpen($timeDepositTransaction)) {
+                    //             $maturityDate = static::getTimeDepositMaturityDate($timeDepositTransaction);
 
-                                Notification::make()
-                                    ->title('Option not available yet')
-                                    ->body('This option can only be set within 7 days before maturity. Maturity date: '.($maturityDate?->format('Y-m-d') ?? 'N/A'))
-                                    ->danger()
-                                    ->send();
+                    //             Notification::make()
+                    //                 ->title('Option not available yet')
+                    //                 ->body('This option can only be set within 7 days before maturity. Maturity date: '.($maturityDate?->format('Y-m-d') ?? 'N/A'))
+                    //                 ->danger()
+                    //                 ->send();
 
-                                return;
-                            }
+                    //             return;
+                    //         }
 
-                            if (filled($timeDepositTransaction->maturity_action)) {
-                                Notification::make()
-                                    ->title('Maturity option already selected')
-                                    ->body('Current option: '.static::getMaturityActionLabel($timeDepositTransaction->maturity_action))
-                                    ->warning()
-                                    ->send();
+                    //         if (filled($timeDepositTransaction->maturity_action)) {
+                    //             Notification::make()
+                    //                 ->title('Maturity option already selected')
+                    //                 ->body('Current option: '.static::getMaturityActionLabel($timeDepositTransaction->maturity_action))
+                    //                 ->warning()
+                    //                 ->send();
 
-                                return;
-                            }
+                    //             return;
+                    //         }
 
-                            $timeDepositTransaction->update([
-                                'maturity_action' => $data['maturity_action'],
-                                'maturity_action_selected_at' => now(),
-                            ]);
+                    //         $timeDepositTransaction->update([
+                    //             'maturity_action' => $data['maturity_action'],
+                    //             'maturity_action_selected_at' => now(),
+                    //         ]);
 
-                            Notification::make()
-                                ->title('Maturity option saved successfully')
-                                ->body('Selected option: '.static::getMaturityActionLabel($data['maturity_action']))
-                                ->success()
-                                ->send();
-                        }),
+                    //         Notification::make()
+                    //             ->title('Maturity option saved successfully')
+                    //             ->body('Selected option: '.static::getMaturityActionLabel($data['maturity_action']))
+                    //             ->success()
+                    //             ->send();
+                    //     }),
 
                     Action::make('add_withdrawal')
                         ->label('Withdraw')
