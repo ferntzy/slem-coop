@@ -2,20 +2,20 @@
 
 namespace App\Filament\Resources\LoanTypes\RelationManagers;
 
-use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\TextInput\Mask;
-use Filament\Tables\Table;
+use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
+use Filament\Tables\Table;
 
 class LoanTypeRequirementsRelationManager extends RelationManager
 {
     protected static string $relationship = 'requirements';
 
-    public function form(\Filament\Schemas\Schema $schema): \Filament\Schemas\Schema
+    public function form(Schema $schema): Schema
     {
         return $form->schema([
             TextInput::make('code')

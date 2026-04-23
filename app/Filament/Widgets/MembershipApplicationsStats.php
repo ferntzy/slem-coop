@@ -11,7 +11,7 @@ class MembershipApplicationsStats extends Widget
 
     protected static ?int $sort = 1;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public function getStats(): array
     {
@@ -22,11 +22,11 @@ class MembershipApplicationsStats extends Widget
         $rejected = MembershipApplication::where('status', 'rejected')->count();
 
         return [
-            'total'        => $total,
-            'pending'      => $pending,
+            'total' => $total,
+            'pending' => $pending,
             'under_review' => $underReview,
-            'approved'     => $approved,
-            'rejected'     => $rejected,
+            'approved' => $approved,
+            'rejected' => $rejected,
         ];
     }
 }

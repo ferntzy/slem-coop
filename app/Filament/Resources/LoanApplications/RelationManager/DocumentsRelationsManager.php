@@ -2,32 +2,33 @@
 
 namespace App\Filament\Resources\LoanApplications\RelationManagers;
 
-use App\Models\LoanProductRequirement;
+use App\Models\LoanTypeRequirement;
+use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables\Table;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Actions\DeleteAction;
+use Filament\Tables\Table;
 
 class DocumentsRelationManager extends RelationManager
 {
     protected static string $relationship = 'documents';
 
-    public function form(\Filament\Schemas\Schema $schema): \Filament\Schemas\Schema
+    public function form(Schema $schema): Schema
     {
         return $form->schema([
             Select::make('code')
                 ->label('Requirement')
                 ->options(function () {
                     $typeId = $this->getOwnerRecord()->loan_type_id;
-                        
-                return \App\Models\LoanTypeRequirement::query()
-                ->where('loan_type_id', $typeId)
-                ->orderBy('sort_order')
-                ->pluck('label', 'code')
-                ->toArray();
+
+                    return LoanTypeRequirement::query()
+                        ->where('loan_type_id', $typeId)
+                        ->orderBy('sort_order')
+                        ->pluck('label', 'code')
+                        ->toArray();
                 })
                 ->searchable()
                 ->required(),
@@ -35,7 +36,7 @@ class DocumentsRelationManager extends RelationManager
             FileUpload::make('file_path')
                 ->label('File')
                 ->disk('public')
-                ->directory(fn () => 'loan-applications/' . $this->getOwnerRecord()->loan_application_id)
+                ->directory(fn () => 'loan-applications/'.$this->getOwnerRecord()->loan_application_id)
                 ->preserveFilenames()
                 ->storeFileNamesIn('original_name')
                 ->storeFileSizesIn('file_size')

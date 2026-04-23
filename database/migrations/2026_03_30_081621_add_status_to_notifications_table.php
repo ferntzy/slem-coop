@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::table('notifications', function (Blueprint $table) {
             $table->enum('status', ['seen', 'unseen'])
-                  ->default('unseen')
-                  ->after('description');
+                ->default('unseen')
+                ->after('description');
         });
     }
 

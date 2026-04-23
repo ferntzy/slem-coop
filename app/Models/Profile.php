@@ -52,6 +52,7 @@ class Profile extends Model
     {
         return $this->hasOne(User::class, 'profile_id', 'profile_id');
     }
+
     public function savingsAccountTransaction()
     {
         return $this->hasMany(SavingsAccountTransaction::class, 'profile_id', 'profile_id');

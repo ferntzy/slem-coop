@@ -566,7 +566,7 @@ class LoanApplicationsTable
                             $user = auth()->user();
 
                             return in_array($record->status, ['Pending', 'Under Review'], true)
-                                && (($user?->isHeadOffice() ?? false) || $user?->isBranchScoped());
+                                && (($user?->isHeadOffice() ?? false) || $user?->isBranchScoped() || ($user?->canApproveAnyLoanAmount() ?? false));
                         })
                         ->action(function ($record) {
                             $user = auth()->user();
@@ -574,8 +574,15 @@ class LoanApplicationsTable
                             $notificationService = app(NotificationService::class);
                             $requiresDualApproval = self::requiresDualApproval($record);
                             $approvalLimit = self::loanOfficerApprovalLimit();
+                            $canApproveAnyLoanAmount = $user?->canApproveAnyLoanAmount() ?? false;
+                            $isLoanOfficerApprover = $user?->hasAnyRole([
+                                'Loan Officer',
+                                'loan_officer',
+                                'HQ Loan Officer',
+                                'hq_loan_officer',
+                            ]) ?? false;
 
-                            if (! (($user?->isHeadOffice() ?? false) || $user?->isBranchScoped())) {
+                            if (! (($user?->isHeadOffice() ?? false) || $user?->isBranchScoped() || ($user?->canApproveAnyLoanAmount() ?? false))) {
                                 Notification::make()
                                     ->title('Unauthorized')
                                     ->danger()
@@ -593,7 +600,17 @@ class LoanApplicationsTable
                                 return;
                             }
 
-                            if ($requiresDualApproval && ($user?->isLoanOfficerApprover() ?? false)) {
+                            if ($requiresDualApproval && ! $canApproveAnyLoanAmount) {
+                                if (! $isLoanOfficerApprover) {
+                                    Notification::make()
+                                        ->title('Unauthorized for high-value approval')
+                                        ->body('Only admin, manager, HQ manager, or loan officers can handle high-value loans.')
+                                        ->danger()
+                                        ->send();
+
+                                    return;
+                                }
+
                                 $from = $record->status;
 
                                 $record->update(['status' => 'Under Review']);
@@ -640,64 +657,6 @@ class LoanApplicationsTable
                                     ->send();
 
                                 return;
-                            }
-
-                            if ($requiresDualApproval) {
-                                $isManagerApprover = $user?->isManagerApprover() ?? false;
-                                $isAdminApprover = $user?->isAdminOrSuperAdmin() ?? false;
-
-                                if (! $isManagerApprover && ! $isAdminApprover) {
-                                    Notification::make()
-                                        ->title('Unauthorized for high-value approval')
-                                        ->body('Only Manager and Admin can complete approvals above the configured threshold.')
-                                        ->danger()
-                                        ->send();
-
-                                    return;
-                                }
-
-                                $updates = ['status' => 'Under Review'];
-
-                                if ($isManagerApprover && ! $record->manager_approved_at) {
-                                    $updates['manager_approved_at'] = now();
-                                    $updates['manager_approved_by_user_id'] = auth()->id();
-                                }
-
-                                if ($isAdminApprover && ! $record->admin_approved_at) {
-                                    $updates['admin_approved_at'] = now();
-                                    $updates['admin_approved_by_user_id'] = auth()->id();
-                                }
-
-                                $record->update($updates);
-                                $record->refresh();
-
-                                if (! $record->manager_approved_at || ! $record->admin_approved_at) {
-                                    if (! $record->manager_approved_at) {
-                                        $notificationService->notifyManagers(
-                                            'Manager approval still required',
-                                            "Loan application #{$record->loan_application_id} still requires manager approval.",
-                                            notifiableType: 'loan_application',
-                                            notifiableId: $record->loan_application_id
-                                        );
-                                    }
-
-                                    if (! $record->admin_approved_at) {
-                                        $notificationService->notifyAdmins(
-                                            'Admin approval still required',
-                                            "Loan application #{$record->loan_application_id} still requires admin approval.",
-                                            notifiableType: 'loan_application',
-                                            notifiableId: $record->loan_application_id
-                                        );
-                                    }
-
-                                    Notification::make()
-                                        ->title('Approval recorded')
-                                        ->body('Waiting for both Manager and Admin approvals before final approval.')
-                                        ->info()
-                                        ->send();
-
-                                    return;
-                                }
                             }
 
                             $from = $record->status;

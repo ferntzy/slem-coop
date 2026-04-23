@@ -5,6 +5,7 @@ namespace App\Filament\Resources\LoanTypes;
 use App\Filament\Resources\LoanTypes\Pages\CreateLoanType;
 use App\Filament\Resources\LoanTypes\Pages\EditLoanType;
 use App\Filament\Resources\LoanTypes\Pages\ListLoanTypes;
+use App\Filament\Resources\LoanTypes\RelationManagers\LoanTypeRequirementsRelationManager;
 use App\Filament\Resources\LoanTypes\Schemas\LoanTypeForm;
 use App\Filament\Resources\LoanTypes\Tables\LoanTypesTable;
 use App\Models\LoanType;
@@ -37,8 +38,6 @@ class LoanTypeResource extends Resource
         return LoanTypesTable::configure($table);
     }
 
-
-
     public static function getPages(): array
     {
         return [
@@ -51,7 +50,7 @@ class LoanTypeResource extends Resource
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Resources\LoanTypes\RelationManagers\LoanTypeRequirementsRelationManager::class,
+            LoanTypeRequirementsRelationManager::class,
         ];
     }
 }

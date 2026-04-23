@@ -2,16 +2,16 @@
 
 namespace Database\Seeders;
 
+use App\Models\PaymentAllocationConfig;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use App\Models\PaymentAllocationConfig;
 
 class PaymentAllocationConfigSeeder extends Seeder
 {
     public function run(): void
     {
 
-    PaymentAllocationConfig::truncate();
+        PaymentAllocationConfig::truncate();
         $configs = [
             [
                 'name' => 'Penalty',

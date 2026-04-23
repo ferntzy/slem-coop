@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ContactPageSetting;
 use App\Models\ContactMessage;
+use App\Models\ContactPageSetting;
 use Illuminate\Http\Request;
 
 class ContactPageController extends Controller
@@ -18,24 +18,24 @@ class ContactPageController extends Controller
 
         return response()->json([
             'hero' => [
-                'badge'    => $s->hero_badge,
-                'title'    => $s->hero_title,
+                'badge' => $s->hero_badge,
+                'title' => $s->hero_title,
                 'subtitle' => $s->hero_subtitle,
             ],
             'info' => [
-                'phone'   => $s->phone,
-                'email'   => $s->email,
+                'phone' => $s->phone,
+                'email' => $s->email,
                 'address' => $s->address,
-                'hours'   => $s->hours,
+                'hours' => $s->hours,
             ],
             'social' => [
-                'facebook'  => $s->facebook_url,
-                'twitter'   => $s->twitter_url,
+                'facebook' => $s->facebook_url,
+                'twitter' => $s->twitter_url,
                 'instagram' => $s->instagram_url,
-                'linkedin'  => $s->linkedin_url,
+                'linkedin' => $s->linkedin_url,
             ],
             'maps_embed_url' => $s->maps_embed_url,
-            'branches'       => $s->branches ?? [],
+            'branches' => $s->branches ?? [],
         ]);
     }
 
@@ -45,8 +45,8 @@ class ContactPageController extends Controller
     public function submit(Request $request)
     {
         $validated = $request->validate([
-            'name'    => 'required|string|max:150',
-            'email'   => 'required|email|max:150',
+            'name' => 'required|string|max:150',
+            'email' => 'required|email|max:150',
             'subject' => 'required|string|max:255',
             'message' => 'required|string|max:5000',
         ]);

@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class LoanType extends Model
 {
     protected $table = 'loan_types';
+
     protected $primaryKey = 'loan_type_id';
-    
+
     protected $fillable = [
         'name',
         'description',
@@ -29,8 +30,8 @@ class LoanType extends Model
     ];
 
     public function requirements()
-{
-    return $this->hasMany(\App\Models\LoanTypeRequirement::class, 'loan_type_id', 'loan_type_id')
-        ->orderBy('sort_order');
-}
+    {
+        return $this->hasMany(LoanTypeRequirement::class, 'loan_type_id', 'loan_type_id')
+            ->orderBy('sort_order');
+    }
 }

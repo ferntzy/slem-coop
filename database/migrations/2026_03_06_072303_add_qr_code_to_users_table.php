@@ -9,13 +9,13 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-   // database/migrations/xxxx_add_qr_code_to_users_table.php
-public function up()
-{
-    Schema::table('users', function (Blueprint $table) {
-        $table->string('qr_code')->nullable();
-    });
-}
+    // database/migrations/xxxx_add_qr_code_to_users_table.php
+    public function up()
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('qr_code')->nullable();
+        });
+    }
 
     /**
      * Reverse the migrations.

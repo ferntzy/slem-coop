@@ -74,7 +74,7 @@ class DormantSavingsDemoSeeder extends Seeder
             [
                 'membership_type_id' => $membershipTypeId,
                 'branch_id' => $branchId,
-                'status' => 'Active',
+                'status' => 'Dormant',
                 'member_no' => 'DEMO-DORM-0001',
             ]
         );
@@ -111,9 +111,9 @@ class DormantSavingsDemoSeeder extends Seeder
 
         $demoSavingsTypeId = (string) $demoSavingsType->id;
 
+        // Reset demo members to a clean savings history so dormancy status is deterministic.
         SavingsAccountTransaction::query()
             ->whereIn('profile_id', [$dormantProfile->profile_id, $activeProfile->profile_id])
-            ->where('savings_type_id', $demoSavingsTypeId)
             ->delete();
 
         SavingsAccountTransaction::query()->create([

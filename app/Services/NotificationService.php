@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\MemberAccountReady;
 use App\Models\Notification;
 use App\Models\Profile;
 use App\Models\User;
@@ -9,7 +10,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use App\Mail\MemberAccountReady;
+use Spatie\Permission\Exceptions\RoleDoesNotExist;
+
 class NotificationService
 {
     public function notifyUser(
@@ -113,37 +115,37 @@ class NotificationService
         }
 
         $password = Str::random(12);
-        $username = Str::slug($profile->full_name, '.').'.'.strtolower(Str::random(4));
 
         $user = User::create([
-            'username' => $username,
             'profile_id' => $profile->profile_id,
             'password' => Hash::make($password),
+            'temp_password' => $password,
             'is_active' => true,
         ]);
 
         $user->assignRole('Member');
 
         $this->sendPasswordEmail($user, $password);
-        $this->notifyUserAccountCreated($user, $username, $password);
+        $this->notifyUserAccountCreated($user, $password);
 
         return $user;
     }
 
     protected function sendPasswordEmail(User $user, string $password): void
-{
-    $profile = $user->profile;
+    {
+        $profile = $user->profile;
 
-    if (! $profile || empty($profile->email)) {
-        return;
+        if (! $profile || empty($profile->email)) {
+            return;
+        }
+
+        try {
+            Mail::to($profile->email)->send(new MemberAccountReady($user, $password));
+        } catch (\Throwable $exception) {
+            Log::warning("Failed to send password email to {$profile->email}: ".$exception->getMessage());
+        }
     }
 
-    try {
-        Mail::to($profile->email)->send(new MemberAccountReady($user, $user->username, $password));
-    } catch (\Throwable $exception) {
-        Log::warning("Failed to send password email to {$profile->email}: " . $exception->getMessage());
-    }
-}
     public function sendPaymentConfirmation(int|string $profileId, float $amount, ?string $loanNumber = null): ?Notification
     {
         $title = 'Payment Confirmation';
@@ -339,10 +341,14 @@ class NotificationService
         $this->notifyAdmins($adminTitle, $adminDescription);
     }
 
-    public function notifyUserAccountCreated(User $user, string $username, string $tempPassword): ?Notification
+    public function notifyUserAccountCreated(User $user, string $tempPassword): ?Notification
     {
         $title = 'Account Created';
-        $description = "Your account has been created. Username: {$username}. Check your email for your temporary password.";
+
+        $description = "Your account has been successfully created.\n\n"
+            ."You can now log in using your registered email address.\n"
+            ."Temporary Password: {$tempPassword}\n\n"
+            .'For security purposes, please change your password after your first login.';
 
         return $this->notifyUser($user->user_id, $title, $description);
     }

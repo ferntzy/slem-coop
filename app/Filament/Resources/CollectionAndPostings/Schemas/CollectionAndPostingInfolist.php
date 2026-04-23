@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\CollectionAndPostings\Schemas;
 
+use App\Models\User;
+use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Grid;
@@ -37,7 +39,7 @@ class CollectionAndPostingInfolist
                                     border-radius:8px;padding:4px 10px;
                                     font-family:monospace;font-size:.9rem;
                                     color:#15803d;letter-spacing:.04em;
-                                ">' . e($state) . '</span>'
+                                ">'.e($state).'</span>'
                             ))
                             ->html(),
 
@@ -46,20 +48,20 @@ class CollectionAndPostingInfolist
                             ->badge()
                             ->color(fn (string $state): string => match ($state) {
                                 'Posted' => 'success',
-                                'Draft'  => 'warning',
-                                'Void'   => 'danger',
-                                default  => 'gray',
+                                'Draft' => 'warning',
+                                'Void' => 'danger',
+                                default => 'gray',
                             }),
 
                         TextEntry::make('payment_method')
                             ->label('Payment Method')
                             ->badge()
                             ->color(fn (string $state): string => match ($state) {
-                                'Cash'          => 'success',
+                                'Cash' => 'success',
                                 'Bank Transfer' => 'info',
-                                'Bank Deposit'  => 'primary',
-                                'Check'         => 'warning',
-                                default         => 'gray',
+                                'Bank Deposit' => 'primary',
+                                'Check' => 'warning',
+                                default => 'gray',
                             }),
 
                         TextEntry::make('amount_paid')
@@ -74,7 +76,7 @@ class CollectionAndPostingInfolist
                                     -webkit-text-fill-color:transparent;
                                     background-clip:text;
                                     letter-spacing:-.01em;
-                                ">₱' . number_format((float)$state, 2) . '</span>'
+                                ">₱'.number_format((float) $state, 2).'</span>'
                             ))
                             ->html(),
 
@@ -86,8 +88,7 @@ class CollectionAndPostingInfolist
                         TextEntry::make('posted_by_user_id')
                             ->label('Posted By')
                             ->icon('heroicon-o-user-circle')
-                            ->formatStateUsing(fn ($state) =>
-                                \App\Models\User::find($state)?->name ?? 'N/A'
+                            ->formatStateUsing(fn ($state) => User::find($state)?->name ?? 'N/A'
                             ),
                     ]),
 
@@ -113,11 +114,72 @@ class CollectionAndPostingInfolist
                                     ->copyMessage('Copied!')
                                     ->badge()
                                     ->color('info'),
+
+                                // ── Receipt download links (inline in the card) ──
+                                TextEntry::make('id')
+                                    ->label('Receipt')
+                                    ->formatStateUsing(function ($state, $record) {
+                                        $downloadUrl = route('receipt.download', $record);
+                                        $printUrl = route('receipt.print', $record);
+
+                                        $downloadBtn = $record->status === 'Posted'
+                                            ? "
+                                                <a href=\"{$downloadUrl}\" target=\"_blank\"
+                                                   style=\"
+                                                       display:inline-flex;align-items:center;gap:5px;
+                                                       padding:5px 12px;border-radius:7px;font-size:.75rem;font-weight:600;
+                                                       background:linear-gradient(135deg,#059669,#10b981);
+                                                       color:#fff;text-decoration:none;
+                                                       box-shadow:0 1px 4px rgba(5,150,105,.25);
+                                                       transition:opacity .15s;
+                                                   \"
+                                                   onmouseover=\"this.style.opacity='.85'\"
+                                                   onmouseout=\"this.style.opacity='1'\">
+                                                    <svg xmlns='http://www.w3.org/2000/svg' style='width:13px;height:13px;' fill='none' viewBox='0 0 24 24' stroke='currentColor' stroke-width='2'>
+                                                        <path stroke-linecap='round' stroke-linejoin='round' d='M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4'/>
+                                                    </svg>
+                                                    Download
+                                                </a>
+                                            "
+                                            : '';
+
+                                        $voidLabel = $record->status === 'Void' ? '' : "
+                                            <a href=\"{$printUrl}\" target=\"_blank\"
+                                               style=\"
+                                                   display:inline-flex;align-items:center;gap:5px;
+                                                   padding:5px 12px;border-radius:7px;font-size:.75rem;font-weight:600;
+                                                   background:#fff;color:#374151;text-decoration:none;
+                                                   border:1px solid #d1d5db;
+                                                   box-shadow:0 1px 3px rgba(0,0,0,.06);
+                                                   transition:opacity .15s;
+                                               \"
+                                               onmouseover=\"this.style.opacity='.8'\"
+                                               onmouseout=\"this.style.opacity='1'\">
+                                                <svg xmlns='http://www.w3.org/2000/svg' style='width:13px;height:13px;' fill='none' viewBox='0 0 24 24' stroke='currentColor' stroke-width='2'>
+                                                    <path stroke-linecap='round' stroke-linejoin='round' d='M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z'/>
+                                                </svg>
+                                                Print
+                                            </a>
+                                        ";
+
+                                        if (! $downloadBtn && ! $voidLabel) {
+                                            return new HtmlString('
+                                                <span style="font-size:.75rem;color:#9ca3af;">Not available (Voided)</span>
+                                            ');
+                                        }
+
+                                        return new HtmlString("
+                                            <div style='display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;'>
+                                                {$downloadBtn}
+                                                {$voidLabel}
+                                            </div>
+                                        ");
+                                    })
+                                    ->html(),
                             ]),
 
                         // Right — Proof of Payment
                         Section::make('Proof of Payment')
-
                             ->icon('heroicon-o-paper-clip')
                             ->schema([
                                 TextEntry::make('document_type')
@@ -151,6 +213,7 @@ class CollectionAndPostingInfolist
                                                 </span>
                                             ');
                                         }
+
                                         return new HtmlString('
                                             <span style="
                                                 display:inline-flex;align-items:center;gap:6px;
@@ -174,11 +237,11 @@ class CollectionAndPostingInfolist
                                             ->visible(fn ($record) => ! empty($record->file_path))
                                             ->modalHeading(fn ($record) => $record->original_file_name ?? 'Proof of Payment')
                                             ->modalContent(function ($record) {
-                                                $path     = storage_path('app/private/' . ltrim($record->file_path, '/'));
-                                                $mime     = $record->mime_type
+                                                $path = storage_path('app/private/'.ltrim($record->file_path, '/'));
+                                                $mime = $record->mime_type
                                                             ?? (file_exists($path) ? mime_content_type($path) : 'application/octet-stream');
                                                 $filename = $record->original_file_name ?? basename($path);
-                                                $uid      = 'cp' . substr(md5($record->id . uniqid()), 0, 8);
+                                                $uid = 'cp'.substr(md5($record->id.uniqid()), 0, 8);
 
                                                 if (! file_exists($path)) {
                                                     return new HtmlString('
@@ -191,18 +254,18 @@ class CollectionAndPostingInfolist
                                                                 </svg>
                                                             </div>
                                                             <p style="font-size:.95rem;font-weight:600;color:#111827;margin:0 0 .25rem;">File not found</p>
-                                                            <p style="font-size:.8rem;color:#9ca3af;margin:0;">' . e($filename) . '</p>
+                                                            <p style="font-size:.8rem;color:#9ca3af;margin:0;">'.e($filename).'</p>
                                                         </div>
                                                     ');
                                                 }
 
                                                 $base64 = base64_encode(file_get_contents($path));
-                                                $src    = "data:{$mime};base64,{$base64}";
+                                                $src = "data:{$mime};base64,{$base64}";
 
                                                 if ($mime === 'application/pdf') {
                                                     return new HtmlString('
                                                         <div style="padding:4px;">
-                                                            <embed src="' . $src . '" type="application/pdf"
+                                                            <embed src="'.$src.'" type="application/pdf"
                                                                    style="width:100%;height:76vh;border-radius:10px;
                                                                           border:1px solid #e5e7eb;box-shadow:0 1px 3px rgba(0,0,0,.08);" />
                                                         </div>
@@ -213,7 +276,7 @@ class CollectionAndPostingInfolist
                                                     return new HtmlString('
                                                         <div style="padding:3rem;text-align:center;">
                                                             <p style="font-size:.875rem;color:#6b7280;">Preview not available for this file type.</p>
-                                                            <p style="font-size:.75rem;color:#9ca3af;margin-top:.25rem;">' . e($filename) . '</p>
+                                                            <p style="font-size:.75rem;color:#9ca3af;margin-top:.25rem;">'.e($filename).'</p>
                                                         </div>
                                                     ');
                                                 }
@@ -237,7 +300,7 @@ class CollectionAndPostingInfolist
                                                                 </span>
                                                             </div>
                                                             <div style="display:flex;gap:6px;align-items:center;">
-                                                                <span onclick="window[\'cpV_' . $uid . '\'].zoom(0.3)"
+                                                                <span onclick="window[\'cpV_'.$uid.'\'].zoom(0.3)"
                                                                       style="display:inline-flex;align-items:center;justify-content:center;
                                                                              width:32px;height:32px;background:white;
                                                                              border:1px solid #e2e8f0;border-radius:8px;
@@ -246,7 +309,7 @@ class CollectionAndPostingInfolist
                                                                              color:#374151;user-select:none;transition:all .15s ease;"
                                                                       onmouseover="this.style.background=\'#f0fdf4\';this.style.borderColor=\'#86efac\';this.style.color=\'#16a34a\';"
                                                                       onmouseout="this.style.background=\'white\';this.style.borderColor=\'#e2e8f0\';this.style.color=\'#374151\';">+</span>
-                                                                <span onclick="window[\'cpV_' . $uid . '\'].zoom(-0.3)"
+                                                                <span onclick="window[\'cpV_'.$uid.'\'].zoom(-0.3)"
                                                                       style="display:inline-flex;align-items:center;justify-content:center;
                                                                              width:32px;height:32px;background:white;
                                                                              border:1px solid #e2e8f0;border-radius:8px;
@@ -256,7 +319,7 @@ class CollectionAndPostingInfolist
                                                                       onmouseover="this.style.background=\'#fef2f2\';this.style.borderColor=\'#fca5a5\';this.style.color=\'#dc2626\';"
                                                                       onmouseout="this.style.background=\'white\';this.style.borderColor=\'#e2e8f0\';this.style.color=\'#374151\';">−</span>
                                                                 <div style="width:1px;height:20px;background:#e2e8f0;margin:0 2px;"></div>
-                                                                <span onclick="window[\'cpV_' . $uid . '\'].reset()"
+                                                                <span onclick="window[\'cpV_'.$uid.'\'].reset()"
                                                                       style="display:inline-flex;align-items:center;justify-content:center;
                                                                              height:32px;padding:0 12px;background:white;
                                                                              border:1px solid #e2e8f0;border-radius:8px;
@@ -268,13 +331,13 @@ class CollectionAndPostingInfolist
                                                             </div>
                                                         </div>
 
-                                                        <div id="wrap_' . $uid . '"
+                                                        <div id="wrap_'.$uid.'"
                                                              style="overflow:hidden;
                                                                     background:repeating-conic-gradient(#f1f5f9 0% 25%, #e2e8f0 0% 50%) 0 0/20px 20px;
                                                                     border-radius:10px;height:64vh;cursor:grab;position:relative;
                                                                     border:1px solid #e2e8f0;box-shadow:inset 0 2px 8px rgba(0,0,0,.04);">
-                                                            <img id="img_' . $uid . '"
-                                                                 src="' . $src . '"
+                                                            <img id="img_'.$uid.'"
+                                                                 src="'.$src.'"
                                                                  draggable="false"
                                                                  style="position:absolute;top:50%;left:50%;
                                                                         max-width:92%;max-height:92%;object-fit:contain;
@@ -284,7 +347,7 @@ class CollectionAndPostingInfolist
                                                                         border-radius:4px;box-shadow:0 4px 24px rgba(0,0,0,.12);" />
                                                         </div>
 
-                                                        <div id="zoom_' . $uid . '"
+                                                        <div id="zoom_'.$uid.'"
                                                              style="text-align:center;margin-top:8px;
                                                                     font-size:.7rem;color:#94a3b8;
                                                                     font-weight:500;letter-spacing:.04em;">100%</div>
@@ -292,7 +355,7 @@ class CollectionAndPostingInfolist
 
                                                     <script>
                                                     (function(){
-                                                        var uid  = "' . $uid . '";
+                                                        var uid  = "'.$uid.'";
                                                         var st   = {scale:1, tx:0, ty:0};
                                                         var drag = {on:false, ox:0, oy:0, ltx:0, lty:0};
 
@@ -381,17 +444,17 @@ class CollectionAndPostingInfolist
 
                                 $rows = collect($logs)->map(function ($log) {
                                     $action = e($log['action'] ?? '—');
-                                    $by     = e($log['by'] ?? '—');
-                                    $at     = isset($log['at'])
-                                        ? \Carbon\Carbon::parse($log['at'])->format('M j, Y g:i A')
+                                    $by = e($log['by'] ?? '—');
+                                    $at = isset($log['at'])
+                                        ? Carbon::parse($log['at'])->format('M j, Y g:i A')
                                         : '—';
-                                    $note   = e($log['note'] ?? '');
+                                    $note = e($log['note'] ?? '');
 
-                                    $actionBadge = match(strtolower($action)) {
-                                        'posted'  => 'background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;',
-                                        'voided'  => 'background:#fef2f2;color:#dc2626;border:1px solid #fecaca;',
-                                        'edited'  => 'background:#fffbeb;color:#d97706;border:1px solid #fde68a;',
-                                        default   => 'background:#f8fafc;color:#475569;border:1px solid #e2e8f0;',
+                                    $actionBadge = match (strtolower($action)) {
+                                        'posted' => 'background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;',
+                                        'voided' => 'background:#fef2f2;color:#dc2626;border:1px solid #fecaca;',
+                                        'edited' => 'background:#fffbeb;color:#d97706;border:1px solid #fde68a;',
+                                        default => 'background:#f8fafc;color:#475569;border:1px solid #e2e8f0;',
                                     };
 
                                     return "
