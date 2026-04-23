@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\SavingsAccounts\Tables;
 
 use App\Models\LoanApplicationStatusLog;
+use App\Models\MemberDetail;
 use App\Models\SavingsAccountTransaction;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -162,6 +163,10 @@ class SavingsAccountsTable
                             }
 
                             SavingsAccountTransaction::create($transactionPayload);
+
+                            MemberDetail::query()
+                                ->where('profile_id', $record->profile_id)
+                                ->update(['status' => 'Active']);
 
                             Notification::make()
                                 ->title('Savings Approved')

@@ -148,18 +148,43 @@ class SavingsDormancyService
 
     private function getAccountsWithPositiveBalance(array $savingsTypeIds): Collection
     {
+        $balanceExpression = $this->getTransactionBalanceExpression();
+
         return SavingsAccountTransaction::query()
-            ->selectRaw('profile_id, savings_type_id, SUM(COALESCE(deposit, 0) - COALESCE(withdrawal, 0)) as balance')
+            ->selectRaw('profile_id, savings_type_id, '.$balanceExpression.' as balance')
             ->whereNotNull('profile_id')
             ->whereNotNull('savings_type_id')
             ->whereIn('savings_type_id', $savingsTypeIds)
             ->groupBy('profile_id', 'savings_type_id')
-            ->havingRaw('SUM(COALESCE(deposit, 0) - COALESCE(withdrawal, 0)) > 0')
+            ->havingRaw($balanceExpression.' > 0')
             ->get();
+    }
+
+    private function getTransactionBalanceExpression(): string
+    {
+        return <<<'SQL'
+SUM(
+    CASE
+        WHEN COALESCE(deposit, 0) > 0 THEN COALESCE(deposit, 0)
+        WHEN LOWER(COALESCE(type, '')) IN ('deposit', 'credit')
+            OR LOWER(COALESCE(direction, '')) IN ('credit', 'inflow') THEN COALESCE(amount, 0)
+        ELSE 0
+    END
+    -
+    CASE
+        WHEN COALESCE(withdrawal, 0) > 0 THEN COALESCE(withdrawal, 0)
+        WHEN LOWER(COALESCE(type, '')) IN ('withdrawal', 'debit')
+            OR LOWER(COALESCE(direction, '')) IN ('debit', 'outflow') THEN COALESCE(amount, 0)
+        ELSE 0
+    END
+)
+SQL;
     }
 
     private function getLastCustomerInitiatedTransactionDate(int $profileId, string $savingsTypeId): ?Carbon
     {
+        $effectiveTransactionDateExpression = 'GREATEST(created_at, COALESCE(transaction_date, created_at))';
+
         $lastCustomerDate = SavingsAccountTransaction::query()
             ->where('profile_id', $profileId)
             ->where('savings_type_id', $savingsTypeId)
@@ -174,8 +199,8 @@ class SavingsDormancyService
                         ->whereRaw('LOWER(type) in (?, ?, ?)', ['deposit', 'withdrawal', 'transfer']);
                 });
             })
-            ->selectRaw('COALESCE(transaction_date, DATE(created_at)) as effective_transaction_date')
-            ->orderByRaw('COALESCE(transaction_date, created_at) DESC')
+            ->selectRaw($effectiveTransactionDateExpression.' as effective_transaction_date')
+            ->orderByRaw($effectiveTransactionDateExpression.' DESC')
             ->orderByDesc('id')
             ->value('effective_transaction_date');
 
@@ -186,8 +211,8 @@ class SavingsDormancyService
         $fallbackDate = SavingsAccountTransaction::query()
             ->where('profile_id', $profileId)
             ->where('savings_type_id', $savingsTypeId)
-            ->selectRaw('COALESCE(transaction_date, DATE(created_at)) as effective_transaction_date')
-            ->orderByRaw('COALESCE(transaction_date, created_at) DESC')
+            ->selectRaw($effectiveTransactionDateExpression.' as effective_transaction_date')
+            ->orderByRaw($effectiveTransactionDateExpression.' DESC')
             ->orderByDesc('id')
             ->value('effective_transaction_date');
 
