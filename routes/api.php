@@ -20,6 +20,8 @@ use App\Http\Controllers\Notifications;
 use App\Http\Controllers\OrientationController;
 use App\Http\Controllers\OrientationSettingsController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SavingsAccount as ControllersSavingsAccount;
+use App\Models\SavingsAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -122,6 +124,10 @@ Route::post('/member/fetch-notifications', [Notifications::class, 'fetchNotifica
 Route::post('/member/fetch-unread-notifications', [Notifications::class, 'fetchUnreadNotifications']);
 Route::post('/member/delete-notification', [Notifications::class, 'deleteNotification']);
 Route::post('/member/mark-notification-seen', [Notifications::class, 'markAsRead']);
+
+Route::get('/member/savings-account-data', [ControllersSavingsAccount::class, 'getSavingsAccount']);
+
+
 
 Route::get('/newsevent', [NewsEventController::class, 'show']);
 Route::get('/newsevent/hero', [HeroNewsEventController::class, 'show']);
