@@ -150,7 +150,7 @@ Route::post('/member/fetch-unread-notifications', [Notifications::class, 'fetchU
 Route::post('/member/delete-notification', [Notifications::class, 'deleteNotification']);
 Route::post('/member/mark-notification-seen', [Notifications::class, 'markAsRead']);
 
-Route::get('/member/savings-account-data', [ControllersSavingsAccount::class, 'getSavingsAccount']);
+Route::post('/member/savings-account-data', [ControllersSavingsAccount::class, 'getSavingsAccount']);
 
 
 
