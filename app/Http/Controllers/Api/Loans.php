@@ -112,7 +112,7 @@ class Loans extends Controller
             $pid = MemberDetail::where('id', $mid)->value('profile_id');
             $amount = $loanapp->amount_requested;
             $intRate = LoanType::where('loan_type_id', $loanapp->loan_type_id)->value('max_interest_rate');
-            $termMonths = $loanapp->term_months;
+            $termMonths = (int) $loanapp->term_months;
             $totalInterest = $amount * ($intRate / 100) * $termMonths;
             $monthlyAmortization = ($amount + $totalInterest) / $termMonths;
             $maturityDate = now()->addMonths($termMonths)->toDateString();
