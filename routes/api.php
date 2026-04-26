@@ -59,9 +59,7 @@ Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
 // loan applications
 Route::get('/loan-applications', [Loans::class, 'getLoanApplications']);
 Route::post('/get-loan-application-detail', [Loans::class, 'getLoanApplication']);
-
-
-Route::get('/loan-applications/{id}', [LoanOfficerApplicationController::class, 'show']);
+Route::post('/decline-loan-application', [Loans::class, 'declineLoanApplication']);
 
 Route::middleware('auth:sanctum')->group(function () {
     // loan application actions
@@ -98,12 +96,6 @@ Route::post('/orientation/video-watched', [OrientationController::class, 'markVi
 Route::post('/orientation/submit', [OrientationController::class, 'submit']);
 
 
-
-
-
-
-
-
 // member apis
 // member dashboard datas
 Route::post('/member/dashboard-data', [MobileMemberGeneral::class, 'getDashboardData']);
@@ -129,8 +121,8 @@ Route::post('/member/savings-account-data', [ControllersSavingsAccount::class, '
 
 
 
-Route::get('/newsevent', [NewsEventController::class, 'show']);
-Route::get('/newsevent/hero', [HeroNewsEventController::class, 'show']);
-Route::get('/newsevent/news', [NewsController::class, 'show']);
+// Route::get('/newsevent', [NewsEventController::class, 'show']);
+// Route::get('/newsevent/hero', [HeroNewsEventController::class, 'show']);
+// Route::get('/newsevent/news', [NewsController::class, 'show']);
 
-Route::get('/orientation-settings', [OrientationSettingsController::class, 'show']);
+// Route::get('/orientation-settings', [OrientationSettingsController::class, 'show']);
