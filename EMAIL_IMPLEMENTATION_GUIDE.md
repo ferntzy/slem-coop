@@ -130,8 +130,8 @@ Create Profile
 Call NotificationService::createUserWithAutoPassword()
         ↓
     ┌─────────────────────────────────┐
-    │   Generate 12-char password    │
-    │   Generate slug username       │
+    │   Generate 12-char password     │
+    │   Generate slug username        │
     └─────────────────────────────────┘
         ↓
     ┌─────────────────────────────────┐
@@ -171,7 +171,6 @@ Welcome to SLEM Coop, John Doe!
 Your member account has been successfully created. Below are your login credentials:
 
 [Grey Box]
-Username: john.doe.a7kx
 Temporary Password: aB3dEfGhIjKl
 [/Grey Box]
 

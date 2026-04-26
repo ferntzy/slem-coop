@@ -26,8 +26,8 @@ class MemberAccountReady extends Mailable
         return new Content(
             view: 'emails.member-account-ready',
             with: [
-                'fullName'     => $this->user->profile?->full_name ?? 'Member',
-                'email'        => $this->user->profile?->email ?? '',
+                'fullName' => $this->user->profile?->full_name ?? 'Member',
+                'email' => $this->user->profile?->email ?? '',
                 'tempPassword' => $this->tempPassword,
             ],
         );

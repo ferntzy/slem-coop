@@ -18,6 +18,8 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
 
+pest()->seed(\Database\Seeders\DatabaseSeeder::class);
+
 /*
 |--------------------------------------------------------------------------
 | Expectations

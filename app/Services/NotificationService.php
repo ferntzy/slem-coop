@@ -2,15 +2,17 @@
 
 namespace App\Services;
 
+use App\Mail\GenericNotification;
 use App\Mail\MemberAccountReady;
 use App\Models\Notification;
 use App\Models\Profile;
+use App\Models\SentEmail;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Spatie\Permission\Exceptions\RoleDoesNotExist;
 
 class NotificationService
 {
@@ -61,6 +63,7 @@ class NotificationService
         ?int $notifiableId = null
     ): void {
         $roleNames = is_array($roles) ? $roles : [$roles];
+        $notifiedUserIds = [];
 
         foreach ($roleNames as $roleName) {
             try {
@@ -72,7 +75,11 @@ class NotificationService
             }
 
             foreach ($roleUsers as $user) {
+                if (in_array($user->user_id, $notifiedUserIds, true)) {
+                    continue;
+                }
                 $this->notifyUser($user->user_id, $title, $description, $isRead, $notifiableType, $notifiableId);
+                $notifiedUserIds[] = $user->user_id;
             }
         }
     }
@@ -116,22 +123,28 @@ class NotificationService
 
         $password = Str::random(12);
 
-        $user = User::create([
-            'profile_id' => $profile->profile_id,
-            'password' => Hash::make($password),
-            'temp_password' => $password,
-            'is_active' => true,
-        ]);
+       $user = User::create([
+        'profile_id' => $profile->profile_id,
+        'password'   => Hash::make($password),
+        'username'   => $profile->first_name . ' ' . $profile->last_name,
+        'must_change_password' => true,
+        'is_active'  => true,
+    ]);
 
         $user->assignRole('Member');
 
-        $this->sendPasswordEmail($user, $password);
-        $this->notifyUserAccountCreated($user, $password);
+        // Send email and track it - use afterCommit so the record survives email failures
+        $this->sendPasswordEmailWithTracking($user, $password);
+        $this->notifyUserAccountCreated($user);
 
         return $user;
     }
 
-    protected function sendPasswordEmail(User $user, string $password): void
+    /**
+     * Send password email with tracking - uses afterCommit to ensure
+     * the sent_emails record is created AFTER the transaction commits.
+     */
+    protected function sendPasswordEmailWithTracking(User $user, string $password): void
     {
         $profile = $user->profile;
 
@@ -139,11 +152,45 @@ class NotificationService
             return;
         }
 
-        try {
-            Mail::to($profile->email)->send(new MemberAccountReady($user, $password));
-        } catch (\Throwable $exception) {
-            Log::warning("Failed to send password email to {$profile->email}: ".$exception->getMessage());
-        }
+        $email = $profile->email;
+        $subject = 'Your SLEM Coop Member Account is Ready';
+
+        // Create pending email record inside transaction
+        $sentEmail = SentEmail::create([
+            'user_id' => $user->user_id,
+            'profile_id' => $profile->profile_id,
+            'email' => $email,
+            'subject' => $subject,
+            'mailable_class' => MemberAccountReady::class,
+        ]);
+
+        // Use afterCommit to ensure the record survives if mail fails
+        DB::afterCommit(function () use ($user, $password, $sentEmail, $email) {
+            try {
+                Mail::to($email)->send(new MemberAccountReady($user, $password));
+
+                // Mark as sent after successful queue
+                $sentEmail->update(['sent_at' => now()]);
+
+                Log::info("Password email queued for user_id={$user->user_id}, sent_email_id={$sentEmail->id}");
+            } catch (\Throwable $exception) {
+                // Mark as failed
+                $sentEmail->update([
+                    'failed_at' => now(),
+                    'failure_reason' => $exception->getMessage(),
+                ]);
+
+                Log::warning("Failed to send password email to {$email}: ".$exception->getMessage());
+            }
+        });
+    }
+
+    /**
+     * @deprecated Use sendPasswordEmailWithTracking() instead
+     */
+    protected function sendPasswordEmail(User $user, string $password): void
+    {
+        $this->sendPasswordEmailWithTracking($user, $password);
     }
 
     public function sendPaymentConfirmation(int|string $profileId, float $amount, ?string $loanNumber = null): ?Notification
@@ -309,10 +356,7 @@ class NotificationService
         }
 
         try {
-            Mail::raw($message, function ($mail) use ($profile, $title) {
-                $mail->to($profile->email)
-                    ->subject($title);
-            });
+            Mail::queue(new GenericNotification($profile->email, $title, $message));
         } catch (\Throwable $exception) {
             Log::warning("NotificationService: failed to send email notification to profile_id={$profile->profile_id} - {$exception->getMessage()}");
         }
@@ -341,13 +385,13 @@ class NotificationService
         $this->notifyAdmins($adminTitle, $adminDescription);
     }
 
-    public function notifyUserAccountCreated(User $user, string $tempPassword): ?Notification
-    {
+    public function notifyUserAccountCreated(User $user): ?Notification
+     {
         $title = 'Account Created';
 
         $description = "Your account has been successfully created.\n\n"
             ."You can now log in using your registered email address.\n"
-            ."Temporary Password: {$tempPassword}\n\n"
+            ."A temporary password has been sent to your email.\n\n"
             .'For security purposes, please change your password after your first login.';
 
         return $this->notifyUser($user->user_id, $title, $description);

@@ -27,73 +27,71 @@ class MembershipApplicationsTable
                 ActionGroup::make([
                     ViewAction::make(),
 
-                    Action::make('approve')
-                        ->label('Approve')
-                        ->icon('heroicon-o-check')
-                        ->color('success')
-                        ->visible(fn ($record) => in_array($record->status, ['pending', 'under_review'], true))
-                        ->action(function ($record) {
-                            if ($record->approved_at) {
-                                Notification::make()
-                                    ->title('Already approved')
-                                    ->warning()
-                                    ->send();
+                     Action::make('approve')
+                    ->label('Approve')
+                    ->icon('heroicon-o-check')
+                    ->color('success')
+                    ->visible(fn ($record) => in_array($record->status, ['pending', 'under_review'], true))
+                    ->action(function ($record) {
+                        if ($record->approved_at) {
+                            Notification::make()
+                                ->title('Already approved')
+                                ->warning()
+                                ->send();
+                
+                            return;
+                        }
+                
+                        $record->update([
+                            'status'      => 'approved',
+                            'approved_at' => now(),
+                            'updated_by'  => auth()->id(),
+                        ]);
+                
+                        $record->refresh();
+                
+                        $exists = MemberDetail::where('profile_id', $record->profile_id)->exists();
+                
+                        if (! $exists) {
+                            Notification::make()
+                                ->title('Missing branch assignment')
+                                ->warning()
+                                ->body('This application has no branch assignment to use for member creation.')
+                                ->send();
+                
+                            return;
+                        }
+                
+                        $profile = Profile::where('profile_id', $record->profile_id)->first();
+                
+                        if (! User::where('profile_id', $record->profile_id)->exists()) {
+                            $currentYear = Carbon::now()->year;
+                            $latest = User::where('coop_id', 'like', "COOP-{$currentYear}-%")
+                                ->orderByDesc('coop_id')
+                                ->first();
+                
+                            $newNumber = $latest ? ((int) substr($latest->coop_id, -3)) + 1 : 1;
+                            $formattedNumber = str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+                            $newCoopId = "COOP-{$currentYear}-{$formattedNumber}";
+                
+                            $pin = random_int(1000, 9999);
+                
+                           $user = app(\App\Services\NotificationService::class)->createUserWithAutoPassword($profile);
 
-                                return;
-                            }
-
-                            $record->update([
-                                'status' => 'approved',
-                                'updated_by' => auth()->id(),
+                        if ($user) {
+                            $user->update([
+                                'coop_id' => $newCoopId,
                             ]);
-
-                            $record->refresh();
-
-                            $exists = MemberDetail::where('profile_id', $record->profile_id)->exists();
-                            $detail = null;
-
-                            if (! $exists) {
-                                Notification::make()
-                                    ->title('Missing branch assignment')
-                                    ->warning()
-                                    ->body('This application has no branch assignment to use for member creation.')
-                                    ->send();
-                            } else {
-                                $profile = Profile::where('profile_id', $record->profile_id)->first();
-
-                                if (! User::where('profile_id', $record->profile_id)->exists()) {
-                                    $currentYear = Carbon::now()->year;
-                                    $latest = User::where('coop_id', 'like', "COOP-{$currentYear}-%")
-                                        ->orderByDesc('coop_id')
-                                        ->first();
-
-                                    $newNumber = $latest ? ((int) substr($latest->coop_id, -3)) + 1 : 1;
-                                    $formattedNumber = str_pad($newNumber, 3, '0', STR_PAD_LEFT);
-                                    $newCoopId = "COOP-{$currentYear}-{$formattedNumber}";
-
-                                    $plainPassword = Str::random(8);
-                                    $pin = random_int(1000, 9999);
-
-                                    User::create([
-                                        'coop_id' => $newCoopId,
-                                        'temp_password' => $plainPassword,
-                                        'password' => Hash::make($plainPassword),
-                                        'temp_pin' => $pin,
-                                        'pin' => Hash::make($pin),
-                                        'profile_id' => $record->profile_id,
-                                        'is_active' => 1,
-                                        'username' => $profile->first_name.' '.$profile->last_name,
-                                    ]);
-                                }
-
-                                Notification::make()
-                                    ->title('Application Approved')
-                                    ->body($exists ? 'Member detail already existed.' : "Member record created. ID: {$detail->id}")
-                                    ->success()
-                                    ->send();
-                            }
-                        }),
-
+                        }
+                        
+                        }
+                
+                        Notification::make()
+                            ->title('Application Approved')
+                            ->body('Member account created. Login credentials sent to ' . $profile->email . '.')
+                            ->success()
+                            ->send();
+                    }),
                     Action::make('reject')
                         ->label('Reject')
                         ->icon('heroicon-o-x-circle')
