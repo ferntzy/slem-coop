@@ -23,6 +23,8 @@ use App\Http\Controllers\Notifications;
 use App\Http\Controllers\OrientationController;
 use App\Http\Controllers\OrientationSettingsController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SavingsAccount as ControllersSavingsAccount;
+use App\Models\SavingsAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -51,6 +53,7 @@ Route::post('/edit-profile', [ProfileController::class, 'editProfile']);
 // stat card data
 Route::get('/active-members', [Members::class, 'getActiveMembers']);
 Route::get('/inactive-members', [Members::class,  'inactiveMembers']);
+Route::get('/get-loans', [Loans::class, 'getLoans']);
 
 // loan officer apis
 // stat card data
@@ -60,9 +63,8 @@ Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
 // loan applications
 Route::get('/loan-applications', [Loans::class, 'getLoanApplications']);
 Route::post('/get-loan-application-detail', [Loans::class, 'getLoanApplication']);
-
-Route::get('/loan-applications-list', [LoanOfficerApplicationController::class, 'index']);
-Route::get('/loan-applications/{id}', [LoanOfficerApplicationController::class, 'show']);
+Route::post('/decline-loan-application', [Loans::class, 'declineLoanApplication']);
+Route::post('/approve-loan-application', [Loans::class, 'approveLoanApplication']);
 
 Route::middleware('auth:sanctum')->group(function () {
     // loan application actions
@@ -104,6 +106,16 @@ Route::get('/loans/{id}', [AccountLoansController::class, 'show']);
 Route::get('/loan-edit', [AccountLoanEditController::class, 'index']);
 Route::get('/loan-edit/{id}', [AccountLoanEditController::class, 'show']);
 
+Route::prefix('member-details')->group(function () {
+    Route::get('/', [MemberDetailsController::class, 'index']);
+    Route::get('/{id}', [MemberDetailsController::class, 'show']);
+    Route::post('/', [MemberDetailsController::class, 'store']);
+    Route::put('/{id}', [MemberDetailsController::class, 'update']);
+    Route::delete('/{id}', [MemberDetailsController::class, 'destroy']);
+});
+
+
+
 Route::get('/about', [AboutPageController::class, 'show']);
 
 Route::get('/contact', [ContactPageController::class, 'show']);
@@ -124,13 +136,7 @@ Route::post('/member/loan-history', [MobileMemberGeneral::class, 'getLoanHistory
 // member delinquent list
 Route::get('/member/delinquent-list', [MobileMemberGeneral::class, 'getDelinquentMembersList']);
 
-Route::prefix('member-details')->group(function () {
-    Route::get('/', [MemberDetailsController::class, 'index']);
-    Route::get('/{id}', [MemberDetailsController::class, 'show']);
-    Route::post('/', [MemberDetailsController::class, 'store']);
-    Route::put('/{id}', [MemberDetailsController::class, 'update']);
-    Route::delete('/{id}', [MemberDetailsController::class, 'destroy']);
-});
+
 
 // member loan application
 Route::post('/send-application-form', [ControllersLoanApplication::class, 'applyLoan']);
@@ -143,8 +149,12 @@ Route::post('/member/fetch-unread-notifications', [Notifications::class, 'fetchU
 Route::post('/member/delete-notification', [Notifications::class, 'deleteNotification']);
 Route::post('/member/mark-notification-seen', [Notifications::class, 'markAsRead']);
 
-Route::get('/newsevent', [NewsEventController::class, 'show']);
-Route::get('/newsevent/hero', [HeroNewsEventController::class, 'show']);
-Route::get('/newsevent/news', [NewsController::class, 'show']);
+Route::post('/member/savings-account-data', [ControllersSavingsAccount::class, 'getSavingsAccount']);
 
-Route::get('/orientation-settings', [OrientationSettingsController::class, 'show']);
+
+
+// Route::get('/newsevent', [NewsEventController::class, 'show']);
+// Route::get('/newsevent/hero', [HeroNewsEventController::class, 'show']);
+// Route::get('/newsevent/news', [NewsController::class, 'show']);
+
+// Route::get('/orientation-settings', [OrientationSettingsController::class, 'show']);

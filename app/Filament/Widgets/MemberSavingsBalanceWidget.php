@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Resources\MemberDetails\MemberDetailResource;
 use App\Models\SavingsAccount;
 use Filament\Widgets\Widget;
 use Illuminate\Database\Eloquent\Builder;
@@ -47,7 +48,14 @@ class MemberSavingsBalanceWidget extends Widget
 
     public function getSavingsPageUrl(): string
     {
-        return route('filament.admin.resources.savings-accounts.index');
+        $profile = Auth::user()?->profile;
+        $memberDetail = $profile?->memberDetail;
+
+        if ($memberDetail) {
+            return MemberDetailResource::getUrl('view', ['record' => $memberDetail]);
+        }
+
+        return MemberDetailResource::getUrl('index');
     }
 
     protected function getTotalBalance(): float
