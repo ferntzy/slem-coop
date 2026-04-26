@@ -97,6 +97,7 @@ class MemberDetailForm
                                     TextInput::make('email')
                                         ->label('Email')
                                         ->email()
+                                        ->unique(ignoreRecord: true)
                                         ->required(),
 
                                     TextInput::make('mobile_number')
