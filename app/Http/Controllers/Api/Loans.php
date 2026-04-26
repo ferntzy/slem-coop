@@ -109,7 +109,7 @@ class Loans extends Controller
             $loanapp = LoanApplication::where('loan_application_id', $request->id)->firstOrFail();
             $loanapp->update(['status' => 'Approved']);
             $mid = $loanapp->member_id;
-            $pid = MemberDetail::where('member_id', $mid)->value('profile_id');
+            $pid = MemberDetail::where('id', $mid)->value('profile_id');
             $amount = $loanapp->amount_requested;
             $intRate = LoanType::where('loan_type_id', $loanapp->loan_type_id)->value('max_interest_rate');
             $termMonths = $loanapp->term_months;
