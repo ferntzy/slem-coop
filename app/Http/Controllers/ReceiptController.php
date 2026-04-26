@@ -29,552 +29,476 @@ class ReceiptController extends Controller
             abort(500, 'GD extension is required for receipt image download.');
         }
 
-        $filename = $data['downloadName'];
-
         return response()->streamDownload(function () use ($data) {
             echo $this->renderReceiptImage($data);
-        }, $filename, [
-            'Content-Type' => 'image/png',
+        }, $data['downloadName'], [
+            'Content-Type'  => 'image/png',
             'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-            'Pragma' => 'no-cache',
+            'Pragma'        => 'no-cache',
         ]);
     }
 
-    /**
-     * @return array<string, mixed>
-     */
+    // ─────────────────────────────────────────────────────────────────────────
+    // Data
+    // ─────────────────────────────────────────────────────────────────────────
+
     private function receiptData(CollectionAndPosting $record, bool $autoprint): array
     {
-        $postedBy = User::find($record->posted_by_user_id);
-
-        $amountPaid = (float) ($record->amount_paid ?? 0);
+        $postedBy         = User::find($record->posted_by_user_id);
+        $amountPaid       = (float) ($record->amount_paid ?? 0);
         $remainingBalance = (float) ($record->remaining_balance ?? 0);
-
-        $paymentDate = $record->payment_date
-            ? Carbon::parse($record->payment_date)
-            : null;
-
-        $nextDueDate = ! empty($record->next_due_date)
-            ? Carbon::parse($record->next_due_date)->format('M d, Y')
-            : 'N/A';
+        $nextDueDate      = 'N/A';
 
         $loanAccount = $record->loanAccount?->fresh();
 
         if ($loanAccount) {
             $remainingBalance = (float) ($loanAccount->balance ?? $remainingBalance);
-
-            $freshSchedule = app(LoanScheduleService::class)->build($loanAccount);
-            $freshNextDue = collect($freshSchedule)->first(
+            $freshSchedule    = app(LoanScheduleService::class)->build($loanAccount);
+            $freshNextDue     = collect($freshSchedule)->first(
                 fn (array $row): bool => round((float) ($row['unpaid_amount'] ?? 0), 2) > 0
             );
-
             if ($freshNextDue && ! empty($freshNextDue['due_date'])) {
                 $nextDueDate = Carbon::parse($freshNextDue['due_date'])->format('M d, Y');
             }
+        } elseif (! empty($record->next_due_date)) {
+            $nextDueDate = Carbon::parse($record->next_due_date)->format('M d, Y');
         }
 
         return [
-            'record' => $record,
-            'orNumber' => e($record->reference_number ?? 'N/A'),
-            'member' => e($record->member_name ?? 'Regular Member'),
-            'loan' => e($record->loan_number ?? 'N/A'),
-            'amount' => number_format($amountPaid, 2),
-            'rawAmount' => $amountPaid,
+            'record'           => $record,
+            'orNumber'         => e($record->reference_number ?? 'N/A'),
+            'member'           => e($record->member_name ?? 'Regular Member'),
+            'loan'             => e($record->loan_number ?? 'N/A'),
+            'amount'           => number_format($amountPaid, 2),
+            'rawAmount'        => $amountPaid,
             'remainingBalance' => number_format($remainingBalance, 2),
-            'paymentDate' => $paymentDate?->format('M d, Y') ?? 'N/A',
-            'generatedAt' => now()->format('M d, Y h:i A'),
-            'method' => e($record->payment_method ?? 'Cash'),
-            'status' => strtoupper((string) ($record->status ?? 'POSTED')),
-            'postedByName' => e($postedBy?->name ?? $postedBy?->username ?? 'Admin User'),
-            'notes' => e($record->notes ?? ''),
-            'nextDueDate' => $nextDueDate,
-            'autoprint' => $autoprint,
-            'downloadName' => sprintf(
-                'payment-receipt-%s.png',
+            'paymentDate'      => $record->payment_date
+                                    ? Carbon::parse($record->payment_date)->format('M d, Y')
+                                    : 'N/A',
+            'generatedAt'      => now()->format('M d, Y h:i A'),
+            'method'           => e($record->payment_method ?? 'Cash'),
+            'status'           => strtoupper((string) ($record->status ?? 'POSTED')),
+            'postedByName'     => e($postedBy?->name ?? $postedBy?->username ?? 'Admin User'),
+            'notes'            => e($record->notes ?? ''),
+            'nextDueDate'      => $nextDueDate,
+            'autoprint'        => $autoprint,
+            'downloadName'     => sprintf(
+                'receipt-%s.png',
                 preg_replace('/[^A-Za-z0-9\-_]/', '-', (string) ($record->reference_number ?: $record->getKey()))
             ),
         ];
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // HTML receipt
+    // ─────────────────────────────────────────────────────────────────────────
+
     private function renderReceipt(CollectionAndPosting $record, bool $autoprint): Response
     {
-        $data = $this->receiptData($record, $autoprint);
+        $d = $this->receiptData($record, $autoprint);
 
-        $autoPrintJs = $data['autoprint']
-            ? '<script>window.addEventListener("load", function () { window.print(); });</script>'
+        $autoPrintJs = $d['autoprint']
+            ? '<script>window.addEventListener("load",function(){window.print();});</script>'
             : '';
 
-        $notesBlock = $data['notes'] !== ''
-            ? <<<HTML
-                <div class="receipt-notes">
-                    <div class="receipt-note-title">Notes</div>
-                    <div class="receipt-note-body">{$data['notes']}</div>
-                </div>
-            HTML
+        $notesBlock = $d['notes'] !== ''
+            ? '<div class="notes-box"><div class="notes-lbl">Notes</div><div class="notes-body">' . $d['notes'] . '</div></div>'
             : '';
+
+        $statusColor = match (strtolower($d['status'])) {
+            'posted' => '#16a34a',
+            'void'   => '#dc2626',
+            'draft'  => '#d97706',
+            default  => '#6b7280',
+        };
+
+        $downloadUrl = route('receipt.download', $record);
 
         $html = <<<HTML
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Receipt - {$data['orNumber']}</title>
-    {$autoPrintJs}
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Receipt — {$d['orNumber']}</title>
+{$autoPrintJs}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background:
-                radial-gradient(circle at top, rgba(16, 185, 129, 0.12), transparent 30%),
-                #020617;
-            color: #e2e8f0;
-            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 24px 16px;
-        }
+*{box-sizing:border-box;margin:0;padding:0;}
 
-        .toolbar {
-            width: 100%;
-            max-width: 720px;
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            margin-bottom: 18px;
-            flex-wrap: wrap;
-        }
+body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:#f0fdf4;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:28px 16px;
+}
 
-        .btn {
-            appearance: none;
-            border: none;
-            border-radius: 14px;
-            padding: 12px 18px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: .2s ease;
-        }
+/* ── Toolbar ── */
+.toolbar{
+    width:100%;max-width:480px;
+    display:flex;justify-content:flex-end;
+    gap:8px;margin-bottom:16px;flex-wrap:wrap;
+}
+.btn{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:9px 16px;border-radius:10px;
+    font-size:.8rem;font-weight:700;border:none;cursor:pointer;
+    text-decoration:none;transition:all .18s;
+}
+.btn:hover{transform:translateY(-1px);opacity:.9;}
+.btn-print{background:#fff;color:#374151;border:1px solid #d1d5db;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.btn-download{
+    background:linear-gradient(135deg,#16a34a,#22c55e);
+    color:#fff;
+    box-shadow:0 4px 14px rgba(22,163,74,.35);
+}
+.btn-close{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;}
 
-        .btn:hover {
-            transform: translateY(-1px);
-            opacity: .94;
-        }
+/* ── Card ── */
+.card{
+    width:100%;max-width:480px;
+    background:#fff;
+    border-radius:24px;
+    overflow:hidden;
+    box-shadow:0 8px 40px rgba(22,163,74,.12), 0 2px 8px rgba(0,0,0,.06);
+    border:1px solid #bbf7d0;
+}
 
-        .btn-close {
-            background: #0f172a;
-            color: #e2e8f0;
-            border: 1px solid #1e293b;
-        }
+/* ── Header strip ── */
+.card-header{
+    background:linear-gradient(135deg,#14532d 0%,#16a34a 60%,#22c55e 100%);
+    padding:28px 28px 22px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+}
+.card-header::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at 70% 30%,rgba(255,255,255,.12),transparent 55%);
+    pointer-events:none;
+}
+.header-icon{
+    width:52px;height:52px;
+    background:rgba(255,255,255,.15);
+    border:2px solid rgba(255,255,255,.25);
+    border-radius:16px;
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 14px;
+    color:#fff;
+    backdrop-filter:blur(4px);
+}
+.header-title{
+    font-size:1.25rem;font-weight:900;
+    color:#fff;letter-spacing:.04em;
+    text-transform:uppercase;
+}
+.header-sub{
+    margin-top:4px;font-size:.8rem;font-weight:600;
+    color:rgba(255,255,255,.75);letter-spacing:.02em;
+}
+.or-badge{
+    display:inline-block;margin-top:12px;
+    background:rgba(255,255,255,.15);
+    border:1px solid rgba(255,255,255,.3);
+    border-radius:999px;
+    padding:4px 14px;
+    font-size:.72rem;font-weight:700;
+    font-family:monospace;letter-spacing:.1em;
+    color:#fff;
+    backdrop-filter:blur(4px);
+}
 
-        .btn-download {
-            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-            color: #ffffff;
-            box-shadow: 0 10px 24px rgba(16, 185, 129, 0.22);
-        }
+/* ── Amount hero ── */
+.amount-hero{
+    background:linear-gradient(135deg,#f0fdf4,#dcfce7);
+    border-bottom:1px solid #bbf7d0;
+    padding:20px 28px;
+    text-align:center;
+}
+.amount-lbl{
+    font-size:.65rem;font-weight:800;
+    text-transform:uppercase;letter-spacing:.12em;
+    color:#15803d;margin-bottom:4px;
+}
+.amount-val{
+    font-size:2.6rem;font-weight:900;
+    color:#15803d;letter-spacing:-.02em;line-height:1;
+}
 
-        .btn-print {
-            background: #111827;
-            color: #f8fafc;
-            border: 1px solid #1f2937;
-        }
+/* ── Details ── */
+.sep-dashed{border-top:2px dashed #bbf7d0;margin:0 24px;}
 
-        .receipt-shell {
-            width: 100%;
-            max-width: 720px;
-            background: rgba(2, 6, 23, 0.96);
-            border: 1px solid #0f2a4a;
-            border-radius: 28px;
-            padding: 28px;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
-        }
+.details{padding:6px 28px 0;}
+.drow{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:13px 0;border-bottom:1px solid #f0fdf4;gap:12px;
+}
+.drow:last-child{border-bottom:none;}
+.dlbl{font-size:.75rem;font-weight:600;color:#6b7280;flex-shrink:0;}
+.dval{font-size:.85rem;font-weight:700;color:#111827;text-align:right;}
+.dval.mono{font-family:monospace;font-size:.82rem;}
 
-        .receipt-card {
-            border: 1px dashed rgba(59, 130, 246, 0.22);
-            border-radius: 24px;
-            padding: 34px 28px 26px;
-            background: linear-gradient(180deg, rgba(2,6,23,0.95), rgba(2,6,23,0.88));
-        }
+/* ── Summary boxes ── */
+.summary{display:flex;flex-direction:column;gap:8px;padding:0 28px 20px;}
+.sbox{
+    background:linear-gradient(135deg,#f0fdf4,#dcfce7);
+    border:1px solid #bbf7d0;border-radius:12px;
+    padding:12px 16px;
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+}
+.sbox-lbl{font-size:.72rem;font-weight:600;color:#15803d;}
+.sbox-val{font-size:.9rem;font-weight:800;color:#14532d;}
 
-        .receipt-head {
-            text-align: center;
-            margin-bottom: 24px;
-        }
+/* ── Notes ── */
+.notes-box{
+    margin:0 28px 20px;
+    padding:12px 14px;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:10px;
+}
+.notes-lbl{
+    font-size:.62rem;font-weight:800;
+    text-transform:uppercase;letter-spacing:.09em;
+    color:#94a3b8;margin-bottom:6px;
+}
+.notes-body{font-size:.8rem;color:#374151;line-height:1.6;white-space:pre-wrap;}
 
-        .receipt-icon {
-            width: 48px;
-            height: 48px;
-            margin: 0 auto 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #00d09c;
-        }
+/* ── Footer ── */
+.card-footer{
+    background:#f8fafc;
+    border-top:1px solid #e8f5e9;
+    padding:14px 28px;
+    text-align:center;
+    font-size:.68rem;color:#9ca3af;line-height:1.7;
+}
+.card-footer strong{color:{$statusColor};font-weight:800;}
+.card-footer span{color:#6b7280;}
 
-        .receipt-title {
-            margin: 0;
-            font-size: 22px;
-            line-height: 1.1;
-            font-weight: 900;
-            letter-spacing: .02em;
-            color: #ffffff;
-            text-transform: uppercase;
-        }
-
-        .receipt-subtitle {
-            margin-top: 8px;
-            color: #00d09c;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .receipt-system {
-            margin-top: 6px;
-            color: #7aa2d6;
-            font-size: 14px;
-        }
-
-        .divider {
-            border-top: 1px dashed rgba(255,255,255,.50);
-            margin: 22px 0;
-        }
-
-        .detail-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-        }
-
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 18px;
-            padding: 14px 0;
-            border-bottom: 1px solid rgba(30, 58, 138, 0.25);
-        }
-
-        .detail-row:last-child {
-            border-bottom: none;
-        }
-
-        .detail-label {
-            font-size: 16px;
-            color: #93c5fd;
-            font-weight: 500;
-        }
-
-        .detail-value {
-            font-size: 16px;
-            color: #ffffff;
-            font-weight: 800;
-            text-align: right;
-            word-break: break-word;
-        }
-
-        .amount-row {
-            margin-top: 8px;
-            padding-top: 8px;
-            border-top: 1px solid rgba(30, 58, 138, 0.35);
-        }
-
-        .amount-row .detail-label {
-            font-size: 17px;
-            font-weight: 800;
-            color: #0f172a;
-            background: linear-gradient(135deg, #c7d2fe 0%, #93c5fd 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .amount-row .detail-value {
-            font-size: 18px;
-            color: #00d09c;
-        }
-
-        .summary-boxes {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            margin-top: 14px;
-        }
-
-        .summary-box {
-            background: linear-gradient(90deg, rgba(0, 94, 55, 0.92), rgba(0, 74, 52, 0.92));
-            border: 1px solid rgba(16, 185, 129, 0.24);
-            border-radius: 14px;
-            padding: 14px 16px;
-            display: flex;
-            justify-content: space-between;
-            gap: 14px;
-            align-items: center;
-        }
-
-        .summary-label {
-            color: #a7f3d0;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .summary-value {
-            color: #ffffff;
-            font-size: 16px;
-            font-weight: 900;
-            text-align: right;
-        }
-
-        .receipt-footer {
-            margin-top: 18px;
-            padding-top: 14px;
-            border-top: 1px dashed rgba(255,255,255,.45);
-            text-align: center;
-            color: #7aa2d6;
-            font-size: 13px;
-        }
-
-        .receipt-footer strong {
-            color: #00d09c;
-        }
-
-        .receipt-notes {
-            margin-top: 14px;
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid #1e293b;
-            border-radius: 14px;
-            padding: 14px 16px;
-        }
-
-        .receipt-note-title {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            color: #94a3b8;
-            font-weight: 800;
-            margin-bottom: 8px;
-        }
-
-        .receipt-note-body {
-            font-size: 14px;
-            color: #e2e8f0;
-            line-height: 1.6;
-            white-space: pre-wrap;
-        }
-
-        @media (max-width: 640px) {
-            .receipt-shell {
-                padding: 18px;
-                border-radius: 20px;
-            }
-
-            .receipt-card {
-                padding: 24px 18px 20px;
-            }
-
-            .detail-row,
-            .summary-box {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .detail-value,
-            .summary-value {
-                text-align: left;
-            }
-        }
-
-        @media print {
-            body {
-                background: #020617;
-                padding: 0;
-            }
-
-            .toolbar {
-                display: none !important;
-            }
-
-            .receipt-shell {
-                max-width: 100%;
-                box-shadow: none;
-                border: none;
-                border-radius: 0;
-            }
-
-            @page {
-                margin: 10mm;
-            }
-        }
-    </style>
+/* ── Print ── */
+@media print{
+    body{background:#fff;padding:0;}
+    .toolbar{display:none!important;}
+    .card{box-shadow:none;border-radius:0;max-width:100%;border:none;}
+    @page{margin:8mm;}
+}
+</style>
 </head>
 <body>
-    <div class="toolbar">
-        <button class="btn btn-close" onclick="window.close()">Close</button>
-        <button class="btn btn-print" onclick="window.print()">Print</button>
-        <a class="btn btn-download" href="{$this->downloadUrl($record)}">Download PNG</a>
+
+<div class="toolbar">
+  <button class="btn btn-close" onclick="window.close()">✕ Close</button>
+  <button class="btn btn-print" onclick="window.print()">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+    </svg>
+    Print
+  </button>
+  <a class="btn btn-download" href="{$downloadUrl}">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+    </svg>
+    Download PNG
+  </a>
+</div>
+
+<div class="card">
+
+  <!-- Header -->
+  <div class="card-header">
+    <div class="header-icon">
+      <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
     </div>
+    <div class="header-title">Payment Receipt</div>
+    <div class="header-sub">Payment Posted Successfully &nbsp;·&nbsp; Cooperative Lending System</div>
+    <div class="or-badge">{$d['orNumber']}</div>
+  </div>
 
-    <div class="receipt-shell">
-        <div class="receipt-card">
-            <div class="receipt-head">
-                <div class="receipt-icon">
-                    <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M14 2H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8z"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6"/>
-                    </svg>
-                </div>
-                <h1 class="receipt-title">Payment Receipt</h1>
-                <div class="receipt-subtitle">Payment Posted Successfully</div>
-                <div class="receipt-system">Cooperative Lending System</div>
-            </div>
+  <!-- Amount hero -->
+  <div class="amount-hero">
+    <div class="amount-lbl">Amount Paid</div>
+    <div class="amount-val">&#x20B1;{$d['amount']}</div>
+  </div>
 
-            <div class="divider"></div>
+  <div class="sep-dashed" style="margin-top:.5rem;"></div>
 
-            <div class="detail-list">
-                <div class="detail-row">
-                    <div class="detail-label">Member</div>
-                    <div class="detail-value">{$data['member']}</div>
-                </div>
-
-                <div class="detail-row">
-                    <div class="detail-label">Loan #</div>
-                    <div class="detail-value">{$data['loan']}</div>
-                </div>
-
-                <div class="detail-row">
-                    <div class="detail-label">Payment Date</div>
-                    <div class="detail-value">{$data['paymentDate']}</div>
-                </div>
-
-                <div class="detail-row">
-                    <div class="detail-label">Method</div>
-                    <div class="detail-value">{$data['method']}</div>
-                </div>
-
-                <div class="detail-row">
-                    <div class="detail-label">Posted By</div>
-                    <div class="detail-value">{$data['postedByName']}</div>
-                </div>
-
-                <div class="detail-row amount-row">
-                    <div class="detail-label">Amount Paid</div>
-                    <div class="detail-value">₱{$data['amount']}</div>
-                </div>
-            </div>
-
-            <div class="summary-boxes">
-                <div class="summary-box">
-                    <div class="summary-label">Remaining Balance</div>
-                    <div class="summary-value">₱{$data['remainingBalance']}</div>
-                </div>
-
-                <div class="summary-box">
-                    <div class="summary-label">Next Due Date</div>
-                    <div class="summary-value">{$data['nextDueDate']}</div>
-                </div>
-            </div>
-
-            {$notesBlock}
-
-            <div class="receipt-footer">
-                Generated on {$data['generatedAt']} &nbsp;·&nbsp; Status: <strong>{$data['status']}</strong>
-            </div>
-        </div>
+  <!-- Details -->
+  <div class="details">
+    <div class="drow">
+      <span class="dlbl">Member</span>
+      <span class="dval">{$d['member']}</span>
     </div>
+    <div class="drow">
+      <span class="dlbl">Loan #</span>
+      <span class="dval mono">{$d['loan']}</span>
+    </div>
+    <div class="drow">
+      <span class="dlbl">Payment Date</span>
+      <span class="dval">{$d['paymentDate']}</span>
+    </div>
+    <div class="drow">
+      <span class="dlbl">Payment Method</span>
+      <span class="dval">{$d['method']}</span>
+    </div>
+    <div class="drow">
+      <span class="dlbl">Posted By</span>
+      <span class="dval">{$d['postedByName']}</span>
+    </div>
+  </div>
+
+  <div class="sep-dashed" style="margin:8px 0 16px;"></div>
+
+  <!-- Summary boxes -->
+  <div class="summary">
+    <div class="sbox">
+      <span class="sbox-lbl">Remaining Balance</span>
+      <span class="sbox-val">&#x20B1;{$d['remainingBalance']}</span>
+    </div>
+    <div class="sbox">
+      <span class="sbox-lbl">Next Due Date</span>
+      <span class="sbox-val">{$d['nextDueDate']}</span>
+    </div>
+  </div>
+
+  {$notesBlock}
+
+  <!-- Footer -->
+  <div class="card-footer">
+    <div>Generated: <span>{$d['generatedAt']}</span></div>
+    <div>Status: <strong>{$d['status']}</strong> &nbsp;·&nbsp; This is an official digital receipt.</div>
+  </div>
+
+</div>
 </body>
 </html>
 HTML;
 
-        return response($html, 200, [
-            'Content-Type' => 'text/html; charset=UTF-8',
-        ]);
+        return response($html, 200, ['Content-Type' => 'text/html; charset=UTF-8']);
     }
 
-    private function downloadUrl(CollectionAndPosting $record): string
-    {
-        return route('receipt.download', $record);
-    }
+    // ─────────────────────────────────────────────────────────────────────────
+    // PNG download (GD)
+    // ─────────────────────────────────────────────────────────────────────────
 
     private function renderReceiptImage(array $data): string
     {
-        $width = 1200;
-        $height = 1500;
+        $w = 900;
+        $h = 1300;
+        $img = imagecreatetruecolor($w, $h);
+        imagealphablending($img, true);
+        imagesavealpha($img, true);
 
-        $image = imagecreatetruecolor($width, $height);
+        // Colours
+        $bgCol      = imagecolorallocate($img, 240, 253, 244);   // #f0fdf4
+        $headerTop  = imagecolorallocate($img, 20,  83,  45);    // #14532d
+        $headerBot  = imagecolorallocate($img, 34, 197,  94);    // #22c55e
+        $white      = imagecolorallocate($img, 255, 255, 255);
+        $cardBg     = imagecolorallocate($img, 255, 255, 255);
+        $greenDark  = imagecolorallocate($img, 21, 128,  61);    // #15803d
+        $greenLight = imagecolorallocate($img, 187, 247, 208);   // #bbf7d0
+        $greenBg    = imagecolorallocate($img, 220, 252, 231);   // #dcfce7
+        $label      = imagecolorallocate($img, 107, 114, 128);   // #6b7280
+        $valueFg    = imagecolorallocate($img, 17,  24,  39);    // #111827
+        $footerFg   = imagecolorallocate($img, 156, 163, 175);   // #9ca3af
+        $sepCol     = imagecolorallocate($img, 187, 247, 208);   // #bbf7d0
 
-        imagealphablending($image, true);
-        imagesavealpha($image, true);
+        // Background
+        imagefilledrectangle($img, 0, 0, $w, $h, $bgCol);
 
-        $bg = imagecolorallocate($image, 2, 6, 23);
-        $card = imagecolorallocate($image, 3, 7, 18);
-        $white = imagecolorallocate($image, 255, 255, 255);
-        $muted = imagecolorallocate($image, 122, 162, 214);
-        $green = imagecolorallocate($image, 0, 208, 156);
-        $greenDark = imagecolorallocate($image, 0, 94, 55);
-        $line = imagecolorallocate($image, 20, 40, 70);
-        $cyan = imagecolorallocate($image, 147, 197, 253);
+        // Card background
+        $pad = 40;
+        imagefilledrectangle($img, $pad, $pad, $w - $pad, $h - $pad, $cardBg);
 
-        imagefilledrectangle($image, 0, 0, $width, $height, $bg);
-        imagefilledrectangle($image, 80, 80, $width - 80, $height - 80, $card);
+        // Header gradient (simulate with two rectangles)
+        $hh = 220;
+        imagefilledrectangle($img, $pad, $pad, $w - $pad, $pad + $hh, $headerTop);
 
-        imagerectangle($image, 110, 110, $width - 110, $height - 110, $line);
+        // Header text
+        $title = 'PAYMENT RECEIPT';
+        $tlen  = imagefontwidth(5) * strlen($title);
+        imagestring($img, 5, (int)(($w - $tlen) / 2), $pad + 60, $title, $white);
 
-        imagestring($image, 5, 505, 150, 'PAYMENT RECEIPT', $white);
-        imagestring($image, 4, 470, 190, 'Payment Posted Successfully', $green);
-        imagestring($image, 3, 500, 225, 'Cooperative Lending System', $muted);
+        $sub = 'Payment Posted Successfully';
+        $slen = imagefontwidth(3) * strlen($sub);
+        imagestring($img, 3, (int)(($w - $slen) / 2), $pad + 92, $sub, $white);
 
-        imageline($image, 150, 290, $width - 150, 290, $white);
+        $sys = 'Cooperative Lending System';
+        $ylen = imagefontwidth(2) * strlen($sys);
+        imagestring($img, 2, (int)(($w - $ylen) / 2), $pad + 116, $sys, $white);
 
+        $or  = 'OR: ' . html_entity_decode($data['orNumber']);
+        $olen = imagefontwidth(3) * strlen($or);
+        imagestring($img, 3, (int)(($w - $olen) / 2), $pad + 148, $or, $white);
+
+        // Amount hero band
+        $ay = $pad + $hh;
+        imagefilledrectangle($img, $pad, $ay, $w - $pad, $ay + 100, $greenBg);
+        $albl = 'AMOUNT PAID';
+        $alen = imagefontwidth(2) * strlen($albl);
+        imagestring($img, 2, (int)(($w - $alen) / 2), $ay + 14, $albl, $greenDark);
+        $aval = 'PHP ' . $data['amount'];
+        $avlen = imagefontwidth(5) * strlen($aval);
+        imagestring($img, 5, (int)(($w - $avlen) / 2), $ay + 38, $aval, $greenDark);
+
+        // Separator
+        imageline($img, $pad + 20, $ay + 100, $w - $pad - 20, $ay + 100, $sepCol);
+
+        // Detail rows
         $rows = [
-            ['Member', html_entity_decode($data['member'])],
-            ['Loan #', html_entity_decode($data['loan'])],
-            ['Payment Date', html_entity_decode($data['paymentDate'])],
-            ['Method', html_entity_decode($data['method'])],
-            ['Posted By', html_entity_decode($data['postedByName'])],
+            ['Member',         html_entity_decode($data['member'])],
+            ['Loan #',         html_entity_decode($data['loan'])],
+            ['Payment Date',   $data['paymentDate']],
+            ['Method',         html_entity_decode($data['method'])],
+            ['Posted By',      html_entity_decode($data['postedByName'])],
         ];
 
-        $y = 350;
-        foreach ($rows as [$label, $value]) {
-            imagestring($image, 5, 150, $y, $label, $cyan);
-            $valueX = $width - 150 - (imagefontwidth(5) * strlen($value));
-            imagestring($image, 5, max(560, $valueX), $y, $value, $white);
-            imageline($image, 150, $y + 42, $width - 150, $y + 42, $line);
-            $y += 85;
+        $ry = $ay + 120;
+        $lx = $pad + 30;
+        $vx = $w - $pad - 30;
+
+        foreach ($rows as [$lbl, $val]) {
+            imagestring($img, 4, $lx, $ry, $lbl, $label);
+            $vlen2 = imagefontwidth(4) * strlen($val);
+            imagestring($img, 4, $vx - $vlen2, $ry, $val, $valueFg);
+            $ry += 58;
+            imageline($img, $lx, $ry - 16, $w - $pad - $lx + $pad, $ry - 16, $greenLight);
         }
 
-        imagestring($image, 5, 150, $y + 10, 'Amount Paid', $white);
-        $amountText = 'PHP '.$data['amount'];
-        $amountX = $width - 150 - (imagefontwidth(5) * strlen($amountText));
-        imagestring($image, 5, max(560, $amountX), $y + 10, $amountText, $green);
-        imageline($image, 150, $y + 52, $width - 150, $y + 52, $line);
+        $ry += 10;
+        imageline($img, $pad + 20, $ry, $w - $pad - 20, $ry, $sepCol);
+        $ry += 20;
 
-        imagefilledrectangle($image, 150, $y + 95, $width - 150, $y + 170, $greenDark);
-        imagestring($image, 5, 180, $y + 120, 'Remaining Balance', $cyan);
-        $rb = 'PHP '.$data['remainingBalance'];
-        $rbX = $width - 180 - (imagefontwidth(5) * strlen($rb));
-        imagestring($image, 5, max(620, $rbX), $y + 120, $rb, $white);
+        // Summary boxes
+        foreach ([
+            ['Remaining Balance', 'PHP ' . $data['remainingBalance']],
+            ['Next Due Date',     $data['nextDueDate']],
+        ] as [$lbl, $val]) {
+            imagefilledrectangle($img, $lx - 10, $ry, $w - $pad - 20, $ry + 60, $greenBg);
+            imagerectangle($img, $lx - 10, $ry, $w - $pad - 20, $ry + 60, $greenLight);
+            imagestring($img, 3, $lx, $ry + 14, $lbl, $greenDark);
+            $vlen3 = imagefontwidth(4) * strlen($val);
+            imagestring($img, 4, $w - $pad - 30 - $vlen3, $ry + 18, $val, $greenDark);
+            $ry += 78;
+        }
 
-        imagefilledrectangle($image, 150, $y + 195, $width - 150, $y + 270, $greenDark);
-        imagestring($image, 5, 180, $y + 220, 'Next Due Date', $cyan);
-        $nd = $data['nextDueDate'];
-        $ndX = $width - 180 - (imagefontwidth(5) * strlen($nd));
-        imagestring($image, 5, max(620, $ndX), $y + 220, $nd, $white);
+        $ry += 10;
 
-        $footer = 'Generated on '.$data['generatedAt'].'  |  Status: '.$data['status'];
-        $footerX = (int) (($width - (imagefontwidth(4) * strlen($footer))) / 2);
-        imagestring($image, 4, max(120, $footerX), $height - 180, $footer, $muted);
+        // Footer
+        $gen = 'Generated: ' . $data['generatedAt'] . '  |  Status: ' . $data['status'];
+        $glen = imagefontwidth(2) * strlen($gen);
+        imagestring($img, 2, (int)(($w - $glen) / 2), $ry + 20, $gen, $footerFg);
 
+        // Capture PNG
         ob_start();
-        imagepng($image);
+        imagepng($img);
         $png = (string) ob_get_clean();
-        imagedestroy($image);
+        imagedestroy($img);
 
         return $png;
     }
