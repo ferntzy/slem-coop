@@ -64,6 +64,7 @@ Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
 Route::get('/loan-applications', [Loans::class, 'getLoanApplications']);
 Route::post('/get-loan-application-detail', [Loans::class, 'getLoanApplication']);
 Route::post('/decline-loan-application', [Loans::class, 'declineLoanApplication']);
+Route::post('/approve-loan-application', [Loans::class, 'approveLoanApplication']);
 
 Route::middleware('auth:sanctum')->group(function () {
     // loan application actions
