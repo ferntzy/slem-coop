@@ -151,7 +151,7 @@ class Loans extends Controller
 
     public function getLoans(){
         try{
-            $loans = LoanAccount::get();
+            $loans = LoanAccount::with('profile')->get();
 
             return response()->json([
                 'loans' => $loans,
