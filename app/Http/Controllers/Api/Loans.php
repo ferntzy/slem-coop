@@ -65,10 +65,15 @@ class Loans extends Controller
         }
     }
 
-    public function getLoanApplication(Request $request)
-    {
-        try {
-            $detail = LoanApplication::with('member.profile.user')->where('loan_application_id', $request->id)->first();
+    public function getLoanApplication(Request $request){
+        try{
+            $detail = LoanApplication::with('member.profile.user')
+                ->where('loan_application_id', $request->id)
+                ->first();
+
+            if ($detail && $detail->collateral_document) {
+                $detail->collateral_document_url = asset('storage/' . $detail->collateral_document);
+            }
 
             return response()->json([
                 'detail' => $detail,
@@ -80,4 +85,20 @@ class Loans extends Controller
             ]);
         }
     }
+
+    public function declineLoanApplication(Request $request){
+        try{
+            LoanApplication::where('loan_application_id', $request->id)->update(['status'=>'Rejected']);
+
+            return response()->json([
+                'success' => 'Loan application was successfully declined!'
+            ], 200);
+        }catch(Exception $e){
+            return response()->json([
+                'message' => 'Unable to decline loan application',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 }
