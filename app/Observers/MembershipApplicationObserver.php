@@ -15,7 +15,7 @@ class MembershipApplicationObserver
      */
     public function created(MembershipApplication $application): void
     {
-        // Notify of documents uploaded upon application creation
+        // Build notification message with documents info if available
         $uploadedDocuments = [];
 
         if ($application->id_document_front) {
@@ -28,14 +28,18 @@ class MembershipApplicationObserver
             $uploadedDocuments[] = 'Proof of Income';
         }
 
+        $description = "{$application->first_name} {$application->last_name} submitted a membership application.";
         if (! empty($uploadedDocuments)) {
-            app(NotificationService::class)->notifyAdmins(
-                'Membership Application Documents Uploaded',
-                'New membership application submitted with documents: '.implode(', ', $uploadedDocuments),
-                notifiableType: 'membership_application',
-                notifiableId: $application->id
-            );
+            $description .= " Submitted with documents: ".implode(', ', $uploadedDocuments);
         }
+
+        // Send ONE notification instead of two
+        app(NotificationService::class)->notifyAdmins(
+            'New membership application',
+            $description,
+            notifiableType: 'membership_application',
+            notifiableId: $application->id
+        );
     }
 
     /**

@@ -19,7 +19,7 @@ class Auth extends Controller
     public function login(Request $request)
     {
         try {
-            $email    = $request->input('email');
+            $email = $request->input('email');
             $password = $request->input('password');
 
             $pid = Profile::where('email', $email)->value('profile_id');
@@ -30,7 +30,7 @@ class Auth extends Controller
 
             $user = User::where('profile_id', $pid)->first();
 
-            if (!Hash::check($password, $user->password)) {
+            if (! Hash::check($password, $user->password)) {
                 throw new Exception('Invalid password!');
             }
 
@@ -39,22 +39,22 @@ class Auth extends Controller
             $token = $user->createToken('mobile-token')->plainTextToken;
 
             $info = [
-                'user'      => $user,
-                'profile'   => $user->profile,
+                'user' => $user,
+                'profile' => $user->profile,
                 'role_name' => $user->profile?->role?->name,
-                'token'     => $token,
-                'has_pin'   => !is_null($user->pin), // tells the app whether to show PIN setup
+                'token' => $token,
+                'has_pin' => ! is_null($user->pin), // tells the app whether to show PIN setup
             ];
 
             return response()->json([
                 'message' => 'Login Successfully!',
-                'data'    => $info,
+                'data' => $info,
             ], 200);
 
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'Unable to login!',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -69,11 +69,11 @@ class Auth extends Controller
         try {
             $pin = $request->input('pin');
 
-            if (!preg_match('/^\d{4}$/', (string) $pin)) {
+            if (! preg_match('/^\d{4}$/', (string) $pin)) {
                 throw new Exception('PIN must be exactly 4 digits.');
             }
 
-            $user      = $request->user();
+            $user = $request->user();
             $user->pin = Hash::make($pin);
             $user->save();
 
@@ -82,7 +82,7 @@ class Auth extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'Unable to set PIN.',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -95,34 +95,34 @@ class Auth extends Controller
     public function verifyPin(Request $request)
     {
         try {
-            $pin  = $request->input('pin');
+            $pin = $request->input('pin');
             $user = $request->user(); // resolved from the stored Bearer token
 
             if (is_null($user->pin)) {
                 throw new Exception('No PIN has been set for this account.');
             }
 
-            if (!Hash::check($pin, $user->pin)) {
+            if (! Hash::check($pin, $user->pin)) {
                 throw new Exception('Invalid PIN.');
             }
 
             $info = [
-                'user'      => $user,
-                'profile'   => $user->profile,
+                'user' => $user,
+                'profile' => $user->profile,
                 'role_name' => $user->profile?->role?->name,
-                'has_pin'   => true,
+                'has_pin' => true,
             ];
 
             return response()->json([
                 'message' => 'PIN verified successfully.',
-                'data'    => $info,
+                'data' => $info,
             ], 200);
 
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'Unable to verify PIN.',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-}   
+}

@@ -20,9 +20,9 @@ return new class extends Migration
 
         // 2. Seed the default types from the old enum values
         DB::table('coop_fee_types')->insert([
-            ['name' => 'Shared Capital', 'key' => 'shared_capital', 'description'=> 'Fee for shared capital contributions', 'status' => 'active', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Insurance',      'key' => 'insurance',      'description'=> 'Fee for insurance coverage', 'status' => 'active', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Processing Fee', 'key' => 'processing_fee', 'description'=> 'Fee for processing loan applications', 'status' => 'active', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Shared Capital', 'key' => 'shared_capital', 'description' => 'Fee for shared capital contributions', 'status' => 'active', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Insurance',      'key' => 'insurance',      'description' => 'Fee for insurance coverage', 'status' => 'active', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Processing Fee', 'key' => 'processing_fee', 'description' => 'Fee for processing loan applications', 'status' => 'active', 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         // 3. Add the foreign key column to coop_fees
@@ -31,12 +31,11 @@ return new class extends Migration
         });
 
         // 4. Migrate existing type data to the new foreign key
-        DB::statement("
+        DB::statement('
             UPDATE coop_fees cf
             JOIN coop_fee_types cft ON cft.key = cf.type
             SET cf.coop_fee_type_id = cft.id
-        ");
-
+        ');
 
     }
 

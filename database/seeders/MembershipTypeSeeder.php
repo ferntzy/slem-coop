@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
-
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\MembershipType;
+use Illuminate\Database\Seeder;
 
 class MembershipTypeSeeder extends Seeder
 {
@@ -14,7 +12,7 @@ class MembershipTypeSeeder extends Seeder
      */
     public function run(): void
     {
-       MembershipType::updateOrCreate(
+        MembershipType::updateOrCreate(
             ['membership_type_id' => 1],
             [
                 'name' => 'Associate Member',

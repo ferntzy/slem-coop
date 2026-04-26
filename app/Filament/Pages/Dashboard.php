@@ -42,7 +42,7 @@ class Dashboard extends BaseDashboard
                 // Row 0: Greeting banner
                 MemberGreetingWidget::class,
 
-                // Row 1: 3 KPI stat cards (Total Loan Balance, Total Payments, Pending Apps)
+                // Row 1: 4 KPI stat cards (Total Loan Balance, Savings Balance, Total Payments, Pending Apps)
                 StatsOverviewWidget::class,
 
                 // Row 2: Loan Status donut (4 cols) + Payment History bar chart (8 cols)

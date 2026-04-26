@@ -1,0 +1,51 @@
+<?php
+
+namespace App\Filament\Pages\Reports;
+
+class DelinquencyReport extends AbstractReportPage
+{
+    protected static bool $shouldRegisterNavigation = false;
+
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-exclamation-triangle';
+
+    protected static ?string $navigationLabel = 'Delinquency';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Reports';
+
+    protected static ?int $navigationSort = 13;
+
+    protected static ?string $title = 'Delinquency Report';
+
+    protected static ?string $slug = 'reports/delinquency';
+
+    protected static function reportKey(): string
+    {
+        return 'delinquency';
+    }
+
+    protected static function allowedRoles(): array
+    {
+        return [
+            'super_admin',
+            'Super Admin',
+            'admin',
+            'Admin',
+            'manager',
+            'Manager',
+            'hq_manager',
+            'HQ Manager',
+            'loan_officer',
+            'Loan Officer',
+            'hq_loan_officer',
+            'HQ Loan Officer',
+            'loan_manager',
+            'Loan Manager',
+            'credit_committee',
+            'Credit Committee',
+            'account_officer',
+            'Account Officer',
+            'hq_account_officer',
+            'HQ Account Officer',
+        ];
+    }
+}

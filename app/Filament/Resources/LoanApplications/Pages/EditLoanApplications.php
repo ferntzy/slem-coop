@@ -3,7 +3,10 @@
 namespace App\Filament\Resources\LoanApplications\Pages;
 
 use App\Filament\Resources\LoanApplications\LoanApplicationsResource;
+use App\Models\CoopSetting;
+use App\Models\LoanApplicationStatusLog;
 use App\Services\CoopFeeCalculatorService;
+use App\Services\NotificationService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
@@ -11,6 +14,11 @@ use Filament\Resources\Pages\EditRecord;
 class EditLoanApplications extends EditRecord
 {
     protected static string $resource = LoanApplicationsResource::class;
+
+    protected function loanOfficerApprovalLimit(): float
+    {
+        return (float) CoopSetting::get('loan.loan_officer_approval_limit', 20000);
+    }
 
     public function getTitle(): string
     {
@@ -25,9 +33,71 @@ class EditLoanApplications extends EditRecord
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->requiresConfirmation()
-                ->visible(fn (): bool => auth()->user()?->hasAnyRole(['super_admin', 'Admin', 'Manager', 'Account Officer', 'Loan Officer']) && in_array($this->record->status, ['Pending', 'Under Review']))
+                ->visible(fn (): bool => in_array($this->record->status, ['Pending', 'Under Review']) && ((auth()->user()?->canApproveAnyLoanAmount() ?? false) || auth()->user()?->hasAnyRole(['Account Officer', 'Loan Officer', 'HQ Loan Officer', 'hq_loan_officer'])))
                 ->action(function (): void {
-                    $this->record->update(['status' => 'Approved']);
+                    $user = auth()->user();
+                    $notificationService = app(NotificationService::class);
+                    $approvalLimit = $this->loanOfficerApprovalLimit();
+                    $requiresDualApproval = (float) $this->record->amount_requested > $approvalLimit;
+                    $canApproveAnyLoanAmount = $user?->canApproveAnyLoanAmount() ?? false;
+                    $isLoanOfficerApprover = $user?->hasAnyRole([
+                        'Loan Officer',
+                        'loan_officer',
+                        'HQ Loan Officer',
+                        'hq_loan_officer',
+                    ]) ?? false;
+
+                    if ($requiresDualApproval && ! $canApproveAnyLoanAmount) {
+                        if (! $isLoanOfficerApprover) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Unauthorized for high-value approval')
+                                ->send();
+
+                            return;
+                        }
+
+                        $from = $this->record->status;
+                        $this->record->update(['status' => 'Under Review']);
+
+                        if ($from !== 'Under Review') {
+                            LoanApplicationStatusLog::create([
+                                'loan_application_id' => $this->record->loan_application_id,
+                                'from_status' => $from,
+                                'to_status' => 'Under Review',
+                                'changed_by_user_id' => auth()->id(),
+                                'reason' => 'Escalated for Manager and Admin approvals due to loan officer limit.',
+                                'changed_at' => now(),
+                            ]);
+                        }
+
+                        $notificationService->notifyManagers(
+                            'Loan requires manager approval',
+                            "Loan application #{$this->record->loan_application_id} exceeds the loan officer limit of PHP ".number_format($approvalLimit, 2).' and needs manager approval.',
+                            notifiableType: 'loan_application',
+                            notifiableId: $this->record->loan_application_id
+                        );
+
+                        $notificationService->notifyAdmins(
+                            'Loan requires admin approval',
+                            "Loan application #{$this->record->loan_application_id} exceeds the loan officer limit of PHP ".number_format($approvalLimit, 2).' and needs manager + admin approvals.',
+                            notifiableType: 'loan_application',
+                            notifiableId: $this->record->loan_application_id
+                        );
+
+                        Notification::make()
+                            ->warning()
+                            ->title('Escalated for manager and admin approvals')
+                            ->send();
+
+                        return;
+                    }
+
+                    $this->record->update([
+                        'status' => 'Approved',
+                        'approved_at' => now(),
+                    ]);
+
                     Notification::make()
                         ->success()
                         ->title('Loan Approved')
@@ -39,9 +109,16 @@ class EditLoanApplications extends EditRecord
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->requiresConfirmation()
-                ->visible(fn (): bool => auth()->user()?->hasAnyRole(['super_admin', 'Admin', 'Manager', 'Account Officer', 'Loan Officer']) && in_array($this->record->status, ['Pending', 'Under Review']))
+                ->visible(fn (): bool => auth()->user()?->hasAnyRole(['super_admin', 'Admin', 'Manager', 'Account Officer', 'Loan Officer', 'HQ Loan Officer', 'hq_loan_officer']) && in_array($this->record->status, ['Pending', 'Under Review']))
                 ->action(function (): void {
-                    $this->record->update(['status' => 'Rejected']);
+                    $this->record->update([
+                        'status' => 'Rejected',
+                        'approved_at' => null,
+                        'manager_approved_at' => null,
+                        'manager_approved_by_user_id' => null,
+                        'admin_approved_at' => null,
+                        'admin_approved_by_user_id' => null,
+                    ]);
                     Notification::make()
                         ->danger()
                         ->title('Loan Rejected')

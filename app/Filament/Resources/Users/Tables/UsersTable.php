@@ -2,21 +2,20 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Models\Profile;
+use DB;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ImageColumn;
-use Filament\Actions\Action;
 use Filament\Tables\Columns\CheckboxColumn;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
-use Illuminate\Support\HtmlString;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Models\Profile;
-use DB;
-
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 
 class UsersTable
 {
@@ -28,11 +27,11 @@ class UsersTable
                     ->label('Avatar')
                     ->circular()
                     ->getStateUsing(function ($record) {
-                        if (!empty($record->profile?->image_path)) {
+                        if (! empty($record->profile?->image_path)) {
                             return Storage::url($record->profile->image_path);
                         }
 
-                        if (!empty($record->avatar)) {
+                        if (! empty($record->avatar)) {
                             return Str::startsWith($record->avatar, ['http://', 'https://'])
                                 ? $record->avatar
                                 : Storage::url($record->avatar);
@@ -51,16 +50,16 @@ class UsersTable
                     ->sortable(),
 
                 TextColumn::make('profile.full_name')
-                ->label('Full Name')
-                ->searchable()
-                ->sortable(query: function (Builder $query, string $direction): Builder {
-                    return $query->orderBy(
-                        Profile::select(DB::raw("CONCAT(first_name, ' ', middle_name, ' ', last_name)"))
-                            ->whereColumn('profiles.profile_id', 'users.profile_id')
-                            ->limit(1),
-                        $direction
-                    );
-                }),
+                    ->label('Full Name')
+                    ->searchable()
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query->orderBy(
+                            Profile::select(DB::raw("CONCAT(first_name, ' ', middle_name, ' ', last_name)"))
+                                ->whereColumn('profiles.profile_id', 'users.profile_id')
+                                ->limit(1),
+                            $direction
+                        );
+                    }),
 
                 ImageColumn::make('qr_code')
                     ->label('QR Code')
@@ -80,9 +79,9 @@ class UsersTable
                     ->label('Print QR')
                     ->icon('heroicon-o-magnifying-glass-plus')
                     ->color('gray')
-                    ->modalHeading(fn ($record) => $record->username . ' — QR Code')
+                    ->modalHeading(fn ($record) => $record->username.' — QR Code')
                     ->modalContent(function ($record): HtmlString {
-                        if (!$record->qr_code) {
+                        if (! $record->qr_code) {
                             return new HtmlString('
                                 <div style="text-align:center; padding:2rem; color:#94a3b8;">
                                     No QR Code available.

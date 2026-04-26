@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class MemberCoMaker extends Model
 {
-     protected $fillable = [
+    protected $fillable = [
         'member_detail_id',
         'full_name',
         'relationship',

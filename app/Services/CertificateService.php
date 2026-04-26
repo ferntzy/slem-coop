@@ -21,30 +21,30 @@ class CertificateService
         $orientation = $assessment->orientation;
 
         $data = [
-            'member_name'      => $this->formatName(
-                                    $application->first_name,
-                                    $application->middle_name,
-                                    $application->last_name
-                                  ),
-            'orientation_title'=> $orientation->title,
-            'score'            => $assessment->score,
-            'pass_threshold'   => $orientation->pass_threshold,
-            'completed_date'   => $assessment->completed_at->format('F d, Y'),
-            'issued_date'      => now()->format('F d, Y'),
-            'attempt_number'   => $assessment->attempt_number,
-            'coop_name'        => config('coop.name', 'Community Cooperative'),
-            'coop_address'     => config('coop.address', ''),
-            'certificate_no'   => $this->generateCertificateNumber($assessment),
+            'member_name' => $this->formatName(
+                $application->first_name,
+                $application->middle_name,
+                $application->last_name
+            ),
+            'orientation_title' => $orientation->title,
+            'score' => $assessment->score,
+            'pass_threshold' => $orientation->pass_threshold,
+            'completed_date' => $assessment->completed_at->format('F d, Y'),
+            'issued_date' => now()->format('F d, Y'),
+            'attempt_number' => $assessment->attempt_number,
+            'coop_name' => config('coop.name', 'Community Cooperative'),
+            'coop_address' => config('coop.address', ''),
+            'certificate_no' => $this->generateCertificateNumber($assessment),
         ];
 
         $pdf = Pdf::loadView('certificates.orientation', $data)
-                  ->setPaper('a4', 'landscape')
-                  ->setOptions([
-                      'defaultFont'     => 'DejaVu Sans',
-                      'isHtml5ParserEnabled' => true,
-                      'isRemoteEnabled' => true,
-                      'dpi'             => 150,
-                  ]);
+            ->setPaper('a4', 'landscape')
+            ->setOptions([
+                'defaultFont' => 'DejaVu Sans',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'dpi' => 150,
+            ]);
 
         $path = "certificates/orientation_{$assessment->id}.pdf";
 
@@ -53,8 +53,8 @@ class CertificateService
 
         // Update the assessment record
         $assessment->update([
-            'certificate_path'            => $path,
-            'certificate_generated_at'    => now(),
+            'certificate_path' => $path,
+            'certificate_generated_at' => now(),
         ]);
 
         return $path;
@@ -79,8 +79,8 @@ class CertificateService
     private function formatName(string $first, ?string $middle, string $last): string
     {
         return trim(
-            $first . ' ' .
-            ($middle ? strtoupper(substr($middle, 0, 1)) . '. ' : '') .
+            $first.' '.
+            ($middle ? strtoupper(substr($middle, 0, 1)).'. ' : '').
             $last
         );
     }

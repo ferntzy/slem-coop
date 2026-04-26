@@ -31,8 +31,9 @@ class MarkDelinquentMembers extends Command
     {
         // Check if auto marking is enabled
         $autoMarkEnabled = (bool) CoopSetting::get('member_status.auto_mark_delinquent', true);
-        if (!$autoMarkEnabled) {
+        if (! $autoMarkEnabled) {
             $this->info('Auto marking delinquent members is disabled. Skipping...');
+
             return;
         }
 
@@ -58,6 +59,7 @@ class MarkDelinquentMembers extends Command
 
         if (empty($delinquentProfileIds)) {
             $this->info('No members found to mark as delinquent.');
+
             return;
         }
 

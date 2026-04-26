@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
-
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\LoanType;
+use Illuminate\Database\Seeder;
 
 class LoanTypeSeeder extends Seeder
 {

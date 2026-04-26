@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::table('coop_settings', function (Blueprint $table) {
-    $table->string('type')->default('string')->after('value');
-    $table->string('group')->nullable()->after('type');
-    $table->string('label')->nullable()->after('group');
-    $table->text('description')->nullable()->after('label');
-});
+        Schema::table('coop_settings', function (Blueprint $table) {
+            $table->string('type')->default('string')->after('value');
+            $table->string('group')->nullable()->after('type');
+            $table->string('label')->nullable()->after('group');
+            $table->text('description')->nullable()->after('label');
+        });
     }
 
     /**

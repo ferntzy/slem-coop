@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 class PaymentAllocationLogicResource extends Resource
 {
     protected static ?string $model = PaymentAllocationSetting::class;
+
     protected static bool $shouldRegisterNavigation = false;    // protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-adjustments-horizontal';
 
     protected static string|\UnitEnum|null $navigationGroup = 'For Deletion';

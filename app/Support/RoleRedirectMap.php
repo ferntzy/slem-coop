@@ -10,10 +10,10 @@ class RoleRedirectMap
     {
         return [
             UserRole::SuperAdmin->value => '/coop',
-            UserRole::Admin->value      => '/coop',
-            UserRole::Librarian->value  => '/library-dashboard',
-            UserRole::Employee->value   => '/employee-dashboard',
-            UserRole::Member->value     => '/coop/savings-accounts',
+            UserRole::Admin->value => '/coop',
+            UserRole::Librarian->value => '/library-dashboard',
+            UserRole::Employee->value => '/employee-dashboard',
+            UserRole::Member->value => '/coop/savings-accounts',
         ];
     }
 

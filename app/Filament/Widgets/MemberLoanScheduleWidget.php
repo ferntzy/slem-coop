@@ -2,16 +2,19 @@
 
 namespace App\Filament\Widgets;
 
-use Filament\Widgets\Widget;
 use App\Models\LoanAccount;
 use App\Services\LoanScheduleService;
+use Filament\Widgets\Widget;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class MemberLoanScheduleWidget extends Widget
 {
     protected string $view = 'filament.widgets.member-loan-schedule-widget';
+
     protected static ?int $sort = 8;
-    protected int | string | array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = 'full';
 
     // Currently selected loan account id
     public ?int $selectedLoanId = null;
@@ -37,7 +40,7 @@ class MemberLoanScheduleWidget extends Widget
         $this->selectedLoanId = $loanAccountId;
     }
 
-    public function getLoans(): \Illuminate\Support\Collection
+    public function getLoans(): Collection
     {
         return LoanAccount::where('profile_id', Auth::user()->profile_id)
             ->whereIn('status', ['Active', 'Restructured'])

@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\PaymentAllocationSetting;
 use App\Models\PaymentAllocationRule;
+use App\Models\PaymentAllocationSetting;
+use Illuminate\Database\Seeder;
 
 class PaymentAllocationRuleSeeder extends Seeder
 {
@@ -13,14 +13,14 @@ class PaymentAllocationRuleSeeder extends Seeder
         $setting = PaymentAllocationSetting::firstOrCreate(
             ['id' => 1],
             [
-                'allow_partial'        => true,
-                'allow_advance'        => true,
-                'allow_overpayment'    => true,
-                'auto_apply'           => true,
-                'allow_void'           => true,
-                'require_void_reason'  => true,
-                'allow_edit'           => true,
-                'require_edit_reason'  => true,
+                'allow_partial' => true,
+                'allow_advance' => true,
+                'allow_overpayment' => true,
+                'auto_apply' => true,
+                'allow_void' => true,
+                'require_void_reason' => true,
+                'allow_edit' => true,
+                'require_edit_reason' => true,
             ]
         );
 
@@ -39,8 +39,8 @@ class PaymentAllocationRuleSeeder extends Seeder
                 ],
                 [
                     'priority' => $rule['priority'],
-                    'bucket'   => $rule['bucket'],
-                    'label'    => $rule['label'], // ✅ provide label
+                    'bucket' => $rule['bucket'],
+                    'label' => $rule['label'], // ✅ provide label
                 ]
             );
         }

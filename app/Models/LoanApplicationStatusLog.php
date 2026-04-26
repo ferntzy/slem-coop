@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class LoanApplicationStatusLog extends Model
 {
     protected $table = 'loan_application_status_logs';
+
     protected $primaryKey = 'loan_application_status_log_id';
+
     public $timestamps = false; // because table uses changed_at, not created_at/updated_at
 
     protected $fillable = [

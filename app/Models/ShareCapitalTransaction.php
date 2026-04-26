@@ -25,7 +25,6 @@ class ShareCapitalTransaction extends Model
         'transaction_date' => 'date',
     ];
 
-    
     public function profile(): BelongsTo
     {
         return $this->belongsTo(Profile::class, 'profile_id', 'profile_id');

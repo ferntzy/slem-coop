@@ -2,30 +2,33 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Page;
-use Filament\Schemas\Schema;
+use App\Models\AboutPageSetting;
+use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Notifications\Notification;
+use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\FileUpload;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Actions\Action;
-use Filament\Notifications\Notification;
-use App\Models\AboutPageSetting;
+use Filament\Schemas\Schema;
 
 class ManageAboutPage extends Page implements HasForms
 {
     use InteractsWithForms;
 
     // Match exact types from Filament v4 base Page class
-    protected static string|\BackedEnum|null $navigationIcon  = 'heroicon-o-information-circle';
-    protected static ?string                 $navigationLabel = 'About';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-information-circle';
+
+    protected static ?string $navigationLabel = 'About';
+
     protected static string|\UnitEnum|null $navigationGroup = 'Pages';
-    protected static ?int                    $navigationSort  = 10;
+
+    protected static ?int $navigationSort = 10;
 
     public static function canAccess(): bool
     {
@@ -42,19 +45,19 @@ class ManageAboutPage extends Page implements HasForms
         $s = AboutPageSetting::getSetting();
 
         $this->form->fill([
-            'hero_badge'             => $s->hero_badge,
-            'hero_title'             => $s->hero_title,
-            'hero_subtitle'          => $s->hero_subtitle,
-            'vision'                 => $s->vision,
-            'mission'                => $s->mission,
-            'history'                => $s->history       ?? [],
-            'core_values'            => $s->core_values   ?? [],
-            'testimonials'           => $s->testimonials  ?? [],
-            'board_members'          => $s->board_members ?? [],
-            'org_general_assembly'   => $s->org_general_assembly,
+            'hero_badge' => $s->hero_badge,
+            'hero_title' => $s->hero_title,
+            'hero_subtitle' => $s->hero_subtitle,
+            'vision' => $s->vision,
+            'mission' => $s->mission,
+            'history' => $s->history ?? [],
+            'core_values' => $s->core_values ?? [],
+            'testimonials' => $s->testimonials ?? [],
+            'board_members' => $s->board_members ?? [],
+            'org_general_assembly' => $s->org_general_assembly,
             'org_board_of_directors' => $s->org_board_of_directors,
-            'org_management_team'    => $s->org_management_team,
-            'org_operational_staff'  => $s->org_operational_staff,
+            'org_management_team' => $s->org_management_team,
+            'org_operational_staff' => $s->org_operational_staff,
         ]);
     }
 
@@ -138,8 +141,7 @@ class ManageAboutPage extends Page implements HasForms
                                             ->reorderable()
                                             ->collapsible()
                                             ->itemLabel(
-                                                fn(array $state): ?string =>
-                                                trim(($state['year'] ?? '') . ' — ' . ($state['title'] ?? ''))
+                                                fn (array $state): ?string => trim(($state['year'] ?? '').' — '.($state['title'] ?? ''))
                                             )
                                             ->addActionLabel('Add Milestone')
                                             ->defaultItems(0),
@@ -175,7 +177,7 @@ class ManageAboutPage extends Page implements HasForms
                                             ->columns(2)
                                             ->reorderable()
                                             ->collapsible()
-                                            ->itemLabel(fn(array $state): ?string => $state['title'] ?? 'Value')
+                                            ->itemLabel(fn (array $state): ?string => $state['title'] ?? 'Value')
                                             ->addActionLabel('Add Value')
                                             ->defaultItems(0),
                                     ]),
@@ -204,7 +206,7 @@ class ManageAboutPage extends Page implements HasForms
                                             ->columns(1)
                                             ->reorderable()
                                             ->collapsible()
-                                            ->itemLabel(fn(array $state): ?string => $state['name'] ?? 'Testimonial')
+                                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Testimonial')
                                             ->addActionLabel('Add Testimonial')
                                             ->defaultItems(0),
                                     ]),
@@ -243,8 +245,7 @@ class ManageAboutPage extends Page implements HasForms
                                             ->reorderable()
                                             ->collapsible()
                                             ->itemLabel(
-                                                fn(array $state): ?string =>
-                                                trim(($state['name'] ?? 'Member') . ' — ' . ($state['position'] ?? ''))
+                                                fn (array $state): ?string => trim(($state['name'] ?? 'Member').' — '.($state['position'] ?? ''))
                                             )
                                             ->addActionLabel('Add Board Member')
                                             ->defaultItems(0),

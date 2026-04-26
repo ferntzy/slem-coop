@@ -2,14 +2,15 @@
 
 namespace App\Filament\Resources\MemberDetails\RelationManagers;
 
-use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Actions\ViewAction;
-use Filament\Schemas\Components\Section;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\RepeatableEntry;
+use App\Services\LoanAmortizationService;
 use App\Services\LoanScheduleService;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Section;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 
 class LoanHistoryRelationManager extends RelationManager
 {
@@ -17,7 +18,7 @@ class LoanHistoryRelationManager extends RelationManager
 
     protected static ?string $title = 'Loan History';
 
-     protected static bool $shouldSkipAuthorization = true;
+    protected static bool $shouldSkipAuthorization = true;
 
     public function table(Table $table): Table
     {
@@ -49,12 +50,12 @@ class LoanHistoryRelationManager extends RelationManager
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'Approved'  => 'success',
-                        'Pending'   => 'warning',
-                        'Rejected'  => 'danger',
-                        'Paid'      => 'info',
+                        'Approved' => 'success',
+                        'Pending' => 'warning',
+                        'Rejected' => 'danger',
+                        'Paid' => 'info',
                         'Defaulted' => 'danger',
-                        default     => 'gray',
+                        default => 'gray',
                     })
                     ->sortable(),
 
@@ -130,7 +131,7 @@ class LoanHistoryRelationManager extends RelationManager
                                             return 0;
                                         }
 
-                                        $schedule = collect(app(\App\Services\LoanAmortizationService::class)->generate(
+                                        $schedule = collect(app(LoanAmortizationService::class)->generate(
                                             loanAmount: (float) $record->amount_requested,
                                             monthlyInterestRatePercent: (float) $record->loanAccount->interest_rate,
                                             termMonths: (int) $record->term_months,
@@ -146,10 +147,10 @@ class LoanHistoryRelationManager extends RelationManager
                                     ->money('PHP')
                                     ->state(function ($record) {
                                         if (! $record->loanAccount || ! $record->loanAccount->release_date) {
-                                         return 0;
+                                            return 0;
                                         }
 
-                                        $schedule = collect(app(\App\Services\LoanAmortizationService::class)->generate(
+                                        $schedule = collect(app(LoanAmortizationService::class)->generate(
                                             loanAmount: (float) $record->amount_requested,
                                             monthlyInterestRatePercent: (float) $record->loanAccount->interest_rate,
                                             termMonths: (int) $record->term_months,
@@ -170,113 +171,112 @@ class LoanHistoryRelationManager extends RelationManager
 
                                         $remainingPrincipal = (float) ($record->loanAccount->balance ?? $record->loanAccount->principal_amount ?? 0);
 
-                                        $schedule = collect(app(\App\Services\LoanAmortizationService::class)->generate(
+                                        $schedule = collect(app(LoanAmortizationService::class)->generate(
                                             loanAmount: (float) $record->amount_requested,
                                             monthlyInterestRatePercent: (float) $record->loanAccount->interest_rate,
                                             termMonths: (int) $record->term_months,
                                             releaseDate: $record->loanAccount->release_date,
-                                            ));
+                                        ));
 
-                                            $totalInterest = (float) $schedule->sum(fn ($row) => (float) ($row['interest'] ?? 0));
-                                            $totalPenalty = (float) $schedule->sum(fn ($row) => (float) ($row['penalty'] ?? 0));
+                                        $totalInterest = (float) $schedule->sum(fn ($row) => (float) ($row['interest'] ?? 0));
+                                        $totalPenalty = (float) $schedule->sum(fn ($row) => (float) ($row['penalty'] ?? 0));
 
-                                            return $remainingPrincipal + $totalInterest + $totalPenalty;
-                                        })
-                                        ->placeholder('—'),
+                                        return $remainingPrincipal + $totalInterest + $totalPenalty;
+                                    })
+                                    ->placeholder('—'),
 
-                                    TextEntry::make('months_left')
-                                        ->label('Months Left')
-                                        ->state(function ($record) {
-                                            $loan = $record->loanAccount;
+                                TextEntry::make('months_left')
+                                    ->label('Months Left')
+                                    ->state(function ($record) {
+                                        $loan = $record->loanAccount;
 
-                                            if (! $loan) {
-                                                return '—';
-                                            }
+                                        if (! $loan) {
+                                            return '—';
+                                        }
 
-                                            $term = (int) ($record->term_months ?? $loan->term_months ?? 0);
+                                        $term = (int) ($record->term_months ?? $loan->term_months ?? 0);
 
-                                            if ($term <= 0) {
-                                                return '—';
-                                            }
+                                        if ($term <= 0) {
+                                            return '—';
+                                        }
 
-                                            $schedule = app(LoanScheduleService::class)->build($loan);
+                                        $schedule = app(LoanScheduleService::class)->build($loan);
 
-                                            if ($schedule === []) {
-                                                return $term . ' months';
-                                            }
+                                        if ($schedule === []) {
+                                            return $term.' months';
+                                        }
 
-                                            $term = count($schedule);
+                                        $term = count($schedule);
 
-                                            $monthsPaid = (int) collect($schedule)
-                                                ->filter(fn (array $row): bool => ($row['status'] ?? null) === 'Paid')
-                                                ->count();
-                                            $monthsLeft = max(0, $term - $monthsPaid);
+                                        $monthsPaid = (int) collect($schedule)
+                                            ->filter(fn (array $row): bool => ($row['status'] ?? null) === 'Paid')
+                                            ->count();
+                                        $monthsLeft = max(0, $term - $monthsPaid);
 
-                                            return $monthsLeft . ' months';
-                                        })
-                                        ->placeholder('—'),
+                                        return $monthsLeft.' months';
+                                    })
+                                    ->placeholder('—'),
 
-                                         TextEntry::make('payment_progress')
-                                        ->label('Payment Progress')
-                                        ->getStateUsing(function ($record): float {
-                                            $loanAccount = $record->loanAccount;
+                                TextEntry::make('payment_progress')
+                                    ->label('Payment Progress')
+                                    ->getStateUsing(function ($record): float {
+                                        $loanAccount = $record->loanAccount;
 
-                                            if (! $loanAccount) {
-                                                return 0.0;
-                                            }
+                                        if (! $loanAccount) {
+                                            return 0.0;
+                                        }
 
-                                            $principal = (float) ($loanAccount->principal_amount ?? 0);
-                                            $balance = (float) ($loanAccount->balance ?? 0);
+                                        $principal = (float) ($loanAccount->principal_amount ?? 0);
+                                        $balance = (float) ($loanAccount->balance ?? 0);
 
-                                            if ($principal <= 0) {
-                                                return 0.0;
-                                            }
+                                        if ($principal <= 0) {
+                                            return 0.0;
+                                        }
 
-                                            $progress = (($principal - $balance) / $principal) * 100;
+                                        $progress = (($principal - $balance) / $principal) * 100;
 
-                                            return min(100.0, max(0.0, round($progress, 2)));
-                                        })
-                                        ->formatStateUsing(fn ($state): string => number_format((float) $state, 2) . '%')
-                                        ->badge()
-                                        ->color(fn ($state) => match (true) {
-                                            (float) $state >= 100.0 => 'success',
-                                            (float) $state <= 0.0 => 'gray',
-                                            default => 'warning',
-                                        })
-                                        ->placeholder('—'),
-                                    TextEntry::make('next_due_date')
-                                        ->label('Next Due Date')
-                                        ->state(function ($record) {
-                                            if (! $record->loanAccount || ! $record->loanAccount->release_date) {
-                                                return '—';
-                                            }
+                                        return min(100.0, max(0.0, round($progress, 2)));
+                                    })
+                                    ->formatStateUsing(fn ($state): string => number_format((float) $state, 2).'%')
+                                    ->badge()
+                                    ->color(fn ($state) => match (true) {
+                                        (float) $state >= 100.0 => 'success',
+                                        (float) $state <= 0.0 => 'gray',
+                                        default => 'warning',
+                                    })
+                                    ->placeholder('—'),
+                                TextEntry::make('next_due_date')
+                                    ->label('Next Due Date')
+                                    ->state(function ($record) {
+                                        if (! $record->loanAccount || ! $record->loanAccount->release_date) {
+                                            return '—';
+                                        }
 
-                                            $schedule = collect(app(\App\Services\LoanAmortizationService::class)->generate(
-                                                loanAmount: (float) $record->amount_requested,
-                                                monthlyInterestRatePercent: (float) $record->loanAccount->interest_rate,
-                                                termMonths: (int) $record->term_months,
-                                                releaseDate: $record->loanAccount->release_date,
-                                            ));
+                                        $schedule = collect(app(LoanAmortizationService::class)->generate(
+                                            loanAmount: (float) $record->amount_requested,
+                                            monthlyInterestRatePercent: (float) $record->loanAccount->interest_rate,
+                                            termMonths: (int) $record->term_months,
+                                            releaseDate: $record->loanAccount->release_date,
+                                        ));
 
-                                            $next = $schedule->first();
+                                        $next = $schedule->first();
 
-                                            return $next['due_date'] ?? '—';
-                                        })
-                                        ->placeholder('—'),
+                                        return $next['due_date'] ?? '—';
+                                    })
+                                    ->placeholder('—'),
 
-                                    TextEntry::make('loanAccount.status')
-                                        ->label('Loan Account Status')
-                                        ->badge()
-                                        ->color(fn ($state) => match ($state) {
-                                            'Active' => 'success',
-                                            'Closed' => 'gray',
-                                            'Defaulted' => 'danger',
-                                            default => 'gray',
-                                        })
-                                        ->placeholder('—'),
-                                    ])
-                                    ->columns(3),
-
+                                TextEntry::make('loanAccount.status')
+                                    ->label('Loan Account Status')
+                                    ->badge()
+                                    ->color(fn ($state) => match ($state) {
+                                        'Active' => 'success',
+                                        'Closed' => 'gray',
+                                        'Defaulted' => 'danger',
+                                        default => 'gray',
+                                    })
+                                    ->placeholder('—'),
+                            ])
+                            ->columns(3),
 
                         Section::make('Payment History')
                             ->schema([
@@ -289,7 +289,7 @@ class LoanHistoryRelationManager extends RelationManager
                                             return [];
                                         }
 
-                                        $history = app(\App\Services\LoanScheduleService::class)->buildPaymentHistory($loanAccount);
+                                        $history = app(LoanScheduleService::class)->buildPaymentHistory($loanAccount);
 
                                         if (empty($history)) {
                                             return [];
@@ -324,55 +324,55 @@ class LoanHistoryRelationManager extends RelationManager
                                 Section::make('Older Payments')
                                     ->schema([
                                         RepeatableEntry::make('older_payments')
-                                        ->label('')
-                                        ->getStateUsing(function ($record): array {
-                                            $loanAccount = $record->loanAccount;
+                                            ->label('')
+                                            ->getStateUsing(function ($record): array {
+                                                $loanAccount = $record->loanAccount;
 
-                                            if (! $loanAccount) {
-                                                return [];
-                                            }
+                                                if (! $loanAccount) {
+                                                    return [];
+                                                }
 
-                                            $history = app(\App\Services\LoanScheduleService::class)->buildPaymentHistory($loanAccount);
+                                                $history = app(LoanScheduleService::class)->buildPaymentHistory($loanAccount);
 
-                                            if (count($history) <= 1) {
-                                                return [];
-                                            }
+                                                if (count($history) <= 1) {
+                                                    return [];
+                                                }
 
-                                            return collect($history)->skip(1)->values()->toArray();
-                                        })
-                                        ->schema([
-                                            TextEntry::make('payment_date')
-                                                ->label('Payment Date')
-                                                ->date('M d, Y')
-                                                ->placeholder('—'),
+                                                return collect($history)->skip(1)->values()->toArray();
+                                            })
+                                            ->schema([
+                                                TextEntry::make('payment_date')
+                                                    ->label('Payment Date')
+                                                    ->date('M d, Y')
+                                                    ->placeholder('—'),
 
-                                            TextEntry::make('amount_paid')
-                                                ->label('Amount Paid')
-                                                ->money('PHP')
-                                                ->placeholder('—'),
+                                                TextEntry::make('amount_paid')
+                                                    ->label('Amount Paid')
+                                                    ->money('PHP')
+                                                    ->placeholder('—'),
 
-                                            TextEntry::make('principal_paid')
-                                                ->label('Principal Paid')
-                                                ->money('PHP')
-                                                ->placeholder('—'),
+                                                TextEntry::make('principal_paid')
+                                                    ->label('Principal Paid')
+                                                    ->money('PHP')
+                                                    ->placeholder('—'),
 
-                                            TextEntry::make('interest_paid')
-                                                ->label('Interest Paid')
-                                                ->money('PHP')
-                                                ->placeholder('—'),
+                                                TextEntry::make('interest_paid')
+                                                    ->label('Interest Paid')
+                                                    ->money('PHP')
+                                                    ->placeholder('—'),
 
-                                        ])
-                                        ->columns(2),
-                                ])
-                                ->collapsible()
-                                        ->collapsed(),
-                             ])
-                                ->collapsed(false),
-                                                ]),
-                                        ])
-                                        ->defaultSort('loan_application_id', 'desc')
-                                        ->striped()
-                                        ->emptyStateHeading('No loan applications found')
-                                        ->emptyStateDescription('This member has no loan application records yet.');
-                                        }
-                                    }
+                                            ])
+                                            ->columns(2),
+                                    ])
+                                    ->collapsible()
+                                    ->collapsed(),
+                            ])
+                            ->collapsed(false),
+                    ]),
+            ])
+            ->defaultSort('loan_application_id', 'desc')
+            ->striped()
+            ->emptyStateHeading('No loan applications found')
+            ->emptyStateDescription('This member has no loan application records yet.');
+    }
+}

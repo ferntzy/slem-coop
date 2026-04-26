@@ -23,7 +23,7 @@ class OrientationSettingsController extends Controller
                     // Convert choices from UUID-keyed object to indexed array
                     $choices = $question['choices'] ?? [];
                     $choicesArray = [];
-                    
+
                     if (is_array($choices)) {
                         foreach ($choices as $choice) {
                             if (is_array($choice) && isset($choice['value'])) {

@@ -2,15 +2,15 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\User;
-use App\Models\Profile;
-use App\Models\MemberDetail;
-use App\Models\LoanApplication;
 use App\Models\LoanAccount;
+use App\Models\LoanApplication;
 use App\Models\LoanPayment;
+use App\Models\MemberDetail;
+use App\Models\Profile;
+use App\Models\User;
 use App\Services\LoanAmortizationService;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class LoanPaymentPenaltyTestSeeder extends Seeder
 {
@@ -21,6 +21,7 @@ class LoanPaymentPenaltyTestSeeder extends Seeder
 
         if (! $adminUser || ! $profile) {
             $this->command?->warn('Required user/profile not found.');
+
             return;
         }
 
@@ -28,6 +29,7 @@ class LoanPaymentPenaltyTestSeeder extends Seeder
 
         if (! $memberDetail) {
             $this->command?->warn('Member detail not found.');
+
             return;
         }
 
@@ -37,6 +39,7 @@ class LoanPaymentPenaltyTestSeeder extends Seeder
 
         if (! $loanApplication) {
             $this->command?->warn('Penalty test loan application not found.');
+
             return;
         }
 
@@ -44,6 +47,7 @@ class LoanPaymentPenaltyTestSeeder extends Seeder
 
         if (! $loanAccount) {
             $this->command?->warn('Penalty test loan account not found.');
+
             return;
         }
 
@@ -58,6 +62,7 @@ class LoanPaymentPenaltyTestSeeder extends Seeder
 
         if (! $firstRow) {
             $this->command?->warn('No amortization schedule generated.');
+
             return;
         }
 

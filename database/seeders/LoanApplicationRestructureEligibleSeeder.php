@@ -2,16 +2,16 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Profile;
-use App\Models\MemberDetail;
-use App\Models\LoanType;
-use App\Models\LoanApplication;
 use App\Models\LoanAccount;
+use App\Models\LoanApplication;
 use App\Models\LoanApplicationCashflow;
+use App\Models\LoanType;
+use App\Models\MemberDetail;
 use App\Models\PenaltyRule;
+use App\Models\Profile;
 use App\Services\LoanAmortizationService;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class LoanApplicationRestructureEligibleSeeder extends Seeder
 {
@@ -21,6 +21,7 @@ class LoanApplicationRestructureEligibleSeeder extends Seeder
 
         if (! $profile) {
             $this->command?->warn('Profile not found for regularmember@example.com');
+
             return;
         }
 
@@ -28,6 +29,7 @@ class LoanApplicationRestructureEligibleSeeder extends Seeder
 
         if (! $memberDetail) {
             $this->command?->warn("MemberDetail not found for profile_id {$profile->profile_id}");
+
             return;
         }
 
@@ -35,6 +37,7 @@ class LoanApplicationRestructureEligibleSeeder extends Seeder
 
         if (! $loanType) {
             $this->command?->warn('Loan type not found: Guaranteed Loan');
+
             return;
         }
 
@@ -42,6 +45,7 @@ class LoanApplicationRestructureEligibleSeeder extends Seeder
 
         if (! $penaltyRule) {
             $this->command?->warn('No active penalty rule found.');
+
             return;
         }
 

@@ -1,0 +1,1 @@
+@include('filament.reports.partials.panel', ['report' => $report])

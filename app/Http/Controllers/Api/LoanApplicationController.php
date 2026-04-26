@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\CoopSetting;
 use App\Models\LoanAccount;
 use App\Models\LoanApplication;
 use App\Models\LoanApplicationStatusLog;
@@ -16,6 +17,11 @@ use Illuminate\Support\Facades\DB;
 
 class LoanApplicationController extends Controller
 {
+    private function loanOfficerApprovalLimit(): float
+    {
+        return (float) CoopSetting::get('loan.loan_officer_approval_limit', 20000);
+    }
+
     private function isLoanOfficer(): bool
     {
         $user = auth()->user();
@@ -33,9 +39,31 @@ class LoanApplicationController extends Controller
             return false;
         }
 
-        $isLoanOfficer = ($profile->roles_id === 9);
+        return $user->hasAnyRole([
+            'Loan Officer',
+            'loan_officer',
+            'HQ Loan Officer',
+            'hq_loan_officer',
+        ]) || $user->canApproveAnyLoanAmount();
+    }
 
-        return $isLoanOfficer;
+    private function canApproveAnyLoanAmount(): bool
+    {
+        $user = auth()->user();
+
+        return $user?->canApproveAnyLoanAmount() ?? false;
+    }
+
+    private function isLoanOfficerApprovalRole(): bool
+    {
+        $user = auth()->user();
+
+        return $user?->hasAnyRole([
+            'Loan Officer',
+            'loan_officer',
+            'HQ Loan Officer',
+            'hq_loan_officer',
+        ]) ?? false;
     }
 
     private function getUserRoleInfo(): array
@@ -54,7 +82,12 @@ class LoanApplicationController extends Controller
             'username' => $user->username,
             'email' => $user->email,
             'role_id' => $user->profile?->roles_id,
-            'is_loan_officer' => ($user->profile?->roles_id === 9),
+            'is_loan_officer' => $user->hasAnyRole([
+                'Loan Officer',
+                'loan_officer',
+                'HQ Loan Officer',
+                'hq_loan_officer',
+            ]),
             'has_profile' => $user->profile ? 'yes' : 'no',
         ];
     }
@@ -84,7 +117,7 @@ class LoanApplicationController extends Controller
     {
         if (! $this->isLoanOfficer()) {
             return response()->json([
-                'message' => 'Unauthorized. You need Loan Officer or Admin access to approve loans.',
+                'message' => 'Unauthorized. You need Loan Officer, HQ Loan Officer, Manager, HQ Manager, or Admin access to approve loans.',
                 'user_info' => $this->getUserRoleInfo(),
             ], 403);
         }
@@ -99,6 +132,61 @@ class LoanApplicationController extends Controller
 
         if ($record->approved_at) {
             return response()->json(['message' => 'This application has already been approved.'], 422);
+        }
+
+        $approvalLimit = $this->loanOfficerApprovalLimit();
+        if ((float) $record->amount_requested > $approvalLimit && ! $this->canApproveAnyLoanAmount()) {
+            if (! $this->isLoanOfficerApprovalRole()) {
+                return response()->json([
+                    'message' => 'Unauthorized. Only loan officers can escalate high-value loans.',
+                ], 403);
+            }
+
+            $from = $record->status;
+
+            if ($from !== 'Under Review') {
+                $record->update(['status' => 'Under Review']);
+
+                LoanApplicationStatusLog::create([
+                    'loan_application_id' => $record->loan_application_id,
+                    'from_status' => $from,
+                    'to_status' => 'Under Review',
+                    'changed_by_user_id' => auth()->id(),
+                    'reason' => 'Escalated for Manager and Admin approvals due to loan officer limit.',
+                    'changed_at' => now(),
+                ]);
+            }
+
+            $profileId = $record->member?->profile_id ?? null;
+
+            app(NotificationService::class)->notifyManagers(
+                'Loan requires manager approval',
+                "Loan application #{$record->loan_application_id} exceeds the loan officer limit of PHP ".number_format($approvalLimit, 2).' and needs manager approval.',
+                notifiableType: 'loan_application',
+                notifiableId: $record->loan_application_id
+            );
+
+            app(NotificationService::class)->notifyAdmins(
+                'Loan requires admin approval',
+                "Loan application #{$record->loan_application_id} exceeds the loan officer limit of PHP ".number_format($approvalLimit, 2).' and needs manager + admin approvals.',
+                notifiableType: 'loan_application',
+                notifiableId: $record->loan_application_id
+            );
+
+            if ($profileId) {
+                app(NotificationService::class)->notifyProfile(
+                    $profileId,
+                    'Loan application escalated for approval',
+                    "Your loan application #{$record->loan_application_id} is under review and requires manager + admin approvals.",
+                    notifiableType: 'loan_application',
+                    notifiableId: $record->loan_application_id
+                );
+            }
+
+            return response()->json([
+                'message' => 'This loan exceeds your approval limit and was escalated to Manager and Admin.',
+                'approval_limit' => $approvalLimit,
+            ], 202);
         }
 
         $profileId = $record->member?->profile_id ?? null;
@@ -433,66 +521,5 @@ class LoanApplicationController extends Controller
         });
 
         return response()->json(['message' => 'Loan application rejected.']);
-    }
-
-    public function cancel(Request $request, $id): JsonResponse
-    {
-        if (! $this->isLoanOfficer()) {
-            return response()->json([
-                'message' => 'Unauthorized. You need Loan Officer or Admin access to cancel loans.',
-                'user_info' => $this->getUserRoleInfo(),
-            ], 403);
-        }
-
-        $record = LoanApplication::with(['member.profile.user'])
-            ->where('loan_application_id', $id)
-            ->firstOrFail();
-
-        if (! in_array($record->status, ['Pending', 'Under Review'], true)) {
-            return response()->json(['message' => 'Only Pending or Under Review applications can be cancelled.'], 422);
-        }
-
-        $profileId = $record->member?->profile_id ?? null;
-        $from = $record->status;
-
-        DB::transaction(function () use ($record, $from, $profileId) {
-
-            $record->update(['status' => 'Cancelled']);
-
-            LoanApplicationStatusLog::create([
-                'loan_application_id' => $record->loan_application_id,
-                'from_status' => $from,
-                'to_status' => 'Cancelled',
-                'changed_by_user_id' => auth()->id(),
-                'changed_at' => now(),
-            ]);
-
-            ModelsNotification::create([
-                'user_id' => $record->member->profile->user->user_id,
-                'title' => 'Loan Application',
-                'description' => 'Your loan application was successfully cancelled!',
-                'notifiable_type' => 'loan_application',
-                'notifiable_id' => $record->loan_application_id,
-            ]);
-
-            if ($profileId) {
-                app(NotificationService::class)->notifyProfile(
-                    $profileId,
-                    'Loan application cancelled',
-                    "Your loan application #{$record->loan_application_id} has been cancelled.",
-                    notifiableType: 'loan_application',
-                    notifiableId: $record->loan_application_id
-                );
-            }
-
-            app(NotificationService::class)->notifyAdmins(
-                'Loan application cancelled',
-                "Loan application #{$record->loan_application_id} is cancelled.",
-                notifiableType: 'loan_application',
-                notifiableId: $record->loan_application_id
-            );
-        });
-
-        return response()->json(['message' => 'Loan application cancelled successfully.']);
     }
 }

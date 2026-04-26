@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class NewsEvent extends Model
 {
@@ -13,34 +12,37 @@ class NewsEvent extends Model
         'location',
         'description',
         'category',
-        'image'
+        'image',
     ];
 
     protected $casts = [
-        'date' => 'date'
+        'date' => 'date',
     ];
 
     public static function getNewsEvent(): static
     {
         $newsevent = static::find(1);
 
-        if (!$newsevent) {
+        if (! $newsevent) {
             $newsevent = static::create([
-                'title'         => 'Annual General Assembly 2026',
-                'date'          => 'March 15, 2026',
-                'location'      => 'Main Office Auditorium',
-                'description'   => "Join us for our annual general assembly where we review the past year and plan for the future.",
-                'category'      => 'Assembly',
-                'image'         => 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
+                'title' => 'Annual General Assembly 2026',
+                'date' => 'March 15, 2026',
+                'location' => 'Main Office Auditorium',
+                'description' => 'Join us for our annual general assembly where we review the past year and plan for the future.',
+                'category' => 'Assembly',
+                'image' => 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
             ]);
         }
+
         return $newsevent;
     }
+
     public function getImageUrlAttribute(): ?string
     {
         if ($this->image) {
-            return asset('storage/' . $this->image);
+            return asset('storage/'.$this->image);
         }
+
         return null;
     }
 }

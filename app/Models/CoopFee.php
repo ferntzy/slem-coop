@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CoopFee extends Model
@@ -12,10 +12,13 @@ class CoopFee extends Model
     use HasFactory;
 
     public const TYPE_SHARED_CAPITAL = 'shared_capital';
+
     public const TYPE_INSURANCE = 'insurance';
+
     public const TYPE_PROCESSING_FEE = 'processing_fee';
 
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_INACTIVE = 'inactive';
 
     protected $fillable = [
@@ -57,8 +60,8 @@ class CoopFee extends Model
     {
         return Attribute::make(
             get: fn () => $this->is_percentage
-                ? $this->percentage . '%'
-                : '₱' . number_format((float) $this->amount, 2)
+                ? $this->percentage.'%'
+                : '₱'.number_format((float) $this->amount, 2)
         );
     }
 

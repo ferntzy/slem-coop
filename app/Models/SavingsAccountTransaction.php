@@ -17,6 +17,8 @@ class SavingsAccountTransaction extends Model
         'type',
         'direction',
         'status',
+        'maturity_action',
+        'maturity_action_selected_at',
         'transaction_date',
         'reference_no',
         'notes',
@@ -26,7 +28,8 @@ class SavingsAccountTransaction extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'transaction_date' => 'date',
+        'transaction_date' => 'datetime',
+        'maturity_action_selected_at' => 'datetime',
     ];
 
     public function member(): BelongsTo
@@ -43,5 +46,13 @@ class SavingsAccountTransaction extends Model
     {
         return $this->belongsTo(User::class, 'posted_by_user_id', 'user_id');
     }
-}
 
+    public function isMatured(): bool
+    {
+        if (! $this->transaction_date || ! $this->terms) {
+            return false;
+        }
+
+        return $this->transaction_date->copy()->addMonths((int) $this->terms)->lte(now());
+    }
+}

@@ -14,7 +14,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Widgets\TableWidget as BaseWidget;
 
-
 class BranchCrudWidget extends BaseWidget
 {
     protected static ?string $heading = 'Branches';

@@ -160,6 +160,22 @@ class User extends Authenticatable implements HasAvatar
         return $this->isAdmin() || $this->isSuperAdmin();
     }
 
+    public function canApproveAnyLoanAmount(): bool
+    {
+        return $this->hasAnyRole([
+            'super_admin',
+            'Super Admin',
+            'super admin',
+            'Admin',
+            'admin',
+            'Manager',
+            'manager',
+            'HQ Manager',
+            'hq_manager',
+            'hqmanager',
+        ]);
+    }
+
     public function isHQManager(): bool
     {
         return $this->hasAnyRole([
@@ -181,6 +197,35 @@ class User extends Authenticatable implements HasAvatar
             'HQ Loan Officer',
             'hq_account_officer',
             'HQ Account Officer',
+        ]);
+    }
+
+    public function isLoanOfficerApprover(): bool
+    {
+        return $this->hasAnyRole([
+            'Loan Officer',
+            'loan_officer',
+            'HQ Loan Officer',
+            'hq_loan_officer',
+            'Account Officer',
+            'account_officer',
+            'HQ Account Officer',
+            'hq_account_officer',
+        ]);
+    }
+
+    public function isManagerApprover(): bool
+    {
+        return $this->hasAnyRole([
+            'Manager',
+            'manager',
+            'Loan Manager',
+            'loan_manager',
+            'Branch Manager',
+            'branch_manager',
+            'HQ Manager',
+            'hq_manager',
+            'hqmanager',
         ]);
     }
 

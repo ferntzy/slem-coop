@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use Illuminate\Http\Request;
-use App\Models\MemberDetail;
-use Carbon\Carbon;
 use App\Http\Controllers\Controller;
-use App\Models\LoanApplication;
 use App\Models\CollectionAndPosting;
 use App\Models\LoanAccount;
+use App\Models\LoanApplication;
+use App\Models\MemberDetail;
+use Carbon\Carbon;
 
 class AccountDashboard extends Controller
 {
@@ -30,6 +29,7 @@ class AccountDashboard extends Controller
             'member_change_percentage' => $memberChange,
         ]);
     }
+
       public function loanDisbursements()
     {
         // Define current period (e.g., this month)
@@ -45,7 +45,6 @@ class AccountDashboard extends Controller
             ->whereBetween('approved_at', [$start, $end])
             ->sum('amount_requested');
 
-
         $prevDisbursed = LoanApplication::where('status', 'Approved')
             ->whereBetween('approved_at', [$prevStart, $prevEnd])
             ->sum('amount_requested');
@@ -54,13 +53,13 @@ class AccountDashboard extends Controller
             ? round((($disbursed - $prevDisbursed) / $prevDisbursed) * 100, 1)
             : 0;
 
-
         return response()->json([
             'disbursed_this_period' => $disbursed,
             'disbursed_previous_period' => $prevDisbursed,
             'disbursed_change_percentage' => $disbursedChange,
         ]);
     }
+
     public function collections()
     {
         // Define current period (e.g., this month)
@@ -119,63 +118,64 @@ class AccountDashboard extends Controller
             'active_loans_change_percentage' => $loansChange,
         ]);
     }
-      // Pending Loan Applications
-      public function pendingLoanApplications()
-      {
-          // Define current period (e.g., this month)
-          $start = Carbon::now()->startOfMonth();
-          $end = Carbon::now()->endOfMonth();
 
-          // Define previous period (previous month)
-          $prevStart = Carbon::now()->subMonth()->startOfMonth();
-          $prevEnd = Carbon::now()->subMonth()->endOfMonth();
+    // Pending Loan Applications
+    public function pendingLoanApplications()
+    {
+        // Define current period (e.g., this month)
+        $start = Carbon::now()->startOfMonth();
+        $end = Carbon::now()->endOfMonth();
 
-          // Pending Loan Applications this period
-          $pendingLoans = LoanApplication::where('status', 'Pending')
-              ->whereBetween('created_at', [$start, $end])
-              ->count();
+        // Define previous period (previous month)
+        $prevStart = Carbon::now()->subMonth()->startOfMonth();
+        $prevEnd = Carbon::now()->subMonth()->endOfMonth();
 
-          $prevPendingLoans = LoanApplication::where('status', 'Pending')
-              ->whereBetween('created_at', [$prevStart, $prevEnd])
-              ->count();
+        // Pending Loan Applications this period
+        $pendingLoans = LoanApplication::where('status', 'Pending')
+            ->whereBetween('created_at', [$start, $end])
+            ->count();
 
-          $pendingChange = $prevPendingLoans > 0
-              ? round((($pendingLoans - $prevPendingLoans) / $prevPendingLoans) * 100, 1)
-              : 0;
+        $prevPendingLoans = LoanApplication::where('status', 'Pending')
+            ->whereBetween('created_at', [$prevStart, $prevEnd])
+            ->count();
 
-          return response()->json([
-              'pending_loans' => $pendingLoans,
-              'pending_loans_previous_period' => $prevPendingLoans,
-              'pending_loans_change_percentage' => $pendingChange,
-          ]);
-      }
-         // Delinquent Members
-         public function delinquentMembers()
-         {
+        $pendingChange = $prevPendingLoans > 0
+            ? round((($pendingLoans - $prevPendingLoans) / $prevPendingLoans) * 100, 1)
+            : 0;
 
-             $start = Carbon::now()->startOfMonth();
-             $end = Carbon::now()->endOfMonth();
+        return response()->json([
+            'pending_loans' => $pendingLoans,
+            'pending_loans_previous_period' => $prevPendingLoans,
+            'pending_loans_change_percentage' => $pendingChange,
+        ]);
+    }
 
+    // Delinquent Members
+    public function delinquentMembers()
+    {
 
-             $prevStart = Carbon::now()->subMonth()->startOfMonth();
-             $prevEnd = Carbon::now()->subMonth()->endOfMonth();
+        $start = Carbon::now()->startOfMonth();
+        $end = Carbon::now()->endOfMonth();
 
-             $delinquentMembers = MemberDetail::where('status', 'Delinquent')
-                 ->whereBetween('updated_at', [$start, $end])
-                 ->count();
+        $prevStart = Carbon::now()->subMonth()->startOfMonth();
+        $prevEnd = Carbon::now()->subMonth()->endOfMonth();
 
-             $prevDelinquentMembers = MemberDetail::where('status', 'Delinquent')
-                 ->whereBetween('updated_at', [$prevStart, $prevEnd])
-                 ->count();
+        $delinquentMembers = MemberDetail::where('status', 'Delinquent')
+            ->whereBetween('updated_at', [$start, $end])
+            ->count();
 
-             $delinquentChange = $prevDelinquentMembers > 0
-                 ? round((($delinquentMembers - $prevDelinquentMembers) / $prevDelinquentMembers) * 100, 1)
-                 : 0;
+        $prevDelinquentMembers = MemberDetail::where('status', 'Delinquent')
+            ->whereBetween('updated_at', [$prevStart, $prevEnd])
+            ->count();
 
-             return response()->json([
-                 'delinquent_members' => $delinquentMembers,
-                 'delinquent_members_previous_period' => $prevDelinquentMembers,
-                 'delinquent_members_change_percentage' => $delinquentChange,
-             ]);
-         }
+        $delinquentChange = $prevDelinquentMembers > 0
+            ? round((($delinquentMembers - $prevDelinquentMembers) / $prevDelinquentMembers) * 100, 1)
+            : 0;
+
+        return response()->json([
+            'delinquent_members' => $delinquentMembers,
+            'delinquent_members_previous_period' => $prevDelinquentMembers,
+            'delinquent_members_change_percentage' => $delinquentChange,
+        ]);
+    }
 }
