@@ -323,9 +323,9 @@ class CoopSettings extends Page
                     Tab::make('Payment Allocation')
                         ->icon('heroicon-o-arrow-trending-up')
                         ->schema([
-                            Livewire::make(\App\Filament\Widgets\PaymentPriorityWidget::class)->columnSpanFull(),
+                            Livewire::make(PaymentPriorityWidget::class)->columnSpanFull(),
                         ]),
-                       // Tab::make('Member Status')
+                    // Tab::make('Member Status')
 
                     Tab::make('Savings')
                         ->icon('heroicon-o-building-library')
