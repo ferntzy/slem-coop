@@ -53,7 +53,7 @@ Route::post('/edit-profile', [ProfileController::class, 'editProfile']);
 // stat card data
 Route::get('/active-members', [Members::class, 'getActiveMembers']);
 Route::get('/inactive-members', [Members::class,  'inactiveMembers']);
-
+Route::get('/get-loans', [Loans::class, 'getLoans']);
 
 // loan officer apis
 // stat card data

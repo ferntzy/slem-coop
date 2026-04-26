@@ -148,4 +148,19 @@ class Loans extends Controller
             ], 500);
         }
     }
+
+    public function getLoans(){
+        try{
+            $loans = LoanAccount::get();
+
+            return response()->json([
+                'loans' => $loans,
+            ], 200);
+        }catch(Exception $e){
+            return response()->json([
+                'message' => 'Unable to get loans',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
