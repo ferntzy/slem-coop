@@ -7,6 +7,7 @@ use App\Models\LoanAccount;
 use App\Models\LoanApplication;
 use App\Models\LoanType;
 use App\Models\MemberDetail;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 
@@ -129,7 +130,7 @@ class Loans extends Controller
                 'net_release_amount' => '0.00',
                 'interest_rate' => $intRate,
                 'term_months' => $termMonths,
-                'release_date' => $loanapp->release_date,
+                'release_date' => Carbon::now()->toDateString(),
                 'maturity_date' => $maturityDate,
                 'monthly_amortization' => $monthlyAmortization,
                 'balance' => $amount,
