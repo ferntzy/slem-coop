@@ -8,6 +8,7 @@ use App\Models\CoopSetting;
 use App\Models\MemberDetail;
 use App\Models\MembershipType;
 use App\Models\Profile;
+use App\Models\SavingsAccount;
 use App\Models\SavingsAccountTransaction;
 use App\Models\SavingsType;
 use Illuminate\Database\Seeder;
@@ -112,19 +113,50 @@ class DormantSavingsDemoSeeder extends Seeder
         $demoSavingsTypeId = (string) $demoSavingsType->id;
 
         // Reset demo members to a clean savings history so dormancy status is deterministic.
+        SavingsAccount::query()
+            ->whereIn('profile_id', [$dormantProfile->profile_id, $activeProfile->profile_id])
+            ->delete();
+
         SavingsAccountTransaction::query()
             ->whereIn('profile_id', [$dormantProfile->profile_id, $activeProfile->profile_id])
             ->delete();
+
+        // Create SavingsAccount records for the demo profiles
+        $dormantSavingsAccount = SavingsAccount::query()->updateOrCreate(
+            [
+                'profile_id' => $dormantProfile->profile_id,
+                'savings_type_id' => $demoSavingsTypeId,
+            ],
+            [
+                'status' => 'Approved',
+                'approved_at' => now(),
+                'terms' => 1,
+            ]
+        );
+
+        $activeSavingsAccount = SavingsAccount::query()->updateOrCreate(
+            [
+                'profile_id' => $activeProfile->profile_id,
+                'terms' => 1,
+                'savings_type_id' => $demoSavingsTypeId,
+            ],
+            [
+                'status' => 'Approved',
+                'approved_at' => now(),
+            ]
+        );
 
         SavingsAccountTransaction::query()->create([
             'profile_id' => $dormantProfile->profile_id,
             'savings_type_id' => $demoSavingsTypeId,
             'type' => 'Deposit',
             'direction' => 'deposit',
-            'deposit' => 2000,
-            'amount' => 2000,
+            'deposit' => 10000,
+            'amount' => 10000,
             'status' => 'completed',
             'transaction_date' => now()->subMonths(30)->toDateString(),
+            'created_at' => now()->subMonths(30),
+            'updated_at' => now()->subMonths(30),
             'reference_no' => 'DEMO-DORMANT-INITIAL',
             'notes' => 'Dormancy demo: customer deposit from 30 months ago.',
             'posted_by_user_id' => null,
@@ -139,6 +171,8 @@ class DormantSavingsDemoSeeder extends Seeder
             'amount' => 2500,
             'status' => 'completed',
             'transaction_date' => now()->subMonths(1)->toDateString(),
+            'created_at' => now()->subMonths(1),
+            'updated_at' => now()->subMonths(1),
             'reference_no' => 'DEMO-ACTIVE-RECENT',
             'notes' => 'Dormancy demo: recent customer activity within threshold.',
             'posted_by_user_id' => null,

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\SavingsAccountTransaction;
 use App\Models\SavingsType;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class MemberSavingsBalanceService
@@ -15,6 +16,11 @@ class MemberSavingsBalanceService
     protected array $transactionsCache = [];
 
     protected ?SavingsType $regularSavingsType = null;
+
+    /**
+     * @var array<int, string>|null
+     */
+    protected ?array $transactionalSavingsTypeIds = null;
 
     public function getRegularSavingsBalance(int $profileId): float
     {
@@ -30,20 +36,52 @@ class MemberSavingsBalanceService
      */
     protected function getRegularSavingsTransactions(int $profileId): Collection
     {
-        $savingsType = $this->getRegularSavingsType();
+        $transactionalSavingsTypeIds = $this->getTransactionalSavingsTypeIds();
 
-        if (! $profileId || ! $savingsType) {
+        if (! $profileId || $transactionalSavingsTypeIds === []) {
             return collect();
         }
 
-        $cacheKey = $profileId.':'.$savingsType->getKey();
+        $cacheKey = $profileId.':'.implode(',', $transactionalSavingsTypeIds);
 
         return $this->transactionsCache[$cacheKey] ??= SavingsAccountTransaction::query()
             ->where('profile_id', $profileId)
-            ->where('savings_type_id', (string) $savingsType->getKey())
+            ->whereIn('savings_type_id', $transactionalSavingsTypeIds)
             ->orderByDesc('transaction_date')
             ->orderByDesc('id')
             ->get();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function getTransactionalSavingsTypeIds(): array
+    {
+        if ($this->transactionalSavingsTypeIds !== null) {
+            return $this->transactionalSavingsTypeIds;
+        }
+
+        $query = SavingsType::query();
+
+        if (Schema::hasColumn('savings_types', 'is_active')) {
+            $query->where('is_active', true);
+        }
+
+        $hasDepositAllowed = Schema::hasColumn('savings_types', 'deposit_allowed');
+        $hasWithdrawalAllowed = Schema::hasColumn('savings_types', 'withdrawal_allowed');
+
+        if ($hasDepositAllowed && $hasWithdrawalAllowed) {
+            $query
+                ->where('deposit_allowed', true)
+                ->where('withdrawal_allowed', true);
+        }
+
+        $this->transactionalSavingsTypeIds = $query
+            ->pluck('id')
+            ->map(fn ($id): string => (string) $id)
+            ->all();
+
+        return $this->transactionalSavingsTypeIds;
     }
 
     protected function getRegularSavingsType(): ?SavingsType
