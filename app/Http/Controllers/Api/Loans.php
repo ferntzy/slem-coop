@@ -69,14 +69,15 @@ class Loans extends Controller
         }
     }
 
-    public function getLoanApplication(Request $request){
-        try{
+    public function getLoanApplication(Request $request)
+    {
+        try {
             $detail = LoanApplication::with('member.profile.user')
                 ->where('loan_application_id', $request->id)
                 ->first();
 
             if ($detail && $detail->collateral_document) {
-                $detail->collateral_document_url = asset('storage/' . $detail->collateral_document);
+                $detail->collateral_document_url = asset('storage/'.$detail->collateral_document);
             }
 
             return response()->json([
@@ -90,23 +91,25 @@ class Loans extends Controller
         }
     }
 
-    public function declineLoanApplication(Request $request){
-        try{
-            LoanApplication::where('loan_application_id', $request->id)->update(['status'=>'Rejected']);
+    public function declineLoanApplication(Request $request)
+    {
+        try {
+            LoanApplication::where('loan_application_id', $request->id)->update(['status' => 'Rejected']);
 
             return response()->json([
-                'success' => 'Loan application was successfully declined!'
+                'success' => 'Loan application was successfully declined!',
             ], 200);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'Unable to decline loan application',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
 
-    public function approveLoanApplication(Request $request){
-        try{
+    public function approveLoanApplication(Request $request)
+    {
+        try {
             $loanapp = LoanApplication::where('loan_application_id', $request->id)->firstOrFail();
             $loanapp->update(['status' => 'Approved']);
             $mid = $loanapp->member_id;
@@ -117,7 +120,7 @@ class Loans extends Controller
             $totalInterest = $amount * ($intRate / 100) * $termMonths;
             $monthlyAmortization = ($amount + $totalInterest) / $termMonths;
             $maturityDate = now()->addMonths($termMonths)->toDateString();
-            
+
             LoanAccount::create([
                 'profile_id' => $pid,
                 'loan_application_id' => $request->id,
@@ -141,7 +144,7 @@ class Loans extends Controller
                 'success' => 'Loan application was successfully approved!',
             ], 200);
 
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'Unable to approve loan application',
                 'error' => $e->getMessage(),
@@ -149,14 +152,15 @@ class Loans extends Controller
         }
     }
 
-    public function getLoans(){
-        try{
+    public function getLoans()
+    {
+        try {
             $loans = LoanAccount::with('profile')->get();
 
             return response()->json([
                 'loans' => $loans,
             ], 200);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'Unable to get loans',
                 'error' => $e->getMessage(),
@@ -164,16 +168,17 @@ class Loans extends Controller
         }
     }
 
-    public function getLoanDetail($id){
-        try{
+    public function getLoanDetail($id)
+    {
+        try {
             $loan = LoanAccount::with('profile')
-            ->findOrFail($id);
+                ->findOrFail($id);
 
             return response()->json([
                 'loan' => $loan,
             ], 200);
 
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'Unable to get loan detail',
                 'error' => $e->getMessage(),
@@ -181,17 +186,18 @@ class Loans extends Controller
         }
     }
 
-    public function getLoanAccountsById($id){
-        try{
+    public function getLoanAccountsById($id)
+    {
+        try {
             $pid = MemberDetail::where('id', $id)->value('profile_id');
             $loanAccounts = LoanAccount::where('profile_id', $pid)->get();
 
             return response()->json([
-                'loanAccounts' => $loanAccounts
+                'loanAccounts' => $loanAccounts,
             ]);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json([
-                'message' => 'Unable to get loan accounts'
+                'message' => 'Unable to get loan accounts',
             ]);
         }
     }
