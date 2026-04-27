@@ -108,6 +108,7 @@ class DormantSavingsDemoSeeder extends Seeder
         CoopSetting::set('savings.dormancy_months_threshold', 24);
         CoopSetting::set('savings.auto_apply_dormancy_fee', true, 'boolean');
         CoopSetting::set('savings.dormancy_fee_amount', 30.00);
+        CoopSetting::set('savings.dormancy_fee_near_zero_threshold', 1.00);
         CoopSetting::set('savings.apply_interest_on_dormant', true, 'boolean');
 
         $demoSavingsTypeId = (string) $demoSavingsType->id;
