@@ -12,6 +12,14 @@ class DatabaseSeeder extends Seeder
             AccessTokenSeeder::class,
             BranchSeeder::class,
 
+            MembershipTypeSeeder::class,
+            RolesAndPermissionsSeeder::class,
+
+            UserSeeder::class,
+            MemberDetailSeeder::class,
+            MemberSpouseSeeder::class,
+            MemberCoMakerSeeder::class,
+
             CoopFeeSeeder::class,
             CoopFeeTypeSeeder::class,
             CoopIdSeeder::class,
@@ -26,12 +34,6 @@ class DatabaseSeeder extends Seeder
 
             LoanTypeSeeder::class,
 
-            MemberCoMakerSeeder::class,
-            MemberDetailSeeder::class,
-            MemberSpouseSeeder::class,
-
-            MembershipTypeSeeder::class,
-
             NewsEventsSeeder::class,
             OrientationSettingsSeeder::class,
 
@@ -41,14 +43,11 @@ class DatabaseSeeder extends Seeder
 
             PenaltyRuleSeeder::class,
 
-            RolesAndPermissionsSeeder::class,
-
             SavingsTypeSeeder::class,
             SystemSettingsSeeder::class,
             TimeDepositSeeder::class,
 
             UserQrCodeSeeder::class,
-            UserSeeder::class,
 
             DormantSavingsDemoSeeder::class,
         ]);

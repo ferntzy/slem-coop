@@ -1,15 +1,18 @@
 import { Link, Outlet, useLocation } from "react-router";
-import { Sun, Moon, Menu, X, Home, Building2, Users, Newspaper, Info, Phone, Calculator, LogIn, MapPin, Facebook, ChevronDown, Mail, LogOut } from "lucide-react";
+import { Sun, Moon, Menu, X, Home, Building2, Users, Newspaper, Info, Phone, Calculator, LogIn, MapPin, Facebook, ChevronDown, Mail, LogOut, User } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
+import { useNavigate } from "react-router";
 
 export function Layout() {
     const { theme, resolvedTheme, setTheme } = useTheme();
     const location = useLocation();
+    const navigate = useNavigate();
     const [mounted, setMounted] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [mustChangePassword, setMustChangePassword] = useState(false);
 
     useEffect(() => setMounted(true), []);
 
@@ -22,13 +25,19 @@ export function Layout() {
                 });
                 const data = await res.json();
                 setIsAuthenticated(data.authenticated);
+                setMustChangePassword(Boolean(data.must_change_password));
+
+                if (data.authenticated && data.must_change_password && location.pathname !== '/coop') {
+                    navigate('/coop', { replace: true });
+                }
             } catch (error) {
                 setIsAuthenticated(false);
+                setMustChangePassword(false);
             }
         };
 
         checkAuthStatus();
-    }, [location.pathname]); // Re-check when location changes
+    }, [location.pathname, navigate]); // Re-check when location changes
 
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: "instant" });
@@ -156,13 +165,21 @@ export function Layout() {
                             </Button>
 
                             {isAuthenticated ? (
-                                <Button
-                                    onClick={handleLogout}
-                                    className="rounded-full bg-red-600 hover:bg-red-700 text-white font-bold h-9 px-4 sm:px-6 text-xs uppercase tracking-wider flex items-center gap-2"
-                                >
-                                    <LogOut className="w-4 h-4" />
-                                    Logout
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                    <Link to="/coop">
+                                        <Button className="rounded-full bg-green-700 hover:bg-green-800 text-white font-bold h-9 px-4 sm:px-6 text-xs uppercase tracking-wider flex items-center gap-2">
+                                            <User className="w-4 h-4" />
+                                            Member Portal
+                                        </Button>
+                                    </Link>
+                                    <Button
+                                        onClick={handleLogout}
+                                        className="rounded-full bg-red-600 hover:bg-red-700 text-white font-bold h-9 px-4 sm:px-6 text-xs uppercase tracking-wider flex items-center gap-2"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        Logout
+                                    </Button>
+                                </div>
                             ) : (
                                 <Link to="/login">
                                     <Button className="rounded-full bg-green-700 hover:bg-green-800 text-white font-bold h-9 px-4 sm:px-6 text-xs uppercase tracking-wider flex items-center gap-2">

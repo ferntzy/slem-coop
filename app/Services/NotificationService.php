@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\UserRole;
 use App\Mail\GenericNotification;
 use App\Mail\MemberAccountReady;
 use App\Models\Notification;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Spatie\Permission\Exceptions\RoleDoesNotExist;
+use Spatie\Permission\Models\Role;
 
 class NotificationService
 {
@@ -118,6 +121,8 @@ class NotificationService
     {
         $existing = User::where('profile_id', $profile->profile_id)->first();
         if ($existing) {
+            $this->ensureMemberRole($existing);
+
             return $existing;
         }
 
@@ -131,13 +136,33 @@ class NotificationService
         'is_active'  => true,
     ]);
 
-        $user->assignRole('Member');
+        $this->ensureMemberRole($user);
 
         // Send email and track it - use afterCommit so the record survives email failures
         $this->sendPasswordEmailWithTracking($user, $password);
         $this->notifyUserAccountCreated($user);
 
         return $user;
+    }
+
+    protected function ensureMemberRole(User $user): void
+    {
+        $memberRoleName = UserRole::Member->value;
+
+        if ($user->hasAnyRole([$memberRoleName, 'Member'])) {
+            return;
+        }
+
+        try {
+            $user->assignRole($memberRoleName);
+        } catch (RoleDoesNotExist) {
+            Role::firstOrCreate([
+                'name' => $memberRoleName,
+                'guard_name' => 'web',
+            ]);
+
+            $user->assignRole($memberRoleName);
+        }
     }
 
     /**

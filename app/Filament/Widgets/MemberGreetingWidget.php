@@ -57,6 +57,16 @@ class MemberGreetingWidget extends Widget
         return route('filament.admin.resources.loan-applications.create');
     }
 
+    public function getPasswordChangeUrl(): string
+    {
+        return route('member.password.form');
+    }
+
+    public function mustChangePassword(): bool
+    {
+        return (bool) (Auth::user()?->must_change_password ?? false);
+    }
+
     public function getSavingsPageUrl(): string
     {
         $profile = Auth::user()?->profile;

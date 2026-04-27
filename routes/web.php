@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LoanApplicationPrintController;
+use App\Http\Controllers\MemberPasswordController;
 use App\Http\Controllers\Notifications;
 use App\Http\Controllers\OrientationController;
 use App\Http\Controllers\ReceiptController;
@@ -12,16 +13,21 @@ Route::get('/csrf-token', function () {
     return response()->json(['token' => csrf_token()]);
 });
 Route::get('/api/auth-status', function () {
-    return response()->json(['authenticated' => auth()->check()]);
+    return response()->json([
+        'authenticated' => auth()->check(),
+        'must_change_password' => auth()->user()?->must_change_password ?? false,
+    ]);
 });
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/member/change-password', [MemberPasswordController::class, 'show'])->name('member.password.form');
     Route::post('/coop/fetch-notification', [Notifications::class, 'WebfetchNotifications']);
     Route::post('/coop/delete-notification', [Notifications::class, 'WebdeleteNotification']);
     Route::post('/coop/mark-notification-read', [Notifications::class, 'WebmarkAsRead']);
     Route::post('/coop/mark-all-notifications-read', [Notifications::class, 'WebmarkAllAsRead']);
+    Route::post('/coop/change-password', [MemberPasswordController::class, 'update'])->name('member.password.update');
 });
 
 Route::get('/', function () {

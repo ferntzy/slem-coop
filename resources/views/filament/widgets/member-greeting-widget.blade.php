@@ -74,6 +74,25 @@
             {{-- Right side --}}
             <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
 
+                @if($this->mustChangePassword())
+                    <div style="
+                        display: inline-flex; align-items: center; gap: 8px;
+                        background: rgba(255,255,255,0.16);
+                        border: 1px solid rgba(255,255,255,0.26);
+                        border-radius: 12px;
+                        padding: 6px 14px;
+                    ">
+                        <span style="font-size: 14px;">🔒</span>
+                        <span style="
+                            font-size: 12px;
+                            font-weight: 700;
+                            color: rgba(255,255,255,0.95);
+                            letter-spacing: 0.3px;
+                            white-space: nowrap;
+                        ">Password change required</span>
+                    </div>
+                @endif
+
                 {{-- View Savings Button --}}
                 <a
                     href="{{ $this->getSavingsPageUrl() }}"
@@ -131,14 +150,43 @@
                     Apply for a Loan
                 </a>
 
-                {{-- Member Portal badge --}}
-                <div style="
-                    display: inline-flex; align-items: center; gap: 8px;
-                    background: rgba(255,255,255,0.14);
-                    border: 1px solid rgba(255,255,255,0.22);
-                    border-radius: 12px;
-                    padding: 6px 14px;
-                ">
+                <a
+                    href="{{ $this->getPasswordChangeUrl() }}"
+                    style="
+                        display: inline-flex; align-items: center; gap: 8px;
+                        background: rgba(255,255,255,0.18);
+                        color: #ffffff;
+                        border: 1px solid rgba(255,255,255,0.22);
+                        border-radius: 10px;
+                        padding: 10px 18px;
+                        font-size: 14px;
+                        font-weight: 700;
+                        letter-spacing: 0.2px;
+                        text-decoration: none;
+                        white-space: nowrap;
+                        box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+                    "
+                    onmouseover="this.style.opacity='0.9'"
+                    onmouseout="this.style.opacity='1'"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="10" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Change Password
+                </a>
+
+                <a
+                    href="{{ $this->getPasswordChangeUrl() }}"
+                    style="
+                        display: inline-flex; align-items: center; gap: 8px;
+                        background: rgba(255,255,255,0.14);
+                        border: 1px solid rgba(255,255,255,0.22);
+                        border-radius: 12px;
+                        padding: 6px 14px;
+                        text-decoration: none;
+                    "
+                >
                     <span style="font-size: 14px;">🌿</span>
                     <span style="
                         font-size: 12px;
@@ -147,7 +195,7 @@
                         letter-spacing: 0.3px;
                         white-space: nowrap;
                     ">Member Portal</span>
-                </div>
+                </a>
 
             </div>
         </div>
