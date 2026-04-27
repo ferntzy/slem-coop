@@ -244,7 +244,17 @@ class User extends Authenticatable implements HasAvatar
 
     public function isMember(): bool
     {
-        return $this->hasAnyRole(['Member', 'member']);
+        if ($this->hasAnyRole(['Member', 'member'])) {
+            return true;
+        }
+
+        if ($this->profile_id === null) {
+            return false;
+        }
+
+        return MemberDetail::query()
+            ->where('profile_id', $this->profile_id)
+            ->exists();
     }
 
     public function isBranchScoped(): bool
