@@ -24,7 +24,6 @@ use App\Http\Controllers\OrientationController;
 use App\Http\Controllers\OrientationSettingsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SavingsAccount as ControllersSavingsAccount;
-use App\Models\SavingsAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -115,8 +114,6 @@ Route::prefix('member-details')->group(function () {
     Route::delete('/{id}', [MemberDetailsController::class, 'destroy']);
 });
 
-
-
 Route::get('/about', [AboutPageController::class, 'show']);
 
 Route::get('/contact', [ContactPageController::class, 'show']);
@@ -137,8 +134,6 @@ Route::post('/member/loan-history', [MobileMemberGeneral::class, 'getLoanHistory
 // member delinquent list
 Route::get('/member/delinquent-list', [MobileMemberGeneral::class, 'getDelinquentMembersList']);
 
-
-
 // member loan application
 Route::post('/send-application-form', [ControllersLoanApplication::class, 'applyLoan']);
 Route::post('/member/fetch-loan-applications', [ControllersLoanApplication::class, 'viewMemberLoanApplications']);
@@ -152,10 +147,8 @@ Route::post('/member/mark-notification-seen', [Notifications::class, 'markAsRead
 
 Route::post('/member/savings-account-data', [ControllersSavingsAccount::class, 'getSavingsAccount']);
 
-
-
 // Route::get('/newsevent', [NewsEventController::class, 'show']);
 // Route::get('/newsevent/hero', [HeroNewsEventController::class, 'show']);
 // Route::get('/newsevent/news', [NewsController::class, 'show']);
 
-// Route::get('/orientation-settings', [OrientationSettingsController::class, 'show']);
+Route::get('/orientation-settings', [OrientationSettingsController::class, 'show']);
