@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Filament\Pages\MemberPasswordPage;
 use App\Http\Requests\ChangePasswordRequest;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 
 class MemberPasswordController extends Controller
 {
-    public function show(): View
+    public function show(): RedirectResponse
     {
-        return view('member.change-password');
+        return redirect()->to(MemberPasswordPage::getUrl());
     }
 
     public function update(ChangePasswordRequest $request): JsonResponse|RedirectResponse

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\MemberPasswordPage;
 use App\Filament\Resources\MemberDetails\MemberDetailResource;
 use App\Models\Profile;
 use Filament\Widgets\Widget;
@@ -59,7 +60,7 @@ class MemberGreetingWidget extends Widget
 
     public function getPasswordChangeUrl(): string
     {
-        return route('member.password.form');
+        return MemberPasswordPage::getUrl();
     }
 
     public function mustChangePassword(): bool
