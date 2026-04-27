@@ -3,9 +3,9 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Resources\MemberDetails\MemberDetailResource;
-use App\Models\SavingsAccount;
+use App\Models\SavingsAccountTransaction;
+use App\Services\MemberSavingsBalanceService;
 use Filament\Widgets\Widget;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class MemberSavingsBalanceWidget extends Widget
@@ -32,9 +32,10 @@ class MemberSavingsBalanceWidget extends Widget
             return 0;
         }
 
-        return SavingsAccount::query()
-            ->whereHas('member', fn (Builder $memberQuery): Builder => $memberQuery->where('profile_id', $user->profile_id))
-            ->count();
+        return SavingsAccountTransaction::query()
+            ->where('profile_id', $user->profile_id)
+            ->distinct('savings_type_id')
+            ->count('savings_type_id');
     }
 
     public function getSavingsAccountLabel(): string
@@ -66,9 +67,7 @@ class MemberSavingsBalanceWidget extends Widget
             return 0.0;
         }
 
-        return SavingsAccount::query()
-            ->whereHas('member', fn (Builder $memberQuery): Builder => $memberQuery->where('profile_id', $user->profile_id))
-            ->get()
-            ->sum(fn (SavingsAccount $account): float => (float) $account->balance);
+        return app(MemberSavingsBalanceService::class)
+            ->getRegularSavingsBalance((int) $user->profile_id);
     }
 }

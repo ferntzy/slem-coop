@@ -14,6 +14,7 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema as SchemaFacade;
 use Illuminate\Support\Str;
 
 class MemberDetailInfolist
@@ -32,6 +33,11 @@ class MemberDetailInfolist
      * @var array<int, array<int, array<string, mixed>>>
      */
     protected static array $timeDepositDisplayCache = [];
+
+    /**
+     * @var array<int, string>|null
+     */
+    protected static ?array $transactionalSavingsTypeIds = null;
 
     protected static function getRegularSavingsType(): ?SavingsType
     {
@@ -67,6 +73,61 @@ class MemberDetailInfolist
         if ($timeDepositType) {
             unset(static::$transactionsCache[$profileId.':'.$timeDepositType->getKey()]);
         }
+
+        unset(static::$transactionsCache[$profileId.':regular-transactional']);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected static function getTransactionalSavingsTypeIds(): array
+    {
+        if (static::$transactionalSavingsTypeIds !== null) {
+            return static::$transactionalSavingsTypeIds;
+        }
+
+        $query = SavingsType::query();
+
+        if (SchemaFacade::hasColumn('savings_types', 'is_active')) {
+            $query->where('is_active', true);
+        }
+
+        $hasDepositAllowed = SchemaFacade::hasColumn('savings_types', 'deposit_allowed');
+        $hasWithdrawalAllowed = SchemaFacade::hasColumn('savings_types', 'withdrawal_allowed');
+
+        if ($hasDepositAllowed && $hasWithdrawalAllowed) {
+            $query
+                ->where('deposit_allowed', true)
+                ->where('withdrawal_allowed', true);
+        }
+
+        static::$transactionalSavingsTypeIds = $query
+            ->pluck('id')
+            ->map(fn ($id): string => (string) $id)
+            ->all();
+
+        return static::$transactionalSavingsTypeIds;
+    }
+
+    /**
+     * @return Collection<int, SavingsAccountTransaction>
+     */
+    protected static function getRegularSavingsTransactions(int $profileId): Collection
+    {
+        $transactionalSavingsTypeIds = static::getTransactionalSavingsTypeIds();
+
+        if (! $profileId || $transactionalSavingsTypeIds === []) {
+            return collect();
+        }
+
+        $cacheKey = $profileId.':regular-transactional';
+
+        return static::$transactionsCache[$cacheKey] ??= SavingsAccountTransaction::query()
+            ->where('profile_id', $profileId)
+            ->whereIn('savings_type_id', $transactionalSavingsTypeIds)
+            ->orderByDesc('transaction_date')
+            ->orderByDesc('id')
+            ->get();
     }
 
     /**
@@ -271,7 +332,7 @@ class MemberDetailInfolist
      */
     protected static function getRegularSavingsDisplayTransactions(int $profileId): array
     {
-        return static::getSavingsTransactions($profileId, static::getRegularSavingsType())
+        return static::getRegularSavingsTransactions($profileId)
             ->map(function (SavingsAccountTransaction $transaction): array {
                 return [
                     'id' => (int) $transaction->id,
@@ -603,10 +664,7 @@ class MemberDetailInfolist
                                         TextEntry::make('regular_savings_balance')
                                             ->label('Current Balance')
                                             ->state(function ($record): float {
-                                                $transactions = static::getSavingsTransactions(
-                                                    (int) $record->profile_id,
-                                                    static::getRegularSavingsType()
-                                                );
+                                                $transactions = static::getRegularSavingsTransactions((int) $record->profile_id);
 
                                                 return static::getBalance($transactions);
                                             })
