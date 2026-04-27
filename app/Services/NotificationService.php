@@ -420,4 +420,14 @@ class NotificationService
 
         return $this->notifyUser($user->user_id, $title, $description);
     }
+
+    public function sendSms(string $mobileNumber, string $message): void
+{
+    try {
+        app(\App\Services\SmsService::class)->sendBulkSms([$mobileNumber], $message);
+    } catch (\Throwable $e) {
+        Log::warning("NotificationService: SMS failed - {$e->getMessage()}");
+    }
+}
+
 }
