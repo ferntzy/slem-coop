@@ -145,8 +145,7 @@ Route::post('/member/fetch-notifications', [Notifications::class, 'fetchNotifica
 Route::post('/member/fetch-unread-notifications', [Notifications::class, 'fetchUnreadNotifications']);
 Route::post('/member/delete-notification', [Notifications::class, 'deleteNotification']);
 Route::post('/member/mark-notification-seen', [Notifications::class, 'markAsRead']);
-
-Route::post('/member/savings-account-data', [ControllersSavingsAccount::class, 'getSavingsAccount']);
+Route::post('/member/savings/{id}', [ControllersSavingsAccount::class, 'getSavingsAccount']);
 
 // Route::get('/newsevent', [NewsEventController::class, 'show']);
 // Route::get('/newsevent/hero', [HeroNewsEventController::class, 'show']);

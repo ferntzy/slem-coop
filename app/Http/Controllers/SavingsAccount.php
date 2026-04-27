@@ -3,17 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Models\SavingsAccount as ModelsSavingsAccount;
+use App\Models\SavingsAccountTransaction;
 use Exception;
 use Illuminate\Http\Request;
 
 class SavingsAccount extends Controller
 {
-    public function getSavingsAccount(Request $request){
+    public function getSavingsAccount($id){
         try{
-            $savings = ModelsSavingsAccount::where('profile_id', $request->id)->first();
+            $totalDeposit = SavingsAccountTransaction::where('profile_id', $id)->where('type', 'Deposit')->sum('deposit');
+            $totalWithdraw = SavingsAccountTransaction::where('profile_id', $id)->where('type', 'Withdraw')->sum('withdrawal');
+            $totalAmount = SavingsAccountTransaction::where('profile_id', $id)->sum('amount');
+
+            $currentBalance = $totalAmount - ($totalDeposit + $totalWithdraw);
 
             return response()->json([
-                'savings' => $savings
+                'data' => [
+                    'total_deposit'   => $totalDeposit,
+                    'total_withdraw'  => $totalWithdraw,
+                    'total_amount'    => $totalAmount,
+                    'current_balance' => $currentBalance,
+                ]
             ]);
 
         }catch(Exception $e){
