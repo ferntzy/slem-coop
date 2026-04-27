@@ -50,7 +50,7 @@ class SendTimeDepositMaturityReminders extends Command
             if ($daysUntilMaturity !== 7) {
                 continue;
             }
-
+ 
             $profile = $transaction->member;
 
             if (! $profile) {

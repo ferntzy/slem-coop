@@ -33,6 +33,8 @@ class Profile extends Model
     use HasRoles;
 
     protected $primaryKey = 'profile_id';
+    protected $keyType = 'string';
+    public $incrementing = false;
 
     protected $fillable = [
         'first_name',
