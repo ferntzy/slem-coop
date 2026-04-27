@@ -154,11 +154,10 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 'Dashboard',
-                'Reports',
                 'Membership Management',
                 'Loan Management',
-                'Payment Management',
-                'Share Capital',
+                'Payment',
+                'Reports',
                 'User Management',
                 'Pages',
                 'Savings Management',
