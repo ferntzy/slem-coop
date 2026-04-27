@@ -180,4 +180,19 @@ class Loans extends Controller
             ], 500);
         }
     }
+
+    public function getLoanAccountsById($id){
+        try{
+            $pid = MemberDetail::where('id', $id)->value('profile_id');
+            $loanAccounts = LoanAccount::where('profile_id', $pid)->get();
+
+            return response()->json([
+                'loanAccounts' => $loanAccounts
+            ]);
+        }catch(Exception $e){
+            return response()->json([
+                'message' => 'Unable to get loan accounts'
+            ]);
+        }
+    }
 }

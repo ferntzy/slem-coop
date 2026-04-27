@@ -54,6 +54,7 @@ Route::get('/active-members', [Members::class, 'getActiveMembers']);
 Route::get('/inactive-members', [Members::class,  'inactiveMembers']);
 Route::get('/get-loans', [Loans::class, 'getLoans']);
 Route::get('/loan/{id}', [Loans::class, 'getLoanDetail']);
+Route::get('/loans-by-id/{id}', [Loans::class, 'getLoanAccountsById']);
 
 // loan officer apis
 // stat card data
