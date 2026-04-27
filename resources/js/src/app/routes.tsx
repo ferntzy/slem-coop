@@ -11,6 +11,7 @@ import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { LoanCalculator } from './pages/LoanCalculator';
 import { Login } from './pages/Login';
+import { MemberPortal } from './pages/MemberPortal';
 import { NotFound } from './pages/NotFound';
 import { ServerError } from './pages/ServerError';
 
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
       { path: 'contact', Component: Contact },
       { path: 'calculator', Component: LoanCalculator },
       { path: 'login', Component: Login },
+      { path: 'coop', Component: MemberPortal },
     ],
   },
   // Catch-all route outside of Layout for 404 pages without header/footer

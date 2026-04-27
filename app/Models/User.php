@@ -59,8 +59,13 @@ class User extends Authenticatable implements HasAvatar
         'coop_id',
         'avatar',
         'is_active',
+        'must_change_password',
         'pin',
         'temp_password',
+    ];
+
+    protected $attributes = [
+        'must_change_password' => false,
     ];
 
     protected $hidden = [
@@ -73,6 +78,7 @@ class User extends Authenticatable implements HasAvatar
         return [
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
         ];
 
     }
