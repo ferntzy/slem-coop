@@ -163,4 +163,21 @@ class Loans extends Controller
             ], 500);
         }
     }
+
+    public function getLoanDetail($id){
+        try{
+            $loan = LoanAccount::with('profile')
+            ->findOrFail($id);
+
+            return response()->json([
+                'loan' => $loan,
+            ], 200);
+
+        }catch(Exception $e){
+            return response()->json([
+                'message' => 'Unable to get loan detail',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
