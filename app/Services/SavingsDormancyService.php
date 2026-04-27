@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Collection;
 
 class SavingsDormancyService
 {
+    private const DEFAULT_NEAR_ZERO_BALANCE_THRESHOLD = 1.00;
+
     private const DIRECTION_DEPOSIT = 'deposit';
 
     private const DIRECTION_WITHDRAWAL = 'withdrawal';
@@ -110,6 +112,7 @@ class SavingsDormancyService
                     currentBalance: $currentBalance,
                     configuredFee: $settings['dormancy_fee_amount'],
                     maintainingBalance: (float) ($savingsType->maintaining_balance ?? 0),
+                    nearZeroBalanceThreshold: $settings['dormancy_fee_near_zero_threshold'],
                 );
 
                 if ($dormancyFeeAmount > 0) {
@@ -134,13 +137,14 @@ class SavingsDormancyService
     }
 
     /**
-     * @return array{dormancy_months_threshold: int, dormancy_fee_amount: float, auto_apply_dormancy_fee: bool, apply_interest_on_dormant: bool}
+     * @return array{dormancy_months_threshold: int, dormancy_fee_amount: float, dormancy_fee_near_zero_threshold: float, auto_apply_dormancy_fee: bool, apply_interest_on_dormant: bool}
      */
     private function getSettings(): array
     {
         return [
             'dormancy_months_threshold' => max((int) CoopSetting::get('savings.dormancy_months_threshold', 24), 1),
             'dormancy_fee_amount' => max((float) CoopSetting::get('savings.dormancy_fee_amount', 30.00), 0),
+            'dormancy_fee_near_zero_threshold' => max((float) CoopSetting::get('savings.dormancy_fee_near_zero_threshold', self::DEFAULT_NEAR_ZERO_BALANCE_THRESHOLD), 0),
             'auto_apply_dormancy_fee' => (bool) CoopSetting::get('savings.auto_apply_dormancy_fee', true),
             'apply_interest_on_dormant' => (bool) CoopSetting::get('savings.apply_interest_on_dormant', true),
         ];
@@ -250,12 +254,16 @@ SQL;
         return round(($currentBalance * ($annualInterestRatePercent / 100)) / 12, 2);
     }
 
-    private function calculateDormancyFee(float $currentBalance, float $configuredFee, float $maintainingBalance): float
+    private function calculateDormancyFee(float $currentBalance, float $configuredFee, float $maintainingBalance, float $nearZeroBalanceThreshold): float
     {
         $minimumBalanceFloor = max($maintainingBalance, 0);
         $availableForFee = round(max($currentBalance - $minimumBalanceFloor, 0), 2);
 
-        if ($availableForFee <= 0 || $configuredFee <= 0) {
+        if (
+            $availableForFee <= 0
+            || $availableForFee <= $nearZeroBalanceThreshold
+            || $configuredFee <= 0
+        ) {
             return 0;
         }
 
