@@ -25,10 +25,95 @@
             width: 100%;
         }
 
+        .loan-application-page {
+            line-height: 1.15;
+        }
+
+        .loan-application-page .form-header {
+            padding: 1mm 1.5mm 0.75mm 1.5mm;
+        }
+
+        .loan-application-page .form-header-table {
+            table-layout: fixed;
+        }
+
+        .loan-application-page .form-logo-cell {
+            width: 28mm;
+            padding-right: 1.5mm;
+        }
+
+        .loan-application-page .form-logo {
+            width: 26mm;
+        }
+
+        .loan-application-page .form-coop-name {
+            font-size: 9.5px;
+        }
+
+        .loan-application-page .form-branch {
+            font-size: 6.5px;
+            margin-top: 0.2mm;
+        }
+
+        .loan-application-page .form-title {
+            font-size: 9px;
+            padding: 1mm 0;
+        }
+
+        .loan-application-page .c {
+            padding: 0.55mm 1mm;
+        }
+
+        .loan-application-page .lbl {
+            font-size: 5.8px;
+        }
+
+        .loan-application-page .val {
+            font-size: 7px;
+            min-height: 3mm;
+            padding-bottom: 0.1mm;
+        }
+
+        .loan-application-page .sh {
+            background: #2f7d32;
+            padding: 0.7mm 1mm;
+            font-size: 7px;
+        }
+
+        .loan-application-page .sig-line {
+            margin-top: 4.5mm;
+            font-size: 6px;
+        }
+
+        .loan-application-page .form-outer > table + table {
+            margin-top: 0;
+        }
+
         .form-header {
             padding: 1.5mm 2mm 1mm 2mm;
             border-bottom: 1px solid #000;
             position: relative;
+        }
+
+        .form-header-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .form-logo-cell {
+            width: 34mm;
+            padding-right: 2mm;
+            vertical-align: middle;
+        }
+
+        .form-logo {
+            display: block;
+            width: 32mm;
+            height: auto;
+        }
+
+        .form-branding {
+            vertical-align: middle;
         }
 
         .form-coop-name {
@@ -75,7 +160,7 @@
         .val-sm { font-size: 7.5px; font-weight: bold; }
 
         .sh {
-            background: #1a1a1a;
+            background: #000;
             color: #fff;
             font-size: 7.5px;
             font-weight: bold;
@@ -333,17 +418,33 @@
     $monthlyAmort = $loanApplication->loanAccount?->monthly_amortization;
     $firstPayDate = $releaseDate ? \Carbon\Carbon::parse($releaseDate)->addMonth()->format('F j, Y') : '___________';
     $releaseYear  = $releaseDate ? \Carbon\Carbon::parse($releaseDate)->format('Y') : '20__';
+    $logoPath = public_path('logo.png');
+    $logoData = file_exists($logoPath)
+        ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoPath))
+        : null;
 @endphp
 
 {{-- ═══════════════════════════════════════════════════════
      PAGE 1 — LOAN APPLICATION FORM
      ═══════════════════════════════════════════════════════ --}}
+<div class="loan-application-page">
 <div class="form-outer">
 
     {{-- Coop Header --}}
     <div class="form-header">
-        <div class="form-coop-name">Southern Leyte Employees Multi-Purpose Cooperative</div>
-        <div class="form-branch">{{ $fmt($member?->branch?->name ?? '') }} Branch</div>
+        <table class="form-header-table">
+            <tr>
+                <td class="form-logo-cell">
+                    @if($logoData)
+                        <img src="{{ $logoData }}" alt="SLEMCOOP Logo" class="form-logo">
+                    @endif
+                </td>
+                <td class="form-branding">
+                    <div class="form-coop-name">Southern Leyte Employees Multi-Purpose Cooperative</div>
+                    <div class="form-branch">{{ $fmt($member?->branch?->name ?? '') }} Branch</div>
+                </td>
+            </tr>
+        </table>
     </div>
     <div class="form-title">Loan Application</div>
 
@@ -738,6 +839,8 @@
             </td>
         </tr>
     </table>
+
+</div>
 
 </div>
 
