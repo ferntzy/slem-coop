@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MemberDetails\Schemas;
 use App\Models\Profile;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -49,9 +50,7 @@ class MemberDetailForm
                                         ->dehydratedWhenHidden()
                                         ->required(),
 
-                                    TextInput::make('member_no')
-                                        ->label('Member No.')
-                                        ->maxLength(45),
+                                    Hidden::make('member_no'),
 
                                     Select::make('membership_type_id')
                                         ->label('Membership Type')
