@@ -271,11 +271,21 @@ class MemberDetailForm
                                         ->required(),
 
                                     TextInput::make('emergency_phone')
-                                        ->label('Phone Number')
-                                        ->tel()
+                                        ->label('Mobile Number')
                                         ->placeholder('09XXXXXXXXX')
                                         ->maxLength(11)
-                                        ->required(),
+                                        ->rules(['nullable', 'regex:/^09[0-9]{9}$/'])
+                                        ->validationMessages([
+                                            'regex' => 'Mobile number must be a valid PH number starting with 09 and exactly 11 digits (e.g. 09123456789).',
+                                        ])
+                                        ->extraInputAttributes([
+                                            'inputmode' => 'numeric',
+                                            'pattern' => '09[0-9]{9}',
+                                            'x-on:keypress' => 'if(!/[0-9]/.test($event.key)) $event.preventDefault()',
+                                            'x-on:input' => '$event.target.value = $event.target.value.replace(/[^0-9]/g, "").slice(0, 11)',
+                                            'x-on:paste' => '$event.preventDefault()',
+                                        ]),
+
 
                                     TextInput::make('emergency_relationship')
                                         ->label('Relationship')
