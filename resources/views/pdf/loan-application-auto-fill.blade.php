@@ -74,8 +74,10 @@
             padding-bottom: 0.1mm;
         }
 
+        /* ── Green theme for section headers ── */
         .loan-application-page .sh {
             background: #2f7d32;
+            color: #fff;
             padding: 0.7mm 1mm;
             font-size: 7px;
         }
@@ -159,8 +161,9 @@
         }
         .val-sm { font-size: 7.5px; font-weight: bold; }
 
+        /* ── GLOBAL GREEN section header ── */
         .sh {
-            background: #000;
+            background: #2f7d32;
             color: #fff;
             font-size: 7.5px;
             font-weight: bold;
@@ -194,106 +197,157 @@
         .bi { background: #dbeafe; color: #1e40af; }
         .bg { background: #f3f4f6; color: #374151; }
 
-        /* ══════════════════════════════════
-           PROMISSORY NOTE STYLES
-        ══════════════════════════════════ */
-        .pn-wrapper {
-            width: 90%;
-            padding: 4mm 5mm;
-            box-sizing: border-box;
-        }
+     /* ══════════════════════════════════
+   PAGE LOGO HEADER (pages 2, 3, 4)
+══════════════════════════════════ */
+.page-logo-header {
+    border-bottom: 3px solid #2f7d32;
+    padding: 1.5mm 2mm 1mm 2mm;
+    margin-bottom: 3mm;
+    width: 100%;
+}
 
-        .pn-title {
-            text-align: center;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5mm;
-        }
+.page-logo-header table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
 
-        .pn-header-row {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 3mm;
-        }
+.page-logo-header .plh-logo-cell {
+    width: 34mm;
+    padding-right: 2mm;
+    vertical-align: middle;
+}
 
-        .pn-header-row td { padding: 0.5mm 0; vertical-align: bottom; }
+.page-logo-header .plh-logo {
+    display: block;
+    width: 32mm;
+    height: auto;
+}
 
-        .pn-field {
-            border-bottom: 0.5px solid #000;
-            display: inline-block;
-            min-width: 25mm;
-            font-size: 9px;
-            font-weight: bold;
-            padding-bottom: 0.3mm;
-        }
+.page-logo-header .plh-branding {
+    vertical-align: middle;
+}
 
-        .pn-field-lg {
-            border-bottom: 0.5px solid #000;
-            display: inline-block;
-            min-width: 40mm;
-            font-size: 9px;
-            font-weight: bold;
-            padding-bottom: 0.3mm;
-        }
+.page-logo-header .plh-name {
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #1b5e20;
+}
 
-        .pn-lbl { font-size: 7px; color: #444; display: block; }
+.page-logo-header .plh-sub {
+    font-size: 7.5px;
+    margin-top: 0.3mm;
+    color: #000;
+}
 
-        .pn-body {
-            font-size: 8px;
-            text-align: justify;
-            margin-bottom: 3mm;
-            line-height: 1.7;
-        }
+/* ══════════════════════════════════
+   PROMISSORY NOTE STYLES
+══════════════════════════════════ */
+.pn-wrapper {
+    width: 90%;
+    padding: 2mm 3mm;          /* was 4mm 5mm */
+    box-sizing: border-box;
+}
 
-        .pn-body p { margin-bottom: 3.5mm; text-align: justify; }
+.pn-title {
+    text-align: center;
+    font-size: 10px;           /* was 12px */
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 2mm;        /* was 5mm */
+    color: #1b5e20;
+    border-bottom: 2px solid #2f7d32;
+    padding-bottom: 1mm;       /* was 2mm */
+}
 
-        .pn-underline {
-            border-bottom: 0.5px solid #000;
-            display: inline-block;
-            min-width: 12mm;
-            font-weight: bold;
-        }
+.pn-header-row {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2mm;        /* was 3mm */
+}
 
-        .pn-sig-table { width: 100%; border-collapse: collapse; margin-top: 4mm; }
-        .pn-sig-table td { padding: 0 5mm; vertical-align: bottom; }
+.pn-header-row td { padding: 0.3mm 0; vertical-align: bottom; }
 
-        .pn-sig-line {
-            border-top: 0.5px solid #000;
-            padding-top: 0.8mm;
-            font-size: 7px;
-            text-align: center;
-            margin-top: 18mm;
-        }
+.pn-field {
+    border-bottom: 0.5px solid #000;
+    display: inline-block;
+    min-width: 25mm;
+    font-size: 8px;            /* was 9px */
+    font-weight: bold;
+    padding-bottom: 0.3mm;
+}
 
-        .pn-sig-sub {
-            font-size: 7px;
-            margin-top: 1.5mm;
-        }
+.pn-field-lg {
+    border-bottom: 0.5px solid #000;
+    display: inline-block;
+    min-width: 40mm;
+    font-size: 8px;            /* was 9px */
+    font-weight: bold;
+    padding-bottom: 0.3mm;
+}
 
-        .pn-comaker-title {
-            font-size: 9px;
-            font-weight: bold;
-            margin: 5mm 0 2mm 0;
-        }
+.pn-lbl { font-size: 6.5px; color: #444; display: block; }
 
-        .pn-presence {
-            text-align: center;
-            font-size: 8.5px;
-            font-weight: bold;
-            margin-top: 8mm;
-            margin-bottom: 5mm;
-        }
+.pn-body {
+    font-size: 7.5px;          /* was 8px */
+    text-align: justify;
+    margin-bottom: 2mm;        /* was 3mm */
+    line-height: 1.5;          /* was 1.7 */
+}
 
+.pn-body p { margin-bottom: 2mm; text-align: justify; }  /* was 3.5mm */
+
+.pn-underline {
+    border-bottom: 0.5px solid #000;
+    display: inline-block;
+    min-width: 12mm;
+    font-weight: bold;
+}
+
+.pn-sig-table { width: 100%; border-collapse: collapse; margin-top: 2mm; }  /* was 4mm */
+.pn-sig-table td { padding: 0 4mm; vertical-align: bottom; }
+
+.pn-sig-line {
+    border-top: 0.5px solid #2f7d32;
+    padding-top: 0.8mm;
+    font-size: 6.5px;
+    text-align: center;
+    margin-top: 10mm;          /* was 18mm */
+}
+
+.pn-sig-sub {
+    font-size: 6.5px;          /* was 7px */
+    margin-top: 1mm;           /* was 1.5mm */
+}
+
+.pn-comaker-title {
+    font-size: 8px;            /* was 9px */
+    font-weight: bold;
+    margin: 2mm 0 1mm 0;       /* was 5mm 0 2mm 0 */
+    color: #1b5e20;
+}
+
+.pn-presence {
+    text-align: center;
+    font-size: 8px;
+    font-weight: bold;
+    margin-top: 4mm;           /* was 8mm */
+    margin-bottom: 2mm;        /* was 5mm */
+}
         /* ══════════════════════════════════
            EVALUATION SHEET STYLES
         ══════════════════════════════════ */
         .eval-header {
             text-align: center;
             border-bottom: 2px solid #000;
-            padding-bottom: 2mm;
+            padding: 2mm 2mm;
             margin-bottom: 3mm;
+            background: #2f7d32;
+            color: #fff;
         }
 
         .notes-box {
@@ -308,12 +362,12 @@
            AMORTIZATION STYLES
         ══════════════════════════════════ */
         table.amort th {
-            background: #374151;
+            background: #2f7d32;
             color: #fff;
             padding: 1.5mm 2mm;
             text-align: center;
             font-weight: bold;
-            border: 0.5px solid #000;
+            border: 0.5px solid #1b5e20;
             font-size: 7.5px;
         }
         table.amort td {
@@ -322,23 +376,29 @@
             border: 0.3px solid #ccc;
             font-size: 7px;
         }
-        table.amort tr:nth-child(even) td { background: #f9fafb; }
+        table.amort tr:nth-child(even) td { background: #f1f8f1; }
         table.amort tfoot td {
             font-weight: bold;
-            background: #f3f4f6;
-            border-top: 1px solid #000;
+            background: #e8f5e9;
+            border-top: 1px solid #2f7d32;
+            color: #1b5e20;
         }
 
         /* Placeholder for empty amortization */
         .amort-placeholder {
-            border: 0.5px dashed #ccc;
+            border: 0.5px dashed #a5d6a7;
             padding: 8mm 4mm;
             text-align: center;
-            color: #999;
+            color: #388e3c;
             font-size: 8px;
             font-style: italic;
-            background: #fafafa;
+            background: #f9fdf9;
             margin-top: 2mm;
+        }
+
+        /* Signature line green accent */
+        .sig-line-green {
+            border-top: 0.5px solid #2f7d32;
         }
     </style>
 </head>
@@ -431,7 +491,7 @@
 <div class="form-outer">
 
     {{-- Coop Header --}}
-    <div class="form-header">
+    <div class="form-header" style="border-bottom: 3px solid #2f7d32;">
         <table class="form-header-table">
             <tr>
                 <td class="form-logo-cell">
@@ -440,13 +500,13 @@
                     @endif
                 </td>
                 <td class="form-branding">
-                    <div class="form-coop-name">Southern Leyte Employees Multi-Purpose Cooperative</div>
+                    <div class="form-coop-name" style="color:#1b5e20;">Southern Leyte Employees Multi-Purpose Cooperative</div>
                     <div class="form-branch">{{ $fmt($member?->branch?->name ?? '') }} Branch</div>
                 </td>
             </tr>
         </table>
     </div>
-    <div class="form-title">Loan Application</div>
+    <div class="form-title" style="background:#2f7d32; color:#fff; border-bottom: none;">Loan Application</div>
 
     {{-- Row: Loan Details --}}
     <table>
@@ -747,7 +807,7 @@
     <table class="bt">
         <tr>
             <td class="b c" style="width:50%; vertical-align:top; border-right: 1px solid #000;">
-                <div style="font-size:7.5px; font-weight:bold; margin-bottom:1mm;">AO's/BDA's, Loan Officer's, and Br. Manager's Action</div>
+                <div style="font-size:7.5px; font-weight:bold; margin-bottom:1mm; color:#1b5e20;">AO's/BDA's, Loan Officer's, and Br. Manager's Action</div>
                 @foreach([
                     "Borrower's Personal Circumstances Verified",
                     "Co-maker's Identity & Personal Circumstances Verified",
@@ -776,15 +836,15 @@
                 </table>
                 <table style="width:100%; margin-top:3mm; border-collapse:collapse;">
                     <tr>
-                        <td style="width:33%; text-align:center; border-top:0.5px solid #000; padding-top:0.3mm; font-size:6.5px;">BDA/AO/DO</td>
-                        <td style="width:34%; text-align:center; border-top:0.5px solid #000; padding-top:0.3mm; font-size:6.5px;">Loan Officer</td>
-                        <td style="width:33%; text-align:center; border-top:0.5px solid #000; padding-top:0.3mm; font-size:6.5px;">Branch Manager</td>
+                        <td style="width:33%; text-align:center; border-top:0.5px solid #2f7d32; padding-top:0.3mm; font-size:6.5px;">BDA/AO/DO</td>
+                        <td style="width:34%; text-align:center; border-top:0.5px solid #2f7d32; padding-top:0.3mm; font-size:6.5px;">Loan Officer</td>
+                        <td style="width:33%; text-align:center; border-top:0.5px solid #2f7d32; padding-top:0.3mm; font-size:6.5px;">Branch Manager</td>
                     </tr>
                 </table>
             </td>
             <td class="b c" style="width:50%; vertical-align:top;">
-                <div style="border:0.5px solid #000; padding:1.5mm; margin-bottom:1.5mm;">
-                    <div style="font-size:7.5px; font-weight:bold; margin-bottom:0.5mm;">General Manager's Action</div>
+                <div style="border:0.5px solid #2f7d32; padding:1.5mm; margin-bottom:1.5mm;">
+                    <div style="font-size:7.5px; font-weight:bold; margin-bottom:0.5mm; color:#1b5e20;">General Manager's Action</div>
                     <div style="font-size:7px;">I have evaluated the credit-worthiness of the applicant with his/her loan. This loan is hereby:</div>
                     <div style="font-size:7px; margin-top:0.5mm;">☐ Disapproved &nbsp;&nbsp; ☐ Approved, as follows:</div>
                     <table style="width:100%; margin-top:0.5mm;"><tr>
@@ -793,10 +853,10 @@
                         <td style="width:30%"><div class="lbl">@ /mo.</div><div class="val">&nbsp;</div></td>
                     </tr></table>
                     <div style="font-size:7px; margin-top:0.5mm;">☐ Endorsed for CRECOM / BOD Action.</div>
-                    <div style="border-top:0.5px solid #000; margin-top:5mm; text-align:center; font-size:6.5px; padding-top:0.3mm;">GM's Signature or Authorized</div>
+                    <div style="border-top:0.5px solid #2f7d32; margin-top:5mm; text-align:center; font-size:6.5px; padding-top:0.3mm;">GM's Signature or Authorized</div>
                 </div>
-                <div style="border:0.5px solid #000; padding:1.5mm; margin-bottom:1.5mm;">
-                    <div style="font-size:7.5px; font-weight:bold; margin-bottom:0.5mm;">CRECOM's Action</div>
+                <div style="border:0.5px solid #2f7d32; padding:1.5mm; margin-bottom:1.5mm;">
+                    <div style="font-size:7.5px; font-weight:bold; margin-bottom:0.5mm; color:#1b5e20;">CRECOM's Action</div>
                     <div style="font-size:7px;">☐ Disapproved &nbsp;&nbsp; ☐ Approved, as follows:</div>
                     <table style="width:100%; margin-top:0.5mm;"><tr>
                         <td style="width:40%"><div class="lbl">Loan Amount</div><div class="val">&nbsp;</div></td>
@@ -805,18 +865,18 @@
                     </tr></table>
                     <div style="font-size:7px; margin-top:0.5mm;">☐ Endorsed for BOD Action.</div>
                     <table style="width:100%; margin-top:3mm; border-collapse:collapse;"><tr>
-                        <td style="width:50%; text-align:center; border-top:0.5px solid #000; font-size:6.5px; padding-top:0.3mm;">Member</td>
-                        <td style="width:50%; text-align:center; border-top:0.5px solid #000; font-size:6.5px; padding-top:0.3mm;">Secretary</td>
+                        <td style="width:50%; text-align:center; border-top:0.5px solid #2f7d32; font-size:6.5px; padding-top:0.3mm;">Member</td>
+                        <td style="width:50%; text-align:center; border-top:0.5px solid #2f7d32; font-size:6.5px; padding-top:0.3mm;">Secretary</td>
                     </tr></table>
-                    <div style="text-align:center; border-top:0.5px solid #000; margin-top:3mm; font-size:6.5px; padding-top:0.3mm;">CRECOM Chairperson</div>
+                    <div style="text-align:center; border-top:0.5px solid #2f7d32; margin-top:3mm; font-size:6.5px; padding-top:0.3mm;">CRECOM Chairperson</div>
                 </div>
-                <div style="border:0.5px solid #000; padding:1.5mm;">
-                    <div style="font-size:7.5px; font-weight:bold; margin-bottom:0.5mm;">BOD's Action</div>
+                <div style="border:0.5px solid #2f7d32; padding:1.5mm;">
+                    <div style="font-size:7.5px; font-weight:bold; margin-bottom:0.5mm; color:#1b5e20;">BOD's Action</div>
                     <div style="font-size:7px;">☐ Disapproved</div>
                     <div style="font-size:7px; margin-top:0.5mm;">☐ Approved as per recommendation...</div>
                     <div style="font-size:7px; margin-top:0.5mm;">At BOD Meeting on _____________, {{ $releaseYear }}</div>
                     <div style="font-size:7px; margin-top:0.5mm;">Per Resolution No. _____________, {{ $releaseYear }}</div>
-                    <div style="border-top:0.5px solid #000; margin-top:5mm; text-align:center; font-size:6.5px; padding-top:0.3mm;">BOD Chairman's Signature / Secretary</div>
+                    <div style="border-top:0.5px solid #2f7d32; margin-top:5mm; text-align:center; font-size:6.5px; padding-top:0.3mm;">BOD Chairman's Signature / Secretary</div>
                 </div>
             </td>
         </tr>
@@ -832,16 +892,15 @@
         </tr>
         <tr>
             <td class="b c" colspan="2" style="height:10mm; vertical-align:bottom;">
-                <div style="border-top:0.5px solid #000; text-align:center; font-size:6.5px; padding-top:0.3mm;">Teller/Cashier</div>
+                <div style="border-top:0.5px solid #2f7d32; text-align:center; font-size:6.5px; padding-top:0.3mm;">Teller/Cashier</div>
             </td>
             <td class="b c" style="height:10mm; vertical-align:bottom;">
-                <div style="border-top:0.5px solid #000; text-align:center; font-size:6.5px; padding-top:0.3mm;">Branch Manager</div>
+                <div style="border-top:0.5px solid #2f7d32; text-align:center; font-size:6.5px; padding-top:0.3mm;">Branch Manager</div>
             </td>
         </tr>
     </table>
 
 </div>
-
 </div>
 
 <div class="footer-pg">
@@ -853,16 +912,33 @@
      ═══════════════════════════════════════════════════════ --}}
 <div class="page-break"></div>
 
+{{-- Page N Logo Header --}}
+<div class="page-logo-header">
+    <table>
+        <tr>
+            <td class="plh-logo-cell">
+                @if($logoData)
+                    <img src="{{ $logoData }}" alt="SLEMCOOP Logo" class="plh-logo">
+                @endif
+            </td>
+            <td class="plh-branding">
+                <div class="plh-name">Southern Leyte Employees Multi-Purpose Cooperative</div>
+                <div class="plh-sub">{{ $fmt($member?->branch?->name ?? '') }} Branch &nbsp;|&nbsp; Promissory Note</div>
+            </td>
+        </tr>
+    </table>
+</div>
+
 <div class="pn-wrapper">
 
     <div class="pn-title">Promissory Note</div>
 
     {{-- Header Row --}}
-    <table style="width:100%; border-collapse:collapse; margin-bottom:5mm;">
+    <table style="width:100%; border-collapse:collapse; margin-bottom:2mm;">
         <tr>
             <td style="width:60%; vertical-align:bottom; padding-bottom:1mm;">
                 <div style="font-size:8px; margin-bottom:0.5mm;">PhP</div>
-                <div style="border-bottom:0.5px solid #000; font-size:9px; font-weight:bold; display:inline-block; min-width:50mm; padding-bottom:0.3mm;">{{ $money($loanApplication->amount_requested) }}</div>
+                <div style="border-bottom:0.5px solid #000; font-size:8px; font-weight:bold; display:inline-block; min-width:50mm; padding-bottom:0.3mm;">{{ $money($loanApplication->amount_requested) }}</div>
                 <div style="font-size:7px; color:#444; margin-top:0.3mm;">Amount of Loan</div>
             </td>
             <td style="width:40%; vertical-align:bottom; padding-bottom:1mm; text-align:right;">
@@ -948,14 +1024,14 @@
     <table class="pn-sig-table">
         <tr>
             <td style="width:50%">
-                <div style="font-size:8px; font-weight:bold; margin-bottom:1mm;">Co-maker 1</div>
+                <div style="font-size:8px; font-weight:bold; margin-bottom:1mm; color:#1b5e20;">Co-maker 1</div>
                 <div class="pn-sig-line">Printed Name and Signature</div>
                 <div style="text-align:center; font-size:8px; font-weight:bold; margin-top:1mm;">{{ $fmt($coMaker1?->full_name) }}</div>
                 <div class="pn-sig-sub">Valid ID/CTC No. ________________________</div>
                 <div class="pn-sig-sub">Address: {{ $fmt($coMaker1?->address) }}</div>
             </td>
             <td style="width:50%">
-                <div style="font-size:8px; font-weight:bold; margin-bottom:1mm;">Co-maker 2</div>
+                <div style="font-size:8px; font-weight:bold; margin-bottom:1mm; color:#1b5e20;">Co-maker 2</div>
                 <div class="pn-sig-line">Printed Name and Signature</div>
                 <div style="text-align:center; font-size:8px; font-weight:bold; margin-top:1mm;">{{ $fmt($coMaker2?->full_name) }}</div>
                 <div class="pn-sig-sub">Valid ID/CTC No. ________________________</div>
@@ -988,10 +1064,26 @@
      ═══════════════════════════════════════════════════════ --}}
 <div class="page-break"></div>
 
+{{-- Page 3 Logo Header --}}
+<div class="page-logo-header">
+    <table>
+        <tr>
+            <td class="plh-logo-cell">
+                @if($logoData)
+                    <img src="{{ $logoData }}" alt="SLEMCOOP Logo" class="plh-logo">
+                @endif
+            </td>
+            <td class="plh-branding">
+                <div class="plh-name">Southern Leyte Employees Multi-Purpose Cooperative</div>
+                <div class="plh-sub">{{ $fmt($member?->branch?->name ?? '') }} Branch &nbsp;|&nbsp; Internal Evaluation Sheet</div>
+            </td>
+        </tr>
+    </table>
+</div>
+
 <div class="eval-header">
-    <div style="font-size:12px; font-weight:bold; text-transform:uppercase;">Southern Leyte Employees Multi-Purpose Cooperative</div>
-    <div style="font-size:9px; font-weight:bold; margin-top:1mm;">Internal Evaluation Sheet</div>
-    <div style="font-size:8px; color:#555; margin-top:0.5mm;">
+    <div style="font-size:12px; font-weight:bold; text-transform:uppercase;">Internal Evaluation Sheet</div>
+    <div style="font-size:8px; color:#fff; margin-top:0.5mm;">
         {{ $fmt($profile?->full_name) }} &nbsp;|&nbsp; Application #{{ $loanApplication->loan_application_id }} &nbsp;|&nbsp; {{ $fmt($loanApplication->type?->name) }} &nbsp;|&nbsp; {{ $money($loanApplication->amount_requested) }}
     </div>
 </div>
@@ -1079,9 +1171,9 @@
 
 <table style="width:100%; border-collapse:collapse; margin-top:4mm;">
     <tr>
-        <td style="width:33%; text-align:center; padding:0 3mm;"><div style="border-top:0.5px solid #000; padding-top:0.5mm; font-size:7px;">Prepared by (Loan Officer)</div></td>
-        <td style="width:34%; text-align:center; padding:0 3mm;"><div style="border-top:0.5px solid #000; padding-top:0.5mm; font-size:7px;">Evaluated by (Branch Manager)</div></td>
-        <td style="width:33%; text-align:center; padding:0 3mm;"><div style="border-top:0.5px solid #000; padding-top:0.5mm; font-size:7px;">Approved by (General Manager)</div></td>
+        <td style="width:33%; text-align:center; padding:0 3mm;"><div style="border-top:0.5px solid #2f7d32; padding-top:0.5mm; font-size:7px;">Prepared by (Loan Officer)</div></td>
+        <td style="width:34%; text-align:center; padding:0 3mm;"><div style="border-top:0.5px solid #2f7d32; padding-top:0.5mm; font-size:7px;">Evaluated by (Branch Manager)</div></td>
+        <td style="width:33%; text-align:center; padding:0 3mm;"><div style="border-top:0.5px solid #2f7d32; padding-top:0.5mm; font-size:7px;">Approved by (General Manager)</div></td>
     </tr>
 </table>
 
@@ -1090,14 +1182,30 @@
 </div>
 
 {{-- ═══════════════════════════════════════════════════════
-     PAGE 4 — AMORTIZATION SCHEDULE (always rendered)
+     PAGE 4 — AMORTIZATION SCHEDULE
      ═══════════════════════════════════════════════════════ --}}
 <div class="page-break"></div>
 
+{{-- Page 4 Logo Header --}}
+<div class="page-logo-header">
+    <table>
+        <tr>
+            <td class="plh-logo-cell">
+                @if($logoData)
+                    <img src="{{ $logoData }}" alt="SLEMCOOP Logo" class="plh-logo">
+                @endif
+            </td>
+            <td class="plh-branding">
+                <div class="plh-name">Southern Leyte Employees Multi-Purpose Cooperative</div>
+                <div class="plh-sub">{{ $fmt($member?->branch?->name ?? '') }} Branch &nbsp;|&nbsp; Amortization Schedule</div>
+            </td>
+        </tr>
+    </table>
+</div>
+
 <div class="eval-header">
-    <div style="font-size:12px; font-weight:bold; text-transform:uppercase;">Southern Leyte Employees Multi-Purpose Cooperative</div>
-    <div style="font-size:9px; font-weight:bold; margin-top:1mm;">Amortization Schedule</div>
-    <div style="font-size:8px; color:#555; margin-top:0.5mm;">
+    <div style="font-size:12px; font-weight:bold; text-transform:uppercase;">Amortization Schedule</div>
+    <div style="font-size:8px; color:#fff; margin-top:0.5mm;">
         {{ $fmt($profile?->full_name) }} &nbsp;|&nbsp; {{ $money($principal) }} &nbsp;|&nbsp; {{ $term }} months &nbsp;|&nbsp; {{ $interestRate }}% / month &nbsp;|&nbsp; Release: {{ $date($releaseDate) }}
     </div>
 </div>
@@ -1207,13 +1315,13 @@
 <table style="width:100%; border-collapse:collapse; margin-top:10mm;">
     <tr>
         <td style="width:33%; text-align:center; padding:0 3mm;">
-            <div style="border-top:0.5px solid #000; padding-top:0.5mm; font-size:7px;">Borrower's Signature over Printed Name</div>
+            <div style="border-top:0.5px solid #2f7d32; padding-top:0.5mm; font-size:7px;">Borrower's Signature over Printed Name</div>
         </td>
         <td style="width:34%; text-align:center; padding:0 3mm;">
-            <div style="border-top:0.5px solid #000; padding-top:0.5mm; font-size:7px;">Loan Officer</div>
+            <div style="border-top:0.5px solid #2f7d32; padding-top:0.5mm; font-size:7px;">Loan Officer</div>
         </td>
         <td style="width:33%; text-align:center; padding:0 3mm;">
-            <div style="border-top:0.5px solid #000; padding-top:0.5mm; font-size:7px;">Branch Manager</div>
+            <div style="border-top:0.5px solid #2f7d32; padding-top:0.5mm; font-size:7px;">Branch Manager</div>
         </td>
     </tr>
 </table>
