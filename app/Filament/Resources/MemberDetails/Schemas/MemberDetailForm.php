@@ -93,12 +93,6 @@ class MemberDetailForm
                                         ->label('Last Name')
                                         ->required(),
 
-                                    TextInput::make('email')
-                                        ->label('Email')
-                                        ->email()
-                                        ->unique(ignoreRecord: true)
-                                        ->required(),
-
                                     TextInput::make('mobile_number')
                                         ->label('Mobile Number')
                                         ->placeholder('09XXXXXXXXX')
@@ -273,19 +267,17 @@ class MemberDetailForm
                                     TextInput::make('emergency_phone')
                                         ->label('Mobile Number')
                                         ->placeholder('09XXXXXXXXX')
-                                        ->maxLength(11)
-                                        ->rules(['nullable', 'regex:/^09[0-9]{9}$/'])
+                                        ->required()
+                                        ->rules(['digits:11', 'regex:/^09\d{9}$/'])
                                         ->validationMessages([
-                                            'regex' => 'Mobile number must be a valid PH number starting with 09 and exactly 11 digits (e.g. 09123456789).',
+                                            'digits' => 'Must be exactly 11 digits.',
+                                            'regex' => 'Must start with 09 and be 11 digits.',
                                         ])
                                         ->extraInputAttributes([
                                             'inputmode' => 'numeric',
-                                            'pattern' => '09[0-9]{9}',
-                                            'x-on:keypress' => 'if(!/[0-9]/.test($event.key)) $event.preventDefault()',
-                                            'x-on:input' => '$event.target.value = $event.target.value.replace(/[^0-9]/g, "").slice(0, 11)',
-                                            'x-on:paste' => '$event.preventDefault()',
+                                            'maxlength' => '11',
+                                            'oninput' => "this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11)",
                                         ]),
-
 
                                     TextInput::make('emergency_relationship')
                                         ->label('Relationship')
