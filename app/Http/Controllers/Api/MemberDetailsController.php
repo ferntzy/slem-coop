@@ -85,7 +85,6 @@ class MemberDetailsController extends Controller
             // ✅ CREATE MEMBER
             $member = MemberDetail::create([
                 'profile_id' => $request->profile_id,
-                'member_no' => $request->member_no,
                 'membership_type_id' => $request->membership_type_id,
                 'branch_id' => $request->branch_id,
                 'status' => $request->status,
