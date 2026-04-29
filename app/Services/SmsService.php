@@ -8,21 +8,21 @@ use Illuminate\Support\Facades\Log;
 
 class SmsService
 {
-    protected string $apiToken;
+    protected string $apiKey;
 
-    protected string $baseUri;
+    protected string $domain;
 
-    protected string $defaultSender;
+    protected string $fromName;
 
     protected Client $client;
 
     public function __construct()
     {
-        $this->apiToken = config('services.philsms.token');
-        $this->baseUri = rtrim(config('services.philsms.base'), '/').'/';
-        $this->defaultSender = config('services.philsms.default_sender');
+        $this->apiKey = config('services.mailgun.secret');
+        $this->domain = config('services.mailgun.domain');
+        $this->fromName = config('services.mailgun.sms_from', 'SLEM Coop');
         $this->client = new Client([
-            'base_uri' => $this->baseUri,
+            'base_uri' => 'https://api.mailgun.net/v3',
             'timeout' => 15,
         ]);
     }
@@ -33,37 +33,31 @@ class SmsService
         ?string $senderId = null,
         ?string $schedule_time = null
     ): array {
-        $senderId ??= $this->defaultSender ?? 'PhilSMS';
+        $senderId ??= $this->fromName;
 
         $recipients = array_map(function ($n) {
             $digits = preg_replace('/\D+/', '', (string) $n);
             if (preg_match('/^09\d{9}$/', $digits)) {
-                return '63'.substr($digits, 1);
+                return '+63'.substr($digits, 1);
             }
 
             return $digits;
         }, $numbers);
 
         $payload = [
-            'recipient' => implode(',', $recipients),
-            'sender_id' => mb_substr($senderId, 0, 11),
-            'type' => 'plain',
+            'from' => $senderId,
+            'to' => implode(',', $recipients),
             'message' => $message,
         ];
 
         if ($schedule_time) {
-            $payload['schedule_time'] = $schedule_time;
+            $payload['o:deliverytime'] = $schedule_time;
         }
 
         try {
-            // POST to the exact documented endpoint
-            $response = $this->client->post('sms/send', [
-                'headers' => [
-                    'Authorization' => 'Bearer '.$this->apiToken,
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                ],
-                'json' => $payload,
+            $response = $this->client->post("{$this->domain}/messages", [
+                'auth' => ['api', $this->apiKey],
+                'form_params' => $payload,
             ]);
 
             $bodyRaw = (string) $response->getBody();
@@ -73,20 +67,19 @@ class SmsService
                 'raw' => $bodyRaw,
             ];
 
-            Log::info('PhilSMS send', [
-                'recipient' => $payload['recipient'],
-                'status' => $body['status'] ?? null,
+            Log::info('Mailgun SMS send', [
+                'recipient' => implode(',', $recipients),
+                'status' => $body['message'] ?? null,
             ]);
 
             return [
-                'status' => $body['status'] ?? 'error',
-                'data' => $body['data'] ?? null,
+                'status' => $body['message'] ?? 'ok',
+                'data' => $body,
                 'message' => $body['message'] ?? null,
-                'raw' => $body,
             ];
         } catch (RequestException $e) {
             $resp = $e->hasResponse() ? (string) $e->getResponse()->getBody() : null;
-            Log::error('PhilSMS RequestException', [
+            Log::error('Mailgun SMS RequestException', [
                 'error' => $e->getMessage(),
                 'response' => $resp,
             ]);
@@ -98,11 +91,4 @@ class SmsService
             ];
         }
     }
-
-    // Send SMS to a single number (for OTP)
-
-    // public function send(string $number, string $message, string $senderId = 'Coop'): array
-    // {
-    //     return $this->sendBulkSms([$number], $message, $senderId);
-    // }
 }
