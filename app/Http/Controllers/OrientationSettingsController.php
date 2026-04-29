@@ -43,7 +43,9 @@ class OrientationSettingsController extends Controller
 
         return response()->json([
             'zoom_link' => CoopSetting::get('orientation.zoom_link', ''),
+            'orientation_zoom_link' => CoopSetting::get('orientation.zoom_link', ''),
             'video_link' => CoopSetting::get('orientation.video_link', ''),
+            'orientation_video_link' => CoopSetting::get('orientation.video_link', ''),
             'passing_score' => (int) CoopSetting::get('orientation.passing_score', 75),
             'require_for_loan' => (bool) CoopSetting::get('orientation.require_for_loan', true),
             'questions' => $formattedQuestions,

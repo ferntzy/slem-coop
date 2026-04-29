@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class MemberDetail extends Model
 {
@@ -45,6 +46,32 @@ class MemberDetail extends Model
         'share_capital_balance' => 'decimal:2',
         'regular_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $memberDetail): void {
+            if (blank($memberDetail->member_no)) {
+                $memberDetail->member_no = self::generateMemberNo();
+            }
+        });
+    }
+
+    public static function generateMemberNo(): string
+    {
+        $latestNumber = 0;
+
+        DB::table('member_details')
+            ->where('member_no', 'like', 'MEM-%')
+            ->orderBy('member_no')
+            ->pluck('member_no')
+            ->each(function ($memberNo) use (&$latestNumber): void {
+                if (preg_match('/^MEM-(\d+)$/', (string) $memberNo, $matches)) {
+                    $latestNumber = max($latestNumber, (int) $matches[1]);
+                }
+            });
+
+        return sprintf('MEM-%04d', $latestNumber + 1);
+    }
 
     public function fullName(): Attribute
     {

@@ -34,6 +34,10 @@ class Profile extends Model
 
     protected $primaryKey = 'profile_id';
 
+    protected $keyType = 'int';
+
+    public $incrementing = true;
+
     protected $fillable = [
         'first_name',
         'middle_name',

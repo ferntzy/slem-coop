@@ -14,6 +14,12 @@ class ListRestructureApplications extends ListRecords
 
     protected function getHeaderActions(): array
     {
+        $user = auth()->user();
+
+        if ($user?->isMember()) {
+            return [];
+        }
+
         return [
             CreateAction::make(),
         ];

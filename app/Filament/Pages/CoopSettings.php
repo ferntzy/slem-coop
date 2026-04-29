@@ -153,6 +153,8 @@ class CoopSettings extends Page
 
     public float $savings_dormancy_fee_amount = 30.00;
 
+    public float $savings_dormancy_fee_near_zero_threshold = 1.00;
+
     public bool $savings_apply_interest_on_dormant = true;
 
     public int $payment_allocation_rule_count = 0;
@@ -245,6 +247,7 @@ class CoopSettings extends Page
         $this->savings_dormancy_months_threshold = (int) CoopSetting::get('savings.dormancy_months_threshold', 24);
         $this->savings_auto_apply_dormancy_fee = (bool) CoopSetting::get('savings.auto_apply_dormancy_fee', true);
         $this->savings_dormancy_fee_amount = (float) CoopSetting::get('savings.dormancy_fee_amount', 30.00);
+        $this->savings_dormancy_fee_near_zero_threshold = (float) CoopSetting::get('savings.dormancy_fee_near_zero_threshold', 1.00);
         $this->savings_apply_interest_on_dormant = (bool) CoopSetting::get('savings.apply_interest_on_dormant', true);
 
         $this->payment_allocation_rule_count = PaymentAllocationSetting::getSingleton()->allocationRules()->count();
@@ -323,9 +326,9 @@ class CoopSettings extends Page
                     Tab::make('Payment Allocation')
                         ->icon('heroicon-o-arrow-trending-up')
                         ->schema([
-                            Livewire::make(\App\Filament\Widgets\PaymentPriorityWidget::class)->columnSpanFull(),
+                            Livewire::make(PaymentPriorityWidget::class)->columnSpanFull(),
                         ]),
-                       // Tab::make('Member Status')
+                    // Tab::make('Member Status')
 
                     Tab::make('Savings')
                         ->icon('heroicon-o-building-library')
@@ -406,6 +409,14 @@ class CoopSettings extends Page
                                         ->minValue(0)
                                         ->prefix('₱')
                                         ->helperText('Applied monthly while account remains dormant. Charging stops when balance reaches maintaining balance.')
+                                        ->required(),
+
+                                    TextInput::make('savings_dormancy_fee_near_zero_threshold')
+                                        ->label('Near-Zero Stop Threshold')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->prefix('₱')
+                                        ->helperText('Stop charging dormancy fees when chargeable balance is less than or equal to this amount above maintaining balance.')
                                         ->required(),
 
                                     Toggle::make('savings_auto_apply_dormancy_fee')
@@ -547,6 +558,7 @@ class CoopSettings extends Page
         CoopSetting::set('savings.dormancy_months_threshold', $this->savings_dormancy_months_threshold);
         CoopSetting::set('savings.auto_apply_dormancy_fee', $this->savings_auto_apply_dormancy_fee, 'boolean');
         CoopSetting::set('savings.dormancy_fee_amount', $this->savings_dormancy_fee_amount);
+        CoopSetting::set('savings.dormancy_fee_near_zero_threshold', $this->savings_dormancy_fee_near_zero_threshold);
         CoopSetting::set('savings.apply_interest_on_dormant', $this->savings_apply_interest_on_dormant, 'boolean');
 
         CoopSetting::set('payment_allocation.apply_to_oldest_loan_first', $this->payment_apply_to_oldest_loan_first ? 'true' : 'false');

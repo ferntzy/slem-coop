@@ -2,6 +2,8 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\MemberPasswordPage;
+use App\Filament\Resources\MemberDetails\MemberDetailResource;
 use App\Models\Profile;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
@@ -56,8 +58,25 @@ class MemberGreetingWidget extends Widget
         return route('filament.admin.resources.loan-applications.create');
     }
 
+    public function getPasswordChangeUrl(): string
+    {
+        return MemberPasswordPage::getUrl();
+    }
+
+    public function mustChangePassword(): bool
+    {
+        return (bool) (Auth::user()?->must_change_password ?? false);
+    }
+
     public function getSavingsPageUrl(): string
     {
-        return route('filament.admin.resources.savings-accounts.index');
+        $profile = Auth::user()?->profile;
+        $memberDetail = $profile?->memberDetail;
+
+        if ($memberDetail) {
+            return MemberDetailResource::getUrl('view', ['record' => $memberDetail]);
+        }
+
+        return MemberDetailResource::getUrl('index');
     }
 }

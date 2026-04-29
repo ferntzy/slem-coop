@@ -2,9 +2,12 @@
 
 namespace App\Filament\Resources\MembershipApplications\Tables;
 
+use App\Enums\UserRole;
 use App\Models\MemberDetail;
 use App\Models\Profile;
+use App\Models\Role;
 use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -15,8 +18,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\RecordActionsPosition;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class MembershipApplicationsTable
 {
@@ -44,13 +45,13 @@ class MembershipApplicationsTable
 
                             $record->update([
                                 'status' => 'approved',
+                                'approved_at' => now(),
                                 'updated_by' => auth()->id(),
                             ]);
 
                             $record->refresh();
 
                             $exists = MemberDetail::where('profile_id', $record->profile_id)->exists();
-                            $detail = null;
 
                             if (! $exists) {
                                 Notification::make()
@@ -58,42 +59,69 @@ class MembershipApplicationsTable
                                     ->warning()
                                     ->body('This application has no branch assignment to use for member creation.')
                                     ->send();
-                            } else {
-                                $profile = Profile::where('profile_id', $record->profile_id)->first();
 
-                                if (! User::where('profile_id', $record->profile_id)->exists()) {
-                                    $currentYear = Carbon::now()->year;
-                                    $latest = User::where('coop_id', 'like', "COOP-{$currentYear}-%")
-                                        ->orderByDesc('coop_id')
-                                        ->first();
+                                return;
+                            }
 
-                                    $newNumber = $latest ? ((int) substr($latest->coop_id, -3)) + 1 : 1;
-                                    $formattedNumber = str_pad($newNumber, 3, '0', STR_PAD_LEFT);
-                                    $newCoopId = "COOP-{$currentYear}-{$formattedNumber}";
+                            $profile = Profile::where('profile_id', $record->profile_id)->first();
 
-                                    $plainPassword = Str::random(8);
-                                    $pin = random_int(1000, 9999);
+                            if (! $profile) {
+                                Notification::make()
+                                    ->title('Missing profile')
+                                    ->warning()
+                                    ->body('No profile was found for this application.')
+                                    ->send();
 
-                                    User::create([
+                                return;
+                            }
+
+                            $memberRoleId = Role::query()
+                                ->whereIn('name', [UserRole::Member->value, 'Member'])
+                                ->value('id');
+
+                            $fullAddress = $record->address ?: collect([
+                                $record->house_no,
+                                $record->street_barangay,
+                                $record->municipality,
+                                $record->province,
+                                $record->zip_code,
+                            ])->filter()->implode(', ');
+
+                            $profile->update([
+                                'sex' => $record->sex,
+                                'civil_status' => $record->civil_status,
+                                'address' => $fullAddress ?: $profile->address,
+                                'roles_id' => $memberRoleId ?: $profile->roles_id,
+                            ]);
+
+                            if (! User::where('profile_id', $record->profile_id)->exists()) {
+                                $currentYear = Carbon::now()->year;
+                                $latest = User::where('coop_id', 'like', "COOP-{$currentYear}-%")
+                                    ->orderByDesc('coop_id')
+                                    ->first();
+
+                                $newNumber = $latest ? ((int) substr($latest->coop_id, -3)) + 1 : 1;
+                                $formattedNumber = str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+                                $newCoopId = "COOP-{$currentYear}-{$formattedNumber}";
+
+                                $pin = random_int(1000, 9999);
+
+                                $user = app(NotificationService::class)->createUserWithAutoPassword($profile);
+
+                                if ($user) {
+                                    $user->update([
                                         'coop_id' => $newCoopId,
-                                        'temp_password' => $plainPassword,
-                                        'password' => Hash::make($plainPassword),
-                                        'temp_pin' => $pin,
-                                        'pin' => Hash::make($pin),
-                                        'profile_id' => $record->profile_id,
-                                        'is_active' => 1,
-                                        'username' => $profile->first_name.' '.$profile->last_name,
                                     ]);
                                 }
 
-                                Notification::make()
-                                    ->title('Application Approved')
-                                    ->body($exists ? 'Member detail already existed.' : "Member record created. ID: {$detail->id}")
-                                    ->success()
-                                    ->send();
                             }
-                        }),
 
+                            Notification::make()
+                                ->title('Application Approved')
+                                ->body('Member account created. Login credentials sent to '.$profile->email.'.')
+                                ->success()
+                                ->send();
+                        }),
                     Action::make('reject')
                         ->label('Reject')
                         ->icon('heroicon-o-x-circle')

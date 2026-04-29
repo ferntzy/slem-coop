@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Collection;
 
 class SavingsDormancyService
 {
+    private const DEFAULT_NEAR_ZERO_BALANCE_THRESHOLD = 1.00;
+
     private const DIRECTION_DEPOSIT = 'deposit';
 
     private const DIRECTION_WITHDRAWAL = 'withdrawal';
@@ -110,6 +112,7 @@ class SavingsDormancyService
                     currentBalance: $currentBalance,
                     configuredFee: $settings['dormancy_fee_amount'],
                     maintainingBalance: (float) ($savingsType->maintaining_balance ?? 0),
+                    nearZeroBalanceThreshold: $settings['dormancy_fee_near_zero_threshold'],
                 );
 
                 if ($dormancyFeeAmount > 0) {
@@ -134,13 +137,14 @@ class SavingsDormancyService
     }
 
     /**
-     * @return array{dormancy_months_threshold: int, dormancy_fee_amount: float, auto_apply_dormancy_fee: bool, apply_interest_on_dormant: bool}
+     * @return array{dormancy_months_threshold: int, dormancy_fee_amount: float, dormancy_fee_near_zero_threshold: float, auto_apply_dormancy_fee: bool, apply_interest_on_dormant: bool}
      */
     private function getSettings(): array
     {
         return [
             'dormancy_months_threshold' => max((int) CoopSetting::get('savings.dormancy_months_threshold', 24), 1),
             'dormancy_fee_amount' => max((float) CoopSetting::get('savings.dormancy_fee_amount', 30.00), 0),
+            'dormancy_fee_near_zero_threshold' => max((float) CoopSetting::get('savings.dormancy_fee_near_zero_threshold', self::DEFAULT_NEAR_ZERO_BALANCE_THRESHOLD), 0),
             'auto_apply_dormancy_fee' => (bool) CoopSetting::get('savings.auto_apply_dormancy_fee', true),
             'apply_interest_on_dormant' => (bool) CoopSetting::get('savings.apply_interest_on_dormant', true),
         ];
@@ -148,18 +152,43 @@ class SavingsDormancyService
 
     private function getAccountsWithPositiveBalance(array $savingsTypeIds): Collection
     {
+        $balanceExpression = $this->getTransactionBalanceExpression();
+
         return SavingsAccountTransaction::query()
-            ->selectRaw('profile_id, savings_type_id, SUM(COALESCE(deposit, 0) - COALESCE(withdrawal, 0)) as balance')
+            ->selectRaw('profile_id, savings_type_id, '.$balanceExpression.' as balance')
             ->whereNotNull('profile_id')
             ->whereNotNull('savings_type_id')
             ->whereIn('savings_type_id', $savingsTypeIds)
             ->groupBy('profile_id', 'savings_type_id')
-            ->havingRaw('SUM(COALESCE(deposit, 0) - COALESCE(withdrawal, 0)) > 0')
+            ->havingRaw($balanceExpression.' > 0')
             ->get();
+    }
+
+    private function getTransactionBalanceExpression(): string
+    {
+        return <<<'SQL'
+SUM(
+    CASE
+        WHEN COALESCE(deposit, 0) > 0 THEN COALESCE(deposit, 0)
+        WHEN LOWER(COALESCE(type, '')) IN ('deposit', 'credit')
+            OR LOWER(COALESCE(direction, '')) IN ('credit', 'inflow') THEN COALESCE(amount, 0)
+        ELSE 0
+    END
+    -
+    CASE
+        WHEN COALESCE(withdrawal, 0) > 0 THEN COALESCE(withdrawal, 0)
+        WHEN LOWER(COALESCE(type, '')) IN ('withdrawal', 'debit')
+            OR LOWER(COALESCE(direction, '')) IN ('debit', 'outflow') THEN COALESCE(amount, 0)
+        ELSE 0
+    END
+)
+SQL;
     }
 
     private function getLastCustomerInitiatedTransactionDate(int $profileId, string $savingsTypeId): ?Carbon
     {
+        $effectiveTransactionDateExpression = 'GREATEST(created_at, COALESCE(transaction_date, created_at))';
+
         $lastCustomerDate = SavingsAccountTransaction::query()
             ->where('profile_id', $profileId)
             ->where('savings_type_id', $savingsTypeId)
@@ -174,8 +203,8 @@ class SavingsDormancyService
                         ->whereRaw('LOWER(type) in (?, ?, ?)', ['deposit', 'withdrawal', 'transfer']);
                 });
             })
-            ->selectRaw('COALESCE(transaction_date, DATE(created_at)) as effective_transaction_date')
-            ->orderByRaw('COALESCE(transaction_date, created_at) DESC')
+            ->selectRaw($effectiveTransactionDateExpression.' as effective_transaction_date')
+            ->orderByRaw($effectiveTransactionDateExpression.' DESC')
             ->orderByDesc('id')
             ->value('effective_transaction_date');
 
@@ -186,8 +215,8 @@ class SavingsDormancyService
         $fallbackDate = SavingsAccountTransaction::query()
             ->where('profile_id', $profileId)
             ->where('savings_type_id', $savingsTypeId)
-            ->selectRaw('COALESCE(transaction_date, DATE(created_at)) as effective_transaction_date')
-            ->orderByRaw('COALESCE(transaction_date, created_at) DESC')
+            ->selectRaw($effectiveTransactionDateExpression.' as effective_transaction_date')
+            ->orderByRaw($effectiveTransactionDateExpression.' DESC')
             ->orderByDesc('id')
             ->value('effective_transaction_date');
 
@@ -225,12 +254,16 @@ class SavingsDormancyService
         return round(($currentBalance * ($annualInterestRatePercent / 100)) / 12, 2);
     }
 
-    private function calculateDormancyFee(float $currentBalance, float $configuredFee, float $maintainingBalance): float
+    private function calculateDormancyFee(float $currentBalance, float $configuredFee, float $maintainingBalance, float $nearZeroBalanceThreshold): float
     {
         $minimumBalanceFloor = max($maintainingBalance, 0);
         $availableForFee = round(max($currentBalance - $minimumBalanceFloor, 0), 2);
 
-        if ($availableForFee <= 0 || $configuredFee <= 0) {
+        if (
+            $availableForFee <= 0
+            || $availableForFee <= $nearZeroBalanceThreshold
+            || $configuredFee <= 0
+        ) {
             return 0;
         }
 

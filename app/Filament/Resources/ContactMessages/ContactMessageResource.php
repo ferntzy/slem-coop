@@ -23,6 +23,15 @@ class ContactMessageResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    // ✅ Hide from sidebar
+    protected static bool $shouldRegisterNavigation = false;
+
+    // 🔒 Completely block access
+    public static function canViewAny(): bool
+    {
+        return false;
+    }
+
     public static function canCreate(): bool
     {
         return false;
@@ -46,6 +55,7 @@ class ContactMessageResource extends Resource
     public static function getPages(): array
     {
         return [
+            // You can keep these, but they won’t be accessible
             'index' => ListContactMessages::route('/'),
             'edit' => EditContactMessage::route('/{record}/edit'),
         ];
