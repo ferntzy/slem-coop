@@ -7,9 +7,12 @@ use App\Models\LoanAccount;
 use App\Models\LoanApplication;
 use App\Models\LoanType;
 use App\Models\MemberDetail;
+use App\Models\User;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Google\Client as GoogleClient;
 
 class Loans extends Controller
 {
@@ -139,6 +142,22 @@ class Loans extends Controller
                 'balance' => $amount,
                 'status' => 'Active',
             ]);
+
+            $fcmToken = User::where('profile_id', $pid)->value('fcm_token');
+
+            if ($fcmToken) {
+                Http::withHeaders(['Content-Type' => 'application/json'])
+                    ->post('https://exp.host/--/push/v2/send', [
+                        'to'    => $fcmToken,
+                        'title' => 'Loan Approved',
+                        'body'  => 'Your loan application has been approved!',
+                        'sound' => 'default',
+                        'data'  => [
+                            'type'                => 'loan_approved',
+                            'loan_application_id' => $request->id,
+                        ],
+                    ]);
+            }
 
             return response()->json([
                 'success' => 'Loan application was successfully approved!',

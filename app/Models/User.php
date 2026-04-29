@@ -62,6 +62,7 @@ class User extends Authenticatable implements HasAvatar
         'must_change_password',
         'pin',
         'temp_password',
+        'fcm_token'
     ];
 
     protected $attributes = [

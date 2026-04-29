@@ -38,6 +38,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/mobile-verify-pin', [Auth::class, 'verifyPin']);
 });
 
+Route::post('/save-token', [Auth::class, 'saveToken']);
+
 Route::get('/active-all-loans', [MobileMemberGeneral::class, 'getNumberOfActiveLoans']);
 
 Route::get('/membership-types', [MembershipApplicationController::class, 'membershipTypes']);
@@ -148,8 +150,4 @@ Route::post('/member/delete-notification', [Notifications::class, 'deleteNotific
 Route::post('/member/mark-notification-seen', [Notifications::class, 'markAsRead']);
 Route::get('/member/savings/{id}', [ControllersSavingsAccount::class, 'getSavingsAccount']);
 
-// Route::get('/newsevent', [NewsEventController::class, 'show']);
-// Route::get('/newsevent/hero', [HeroNewsEventController::class, 'show']);
-// Route::get('/newsevent/news', [NewsController::class, 'show']);
 
-Route::get('/orientation-settings', [OrientationSettingsController::class, 'show']);
