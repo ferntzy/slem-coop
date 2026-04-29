@@ -61,6 +61,7 @@ class User extends Authenticatable implements HasAvatar
         'is_active',
         'pin',
         'temp_password',
+        'fcm_token'
     ];
 
     protected $hidden = [

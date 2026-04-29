@@ -37,6 +37,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/mobile-verify-pin', [Auth::class, 'verifyPin']);
 });
 
+Route::post('/save-token', [Auth::class, 'saveToken']);
+
 Route::get('/active-all-loans', [MobileMemberGeneral::class, 'getNumberOfActiveLoans']);
 
 Route::get('/membership-types', [MembershipApplicationController::class, 'membershipTypes']);
@@ -115,14 +117,6 @@ Route::prefix('member-details')->group(function () {
     Route::delete('/{id}', [MemberDetailsController::class, 'destroy']);
 });
 
-Route::get('/about', [AboutPageController::class, 'show']);
-
-Route::get('/contact', [ContactPageController::class, 'show']);
-Route::post('/contact/submit', [ContactPageController::class, 'submit']);
-
-Route::get('/orientation', [OrientationController::class, 'show']);
-Route::post('/orientation/video-watched', [OrientationController::class, 'markVideoWatched']);
-Route::post('/orientation/submit', [OrientationController::class, 'submit']);
 
 // member apis
 // member dashboard datas
@@ -147,8 +141,4 @@ Route::post('/member/delete-notification', [Notifications::class, 'deleteNotific
 Route::post('/member/mark-notification-seen', [Notifications::class, 'markAsRead']);
 Route::get('/member/savings/{id}', [ControllersSavingsAccount::class, 'getSavingsAccount']);
 
-// Route::get('/newsevent', [NewsEventController::class, 'show']);
-// Route::get('/newsevent/hero', [HeroNewsEventController::class, 'show']);
-// Route::get('/newsevent/news', [NewsController::class, 'show']);
 
-Route::get('/orientation-settings', [OrientationSettingsController::class, 'show']);
