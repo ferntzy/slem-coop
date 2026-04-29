@@ -20,14 +20,22 @@ class MemberRegistrationComplete extends Mailable
         );
     }
 
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.member-registration-complete',
-            with: [
-                'fullName' => $this->user->profile?->full_name ?? 'Member',
+   public function content(): Content
+{
+    return new Content(
+        view: 'emails.member-registration-complete',
+        with: [
+            'fullName'  => $this->user->profile?->full_name ?? 'Member',
+            'email'     => $this->user->profile?->email ?? '',
+            'portalUrl' => \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'register.complete',
+            now()->addDays(7),
+            [
+                'user'  => $this->user->user_id,
                 'email' => $this->user->profile?->email ?? '',
-            ],
-        );
-    }
+            ]
+        ),
+        ],
+    );
+}
 }

@@ -19,8 +19,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
 
 // Complete Registration
 Route::get('/register/complete', function () {
-    return view('welcome'); // React SPA handles the UI
-});
+    return view('welcome');
+})->name('register.complete')->middleware('signed');
 
 Route::post('/register/complete', [AuthController::class, 'completeRegistration']);
 
