@@ -90,17 +90,33 @@ class DormantSavingsDemoSeeder extends Seeder
             ]
         );
 
-        $demoSavingsType = SavingsType::query()->updateOrCreate(
-            ['code' => 'SA DEMO DORMANCY'],
+        $regularInterestRate = (float) CoopSetting::get('savings.regular_interest_rate_percent', 1.00);
+        $timeDepositInterestRate = (float) CoopSetting::get('savings.time_deposit_interest_rate_percent', 2.00);
+
+        CoopSetting::set('savings.regular_interest_rate_percent', $regularInterestRate);
+        CoopSetting::set('savings.time_deposit_interest_rate_percent', $timeDepositInterestRate);
+
+        $regularSavingsType = SavingsType::query()->updateOrCreate(
+            ['name' => 'Regular Savings'],
             [
-                'name' => 'Dormancy Demo Savings',
-                'description' => 'Demo savings type for dormant account verification.',
+                'code' => 'SA 02',
+                'description' => 'Securing money savings that can be withdrawn anytime.',
                 'minimum_initial_deposit' => 1000,
                 'maintaining_balance' => 500,
                 'minimum_terms' => 2,
-                'interest_rate' => 1.20,
-                'deposit_allowed' => true,
-                'withdrawal_allowed' => true,
+                'interest_rate' => $regularInterestRate,
+                'is_active' => true,
+            ]
+        );
+
+        SavingsType::query()->updateOrCreate(
+            ['name' => 'Time Deposit'],
+            [
+                'code' => 'SA 01',
+                'description' => 'Deposit grows over time with fixed withdrawal date.',
+                'minimum_initial_deposit' => 10000,
+                'minimum_terms' => 4,
+                'interest_rate' => $timeDepositInterestRate,
                 'is_active' => true,
             ]
         );
@@ -111,7 +127,7 @@ class DormantSavingsDemoSeeder extends Seeder
         CoopSetting::set('savings.dormancy_fee_near_zero_threshold', 1.00);
         CoopSetting::set('savings.apply_interest_on_dormant', true, 'boolean');
 
-        $demoSavingsTypeId = (string) $demoSavingsType->id;
+        $regularSavingsTypeId = (string) $regularSavingsType->id;
 
         // Reset demo members to a clean savings history so dormancy status is deterministic.
         SavingsAccount::query()
@@ -126,7 +142,7 @@ class DormantSavingsDemoSeeder extends Seeder
         $dormantSavingsAccount = SavingsAccount::query()->updateOrCreate(
             [
                 'profile_id' => $dormantProfile->profile_id,
-                'savings_type_id' => $demoSavingsTypeId,
+                'savings_type_id' => $regularSavingsTypeId,
             ],
             [
                 'status' => 'Approved',
@@ -139,7 +155,7 @@ class DormantSavingsDemoSeeder extends Seeder
             [
                 'profile_id' => $activeProfile->profile_id,
                 'terms' => 1,
-                'savings_type_id' => $demoSavingsTypeId,
+                'savings_type_id' => $regularSavingsTypeId,
             ],
             [
                 'status' => 'Approved',
@@ -149,7 +165,7 @@ class DormantSavingsDemoSeeder extends Seeder
 
         SavingsAccountTransaction::query()->create([
             'profile_id' => $dormantProfile->profile_id,
-            'savings_type_id' => $demoSavingsTypeId,
+            'savings_type_id' => $regularSavingsTypeId,
             'type' => 'Deposit',
             'direction' => 'deposit',
             'deposit' => 10000,
@@ -165,7 +181,7 @@ class DormantSavingsDemoSeeder extends Seeder
 
         SavingsAccountTransaction::query()->create([
             'profile_id' => $activeProfile->profile_id,
-            'savings_type_id' => $demoSavingsTypeId,
+            'savings_type_id' => $regularSavingsTypeId,
             'type' => 'Deposit',
             'direction' => 'deposit',
             'deposit' => 2500,
@@ -182,7 +198,8 @@ class DormantSavingsDemoSeeder extends Seeder
         $this->command?->info('Dormancy demo data seeded successfully.');
         $this->command?->line('Dormant demo profile: dormant.demo.member@slem-coop.test');
         $this->command?->line('Active demo profile: active.demo.member@slem-coop.test');
-        $this->command?->line('Savings type code: SA DEMO DORMANCY');
+        $this->command?->line('Savings types seeded: Regular Savings (SA 02) and Time Deposit (SA 01).');
+        $this->command?->line('Savings interest rates are configurable in Coop Settings under Savings Interest Settings.');
         $this->command?->line('Member detail rows seeded for both demo profiles.');
     }
 }

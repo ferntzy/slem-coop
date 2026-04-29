@@ -12,8 +12,19 @@ class ListLoanApplications extends ListRecords
 
     protected string $view = 'filament.resources.loan-applications.pages.list-loan-applications';
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->check();
+    }
+
     protected function getHeaderActions(): array
     {
+        $user = auth()->user();
+
+        if ($user?->isMember()) {
+            return [];
+        }
+
         return [
             CreateAction::make(),
         ];

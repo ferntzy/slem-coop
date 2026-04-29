@@ -17,6 +17,10 @@
         : 0;
 @endphp
 
+@php
+    $isMember = auth()->user()?->isMember() ?? false;
+@endphp
+
 <x-filament::page>
     @push('styles')
 <style>
@@ -484,104 +488,106 @@
 
     <div class="loan-dashboard">
 
-        <div class="loan-hero">
-            <div class="loan-hero__row">
-                <div class="loan-hero__content">
-                    <div class="loan-chip">
-                        Loan Management Dashboard
+        @unless ($isMember)
+            <div class="loan-hero">
+                <div class="loan-hero__row">
+                    <div class="loan-hero__content">
+                        <div class="loan-chip">
+                            Loan Management Dashboard
+                        </div>
+
+                        <h1>Restructure Applications Overview</h1>
+
+                        <p>
+                            Track restructure requests, review decision progress, and manage approvals
+                            from one centralized page.
+                        </p>
                     </div>
 
-                    <h1>Restructure Applications Overview</h1>
-
-                    <p>
-                        Track restructure requests, review decision progress, and manage approvals
-                        from one centralized page.
-                    </p>
-                </div>
-
-                <div class="loan-hero__summary">
-                    <p class="loan-hero__summary-label">Total Net Release Amount</p>
-                    <div class="loan-hero__summary-value">
-                        &#8369;{{ number_format($totalNetReleaseAmount, 2) }}
-                    </div>
-                    <p class="loan-hero__summary-sub">
-                        Across {{ $totalApplications }} application{{ $totalApplications !== 1 ? 's' : '' }}
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="loan-grid-4">
-            <div class="loan-card loan-card--pending">
-                <p class="loan-label loan-label--pending">Pending</p>
-                <h2>{{ $pendingCount }}</h2>
-                <p class="loan-subtext">Applications awaiting initial review.</p>
-            </div>
-
-            <div class="loan-card loan-card--review">
-                <p class="loan-label loan-label--review">Total</p>
-                <h2>{{ $totalApplications }}</h2>
-                <p class="loan-subtext">Total restructure applications recorded.</p>
-            </div>
-
-            <div class="loan-card loan-card--approved">
-                <p class="loan-label loan-label--approved">Approved</p>
-                <h2>{{ $approvedCount }}</h2>
-                <p class="loan-subtext">Applications approved for processing.</p>
-            </div>
-
-            <div class="loan-card loan-card--rejected">
-                <p class="loan-label loan-label--rejected">Rejected</p>
-                <h2>{{ $rejectedCount }}</h2>
-                <p class="loan-subtext">Applications that did not pass evaluation.</p>
-            </div>
-        </div>
-
-        <div class="loan-grid-insights">
-            <div class="loan-panel">
-                <h3>Quick Insights</h3>
-
-                <div class="loan-soft-grid">
-                    <div class="loan-soft-box">
-                        <p>Loan Accounts</p>
-                        <p>{{ $loanAccountsCount }}</p>
-                    </div>
-
-                    <div class="loan-soft-box">
-                        <p>Approval Rate</p>
-                        <p>{{ $approvalRate }}%</p>
-                    </div>
-
-                    <div class="loan-soft-box">
-                        <p>Decisioned</p>
-                        <p>{{ $decisionedCount }}</p>
-                    </div>
-
-                    <div class="loan-soft-box">
-                        <p>Open Queue</p>
-                        <p>{{ $pendingCount }}</p>
+                    <div class="loan-hero__summary">
+                        <p class="loan-hero__summary-label">Total Net Release Amount</p>
+                        <div class="loan-hero__summary-value">
+                            &#8369;{{ number_format($totalNetReleaseAmount, 2) }}
+                        </div>
+                        <p class="loan-hero__summary-sub">
+                            Across {{ $totalApplications }} application{{ $totalApplications !== 1 ? 's' : '' }}
+                        </p>
                     </div>
                 </div>
             </div>
 
-            <div class="loan-mini-card loan-mini-card--green">
-                <p class="loan-mini-label loan-mini-label--green">Net Release Total</p>
-                <h3>&#8369;{{ number_format($totalNetReleaseAmount, 2) }}</h3>
-                <small>Total net release amount across restructure applications.</small>
+            <div class="loan-grid-4">
+                <div class="loan-card loan-card--pending">
+                    <p class="loan-label loan-label--pending">Pending</p>
+                    <h2>{{ $pendingCount }}</h2>
+                    <p class="loan-subtext">Applications awaiting initial review.</p>
+                </div>
+
+                <div class="loan-card loan-card--review">
+                    <p class="loan-label loan-label--review">Total</p>
+                    <h2>{{ $totalApplications }}</h2>
+                    <p class="loan-subtext">Total restructure applications recorded.</p>
+                </div>
+
+                <div class="loan-card loan-card--approved">
+                    <p class="loan-label loan-label--approved">Approved</p>
+                    <h2>{{ $approvedCount }}</h2>
+                    <p class="loan-subtext">Applications approved for processing.</p>
+                </div>
+
+                <div class="loan-card loan-card--rejected">
+                    <p class="loan-label loan-label--rejected">Rejected</p>
+                    <h2>{{ $rejectedCount }}</h2>
+                    <p class="loan-subtext">Applications that did not pass evaluation.</p>
+                </div>
             </div>
 
-            <div class="loan-mini-card loan-mini-card--yellow">
-                <p class="loan-mini-label loan-mini-label--yellow">Open Queue</p>
-                <h3>{{ $pendingCount }}</h3>
-                <small>Applications still awaiting review or processing.</small>
-            </div>
+            <div class="loan-grid-insights">
+                <div class="loan-panel">
+                    <h3>Quick Insights</h3>
 
-            <div class="loan-mini-card loan-mini-card--blue">
-                <p class="loan-mini-label loan-mini-label--blue">Decisioned</p>
-                <h3>{{ $decisionedCount }}</h3>
-                <small>Applications with final outcomes recorded.</small>
+                    <div class="loan-soft-grid">
+                        <div class="loan-soft-box">
+                            <p>Loan Accounts</p>
+                            <p>{{ $loanAccountsCount }}</p>
+                        </div>
+
+                        <div class="loan-soft-box">
+                            <p>Approval Rate</p>
+                            <p>{{ $approvalRate }}%</p>
+                        </div>
+
+                        <div class="loan-soft-box">
+                            <p>Decisioned</p>
+                            <p>{{ $decisionedCount }}</p>
+                        </div>
+
+                        <div class="loan-soft-box">
+                            <p>Open Queue</p>
+                            <p>{{ $pendingCount }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="loan-mini-card loan-mini-card--green">
+                    <p class="loan-mini-label loan-mini-label--green">Net Release Total</p>
+                    <h3>&#8369;{{ number_format($totalNetReleaseAmount, 2) }}</h3>
+                    <small>Total net release amount across restructure applications.</small>
+                </div>
+
+                <div class="loan-mini-card loan-mini-card--yellow">
+                    <p class="loan-mini-label loan-mini-label--yellow">Open Queue</p>
+                    <h3>{{ $pendingCount }}</h3>
+                    <small>Applications still awaiting review or processing.</small>
+                </div>
+
+                <div class="loan-mini-card loan-mini-card--blue">
+                    <p class="loan-mini-label loan-mini-label--blue">Decisioned</p>
+                    <h3>{{ $decisionedCount }}</h3>
+                    <small>Applications with final outcomes recorded.</small>
+                </div>
             </div>
-        </div>
+        @endunless
 
         <div class="loan-table">
             <div class="loan-table__header">

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MemberDetails\Schemas;
 use App\Models\Profile;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -49,9 +50,7 @@ class MemberDetailForm
                                         ->dehydratedWhenHidden()
                                         ->required(),
 
-                                    TextInput::make('member_no')
-                                        ->label('Member No.')
-                                        ->maxLength(45),
+                                    Hidden::make('member_no'),
 
                                     Select::make('membership_type_id')
                                         ->label('Membership Type')
@@ -92,12 +91,6 @@ class MemberDetailForm
 
                                     TextInput::make('last_name')
                                         ->label('Last Name')
-                                        ->required(),
-
-                                    TextInput::make('email')
-                                        ->label('Email')
-                                        ->email()
-                                        ->unique(ignoreRecord: true)
                                         ->required(),
 
                                     TextInput::make('mobile_number')
@@ -272,11 +265,19 @@ class MemberDetailForm
                                         ->required(),
 
                                     TextInput::make('emergency_phone')
-                                        ->label('Phone Number')
-                                        ->tel()
+                                        ->label('Mobile Number')
                                         ->placeholder('09XXXXXXXXX')
-                                        ->maxLength(11)
-                                        ->required(),
+                                        ->required()
+                                        ->rules(['digits:11', 'regex:/^09\d{9}$/'])
+                                        ->validationMessages([
+                                            'digits' => 'Must be exactly 11 digits.',
+                                            'regex' => 'Must start with 09 and be 11 digits.',
+                                        ])
+                                        ->extraInputAttributes([
+                                            'inputmode' => 'numeric',
+                                            'maxlength' => '11',
+                                            'oninput' => "this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11)",
+                                        ]),
 
                                     TextInput::make('emergency_relationship')
                                         ->label('Relationship')

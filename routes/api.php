@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\LoanApplicationController as LoanOfficerApplication
 use App\Http\Controllers\Api\Loans;
 use App\Http\Controllers\Api\MemberDetailsController;
 use App\Http\Controllers\Api\Members;
+use App\Http\Controllers\Api\ReportsController;
 use App\Http\Controllers\Api\RestructureApplicationController;
 use App\Http\Controllers\HeroNewsEventController;
 use App\Http\Controllers\LoanApplication as ControllersLoanApplication;
@@ -71,12 +72,11 @@ Route::post('/approve-loan-application', [Loans::class, 'approveLoanApplication'
 
 Route::middleware('auth:sanctum')->group(function () {
     // loan application actions
-    Route::post('/loan-applications/{id}/approve', [LoanOfficerApplicationController::class, 'approve']);
+
     Route::post('/loan-applications/{id}/reloan', [LoanOfficerApplicationController::class, 'reloan']);
     Route::post('/loan-applications/{id}/set-penalty-rule', [LoanOfficerApplicationController::class, 'setPenaltyRule']);
     Route::post('/loan-applications/{id}/under-review', [LoanOfficerApplicationController::class, 'markUnderReview']);
     Route::get('/loan-applications/{id}/download-form', [LoanOfficerApplicationController::class, 'downloadLoanForm']);
-    Route::post('/loan-applications/{id}/reject', [LoanOfficerApplicationController::class, 'reject']);
 
     // restructure applications
     Route::get('/restructure-applications/eligible-loans', [RestructureApplicationController::class, 'eligibleLoans']);
@@ -117,6 +117,15 @@ Route::prefix('member-details')->group(function () {
     Route::delete('/{id}', [MemberDetailsController::class, 'destroy']);
 });
 
+Route::get('/about', [AboutPageController::class, 'show']);
+Route::get('/report', [ReportsController::class, 'index']);
+
+Route::get('/contact', [ContactPageController::class, 'show']);
+Route::post('/contact/submit', [ContactPageController::class, 'submit']);
+
+Route::get('/orientation', [OrientationController::class, 'show']);
+Route::post('/orientation/video-watched', [OrientationController::class, 'markVideoWatched']);
+Route::post('/orientation/submit', [OrientationController::class, 'submit']);
 
 // member apis
 // member dashboard datas

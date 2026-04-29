@@ -6,6 +6,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
+use app\Models\MemberDetail;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -43,7 +44,7 @@ class ProfilesTable
                     ->label('Role')
                     ->sortable(),
 
-                TextColumn::make('staffDetail.branch.name')
+                TextColumn::make('MemberDetail.branch.name')
                     ->label('Branch')
                     ->sortable(),
             ])

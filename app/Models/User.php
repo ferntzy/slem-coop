@@ -59,9 +59,14 @@ class User extends Authenticatable implements HasAvatar
         'coop_id',
         'avatar',
         'is_active',
+        'must_change_password',
         'pin',
         'temp_password',
         'fcm_token'
+    ];
+
+    protected $attributes = [
+        'must_change_password' => false,
     ];
 
     protected $hidden = [
@@ -74,6 +79,7 @@ class User extends Authenticatable implements HasAvatar
         return [
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
         ];
 
     }
@@ -239,7 +245,17 @@ class User extends Authenticatable implements HasAvatar
 
     public function isMember(): bool
     {
-        return $this->hasAnyRole(['Member', 'member']);
+        if ($this->hasAnyRole(['Member', 'member'])) {
+            return true;
+        }
+
+        if ($this->profile_id === null) {
+            return false;
+        }
+
+        return MemberDetail::query()
+            ->where('profile_id', $this->profile_id)
+            ->exists();
     }
 
     public function isBranchScoped(): bool

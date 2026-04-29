@@ -660,6 +660,22 @@ class MemberDetailInfolist
                                     ->schema([
                                         TextEntry::make('profile.full_name')
                                             ->label('Member Name'),
+                                        TextEntry::make('regular_savings_type')
+                                            ->label('Savings Type')
+                                            ->state(function ($record): string {
+                                                $type = static::getRegularSavingsType();
+
+                                                return $type ? (string) $type->name : '-';
+                                            }),
+
+                                        TextEntry::make('regular_savings_interest_rate')
+                                            ->label('Interest Rate')
+                                            ->state(function ($record): float {
+                                                $type = static::getRegularSavingsType();
+
+                                                return $type ? round((float) ($type->interest_rate ?? 0), 2) : 0.0;
+                                            })
+                                            ->formatStateUsing(fn ($state) => $state !== null ? ($state.'%') : '-'),
 
                                         TextEntry::make('regular_savings_balance')
                                             ->label('Current Balance')
@@ -774,6 +790,14 @@ class MemberDetailInfolist
                                                 return round((float) $transactions->sum('deposit'), 2);
                                             })
                                             ->money('PHP'),
+                                        TextEntry::make('time_deposit_interest')
+                                            ->label('Interest Rate')
+                                            ->state(function ($record): float {
+                                                $type = static::getTimeDepositType();
+
+                                                return $type ? round((float) ($type->interest_rate ?? 0), 2) : 0.0;
+                                            })
+                                            ->formatStateUsing(fn ($state) => $state !== null ? ($state.'%') : '-'),
 
                                         TextEntry::make('time_deposit_active_count')
                                             ->label('Active Deposits')
