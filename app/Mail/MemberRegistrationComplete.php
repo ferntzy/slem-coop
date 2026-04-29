@@ -31,7 +31,6 @@ class MemberRegistrationComplete extends Mailable
             'register.complete',
             now()->addDays(7),
             [
-                'user'  => $this->user->user_id,
                 'email' => $this->user->profile?->email ?? '',
             ]
         ),
