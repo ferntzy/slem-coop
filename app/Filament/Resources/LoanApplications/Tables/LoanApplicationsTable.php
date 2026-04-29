@@ -695,6 +695,13 @@ class LoanApplicationsTable
                                     notifiableType: 'loan_application',
                                     notifiableId: $record->loan_application_id
                                 );
+
+                                // Send SMS notification to member
+                                $profile = \App\Models\Profile::where('profile_id', $profileId)->first();
+                                if ($profile && $profile->mobile_number) {
+                                    $smsMessage = "SLEM Coop: Your loan application #{$record->loan_application_id} has been approved. Please wait for further instructions regarding the loan release.";
+                                    $notificationService->sendSms($profile->mobile_number, $smsMessage);
+                                }
                             }
 
                             $notificationService->notifyAdmins(

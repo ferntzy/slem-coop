@@ -17,6 +17,13 @@ Route::get('/api/auth-status', function () {
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
 
+// Complete Registration
+Route::get('/register/complete', function () {
+    return view('welcome'); // React SPA handles the UI
+});
+
+Route::post('/register/complete', [AuthController::class, 'completeRegistration']);
+
 Route::middleware('auth')->group(function () {
     Route::post('/coop/fetch-notification', [Notifications::class, 'WebfetchNotifications']);
     Route::post('/coop/delete-notification', [Notifications::class, 'WebdeleteNotification']);

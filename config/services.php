@@ -29,4 +29,10 @@ return [
         'default_sender' => env('PHILSMS_DEFAULT_SENDER'),
     ],
 
+    'mailgun' => [
+        'domain' => env('MAILGUN_DOMAIN'),
+        'secret' => env('MAILGUN_SECRET'),
+        'sms_from' => env('MAILGUN_SMS_FROM', 'SLEM Coop'),
+    ],
+
 ];

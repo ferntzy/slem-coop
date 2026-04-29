@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Your SLEM Coop Account is Ready</title>
+    <title>Welcome to SLEM Coop</title>
 </head>
 <body style="margin:0; padding:0; background-color:#f0f4f8; font-family: 'Segoe UI', Arial, sans-serif;">
 
@@ -14,7 +14,8 @@
 
                     {{-- Header --}}
                     <tr>
-                        <td style="background: linear-gradient(135deg, #1a6b3c, #27ae60); padding: 40px 40px 30px; text-align:center;">
+                        <td style="background: linear-gradient(135deg, #1a6b3c, #27ae60); padding: 30px 40px 20px; text-align:center;">
+                            <img src="{{ asset('logo.png') }}" alt="SLEM Coop Logo" style="width:80px; height:80px; border-radius:50%; margin-bottom:10px; object-fit:contain; background:white; padding:5px;">
                             <h1 style="margin:0; color:#ffffff; font-size:26px; font-weight:700; letter-spacing:0.5px;">
                                 SLEM Coop
                             </h1>
@@ -31,7 +32,7 @@
                             </h2>
                             <p style="margin:0 0 24px; color:#555; font-size:15px; line-height:1.6;">
                                 Your SLEM Coop member account has been <strong>approved and activated</strong>.
-                                You can now log in to the member portal using your Gmail address and the temporary password below.
+                                You can now log in to the member portal to complete your registration and set up your password.
                             </p>
 
                             {{-- Credentials Box --}}
@@ -39,23 +40,7 @@
                                 <tr>
                                     <td style="padding: 24px;">
                                         <p style="margin:0 0 4px; font-size:12px; color:#888; text-transform:uppercase; letter-spacing:1px;">Login Email</p>
-                                        <p style="margin:0 0 20px; font-size:16px; color:#1a6b3c; font-weight:600;">{{ $email }}</p>
-
-                                        <p style="margin:0 0 4px; font-size:12px; color:#888; text-transform:uppercase; letter-spacing:1px;">Temporary Password</p>
-                                        <p style="margin:0; font-size:20px; color:#1a1a1a; font-weight:700; letter-spacing:2px; font-family: 'Courier New', monospace; background:#eafaf1; display:inline-block; padding:8px 16px; border-radius:6px;">
-                                            {{ $tempPassword }}
-                                        </p>
-                                    </td>
-                                </tr>
-                            </table>
-
-                            {{-- Warning --}}
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff8e1; border-left:4px solid #f59e0b; border-radius:4px; margin-bottom:24px;">
-                                <tr>
-                                    <td style="padding:14px 18px;">
-                                        <p style="margin:0; color:#92400e; font-size:14px; line-height:1.5;">
-                                            ⚠️ <strong>Important:</strong> Please change your password immediately after your first login for security purposes.
-                                        </p>
+                                        <p style="margin:0; font-size:16px; color:#1a6b3c; font-weight:600;">{{ $email }}</p>
                                     </td>
                                 </tr>
                             </table>
@@ -65,8 +50,8 @@
                             <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
                                 @foreach([
                                     ['1', 'Go to the SLEM Coop Member Portal'],
-                                    ['2', 'Log in using your Gmail address and temporary password'],
-                                    ['3', 'Change your password immediately after logging in'],
+                                    ['2', 'Log in using your Gmail address'],
+                                    ['3', 'Complete your registration by setting up a password'],
                                 ] as [$step, $text])
                                 <tr>
                                     <td width="36" valign="top" style="padding-bottom:10px;">

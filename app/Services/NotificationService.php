@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Mail\GenericNotification;
-use App\Mail\MemberAccountReady;
+use App\Mail\MemberRegistrationComplete;
 use App\Models\Notification;
 use App\Models\Profile;
 use App\Models\SentEmail;
@@ -161,13 +161,13 @@ class NotificationService
             'profile_id' => $profile->profile_id,
             'email' => $email,
             'subject' => $subject,
-            'mailable_class' => MemberAccountReady::class,
+            'mailable_class' => MemberRegistrationComplete::class,
         ]);
 
         // Use afterCommit to ensure the record survives if mail fails
         DB::afterCommit(function () use ($user, $password, $sentEmail, $email) {
             try {
-                Mail::to($email)->send(new MemberAccountReady($user, $password));
+                Mail::to($email)->send(new MemberRegistrationComplete($user, $password));
 
                 // Mark as sent after successful queue
                 $sentEmail->update(['sent_at' => now()]);
