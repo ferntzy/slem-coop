@@ -209,7 +209,7 @@ class Loans extends Controller
     {
         try {
             $pid = MemberDetail::where('id', $id)->value('profile_id');
-            $loanAccounts = LoanAccount::where('profile_id', $pid)->get();
+            $loanAccounts = LoanAccount::where('profile_id', $pid)->where('status', 'Active')->get();
 
             return response()->json([
                 'loanAccounts' => $loanAccounts,
