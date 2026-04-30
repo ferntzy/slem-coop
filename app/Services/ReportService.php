@@ -135,7 +135,7 @@ class ReportService
         $dailyEntriesQuery = $this->dailyCollectionEntryQuery($filters)
             ->with([
                 'ao.profile',
-                'ao.staffDetail.branch',
+                'ao.profile.branch',
                 'verifiedBy.profile',
             ])
             ->orderBy('collection_date', 'desc')

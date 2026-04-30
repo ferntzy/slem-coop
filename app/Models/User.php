@@ -62,7 +62,7 @@ class User extends Authenticatable implements HasAvatar
         'must_change_password',
         'pin',
         'temp_password',
-        'fcm_token'
+        'fcm_token',
     ];
 
     protected $attributes = [
@@ -139,7 +139,9 @@ class User extends Authenticatable implements HasAvatar
 
     public function branchId(): ?int
     {
-        return $this->staffDetail?->branch_id;
+        return $this->profile?->branch_id
+            ? (int) $this->profile->branch_id
+            : ($this->staffDetail?->branch_id ? (int) $this->staffDetail->branch_id : ($this->profile?->memberDetail?->branch_id ? (int) $this->profile->memberDetail->branch_id : null));
     }
 
     public function roleName(): ?string

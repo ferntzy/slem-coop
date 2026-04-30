@@ -18,13 +18,4 @@ class EditMemberDetail extends EditRecord
             DeleteAction::make(),
         ];
     }
-
-    protected function mutateFormDataBeforeSave(array $data): array
-    {
-        if (empty($data['branch_id']) && $this->record?->branch_id) {
-            $data['branch_id'] = $this->record->branch_id;
-        }
-
-        return $data;
-    }
 }

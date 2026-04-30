@@ -104,9 +104,10 @@ class ProfileForm
                     ->reactive()
                     ->required(),
 
-                Select::make('staff_branch_id')
+                Select::make('branch_id')
                     ->label('Branch')
                     ->options(fn (): array => Branch::where('is_active', true)->orderBy('name')->pluck('name', 'branch_id')->toArray())
+                    ->default(fn (): ?int => auth()->user()?->branchId())
                     ->searchable()
                     ->preload()
                     ->visible(fn (callable $get): bool => in_array($get('roles_id'), self::branchScopedRoleIds(), true))

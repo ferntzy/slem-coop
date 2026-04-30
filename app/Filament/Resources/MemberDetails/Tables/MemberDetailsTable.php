@@ -270,10 +270,6 @@ class MemberDetailsTable
                     ->label('Membership Type')
                     ->sortable(),
 
-                TextColumn::make('branch.name')
-                    ->label('Branch')
-                    ->sortable(),
-
                 TextColumn::make('status')
                     ->label('Status')
                     ->state(function ($record): string {

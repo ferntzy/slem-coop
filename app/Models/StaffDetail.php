@@ -14,16 +14,10 @@ class StaffDetail extends Model
         'profile_id',
         'position',
         'staff_detailscol',
-        'branch_id',
     ];
 
     public function profile()
     {
         return $this->belongsTo(Profile::class, 'profile_id', 'profile_id');
-    }
-
-    public function branch()
-    {
-        return $this->belongsTo(Branch::class, 'branch_id', 'branch_id');
     }
 }
