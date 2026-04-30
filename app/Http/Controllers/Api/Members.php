@@ -16,7 +16,7 @@ class Members extends Controller
             return response()->json([
                 'noa' => $NumberOfActiveMembers,
             ]);
-
+ 
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'Unable to get active members',
