@@ -11,6 +11,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Section;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Tables\Enums\RecordActionsPosition;
 
 class LoanHistoryRelationManager extends RelationManager
 {
@@ -73,10 +74,11 @@ class LoanHistoryRelationManager extends RelationManager
             ])
             ->actions([
                 ViewAction::make('inspect')
-                    ->label('Inspect')
-                    ->modalHeading('Loan Details')
-                    ->modalWidth('7xl')
-                    ->infolist([
+                      
+                        ->hiddenLabel()          // eye icon only, no text
+                        ->modalHeading('Loan Details')
+                        ->modalWidth('7xl')
+                        ->infolist([
                         Section::make('Loan Information')
                             ->schema([
                                 // TextEntry::make('loan_application_id')
@@ -371,6 +373,7 @@ class LoanHistoryRelationManager extends RelationManager
                     ]),
             ])
             ->defaultSort('loan_application_id', 'desc')
+           ->actionsPosition(RecordActionsPosition::BeforeColumns)
             ->striped()
             ->emptyStateHeading('No loan applications found')
             ->emptyStateDescription('This member has no loan application records yet.');
