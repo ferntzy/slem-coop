@@ -140,58 +140,92 @@ class MemberDetailsController extends Controller
     /**
      * PUT /api/member-details/{id}
      */
-    public function update(Request $request, $id)
-    {
-        DB::beginTransaction();
+   public function update(Request $request, $id)
+{
+    DB::beginTransaction();
 
-        try {
-            $member = MemberDetail::find($id);
+    try {
+        $member = MemberDetail::with(['profile','spouse','coMakers'])->find($id);
 
-            if (! $member) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Member not found',
-                ], 404);
-            }
-
-            // ✅ UPDATE MEMBER
-            $member->update($request->all());
-
-            // ✅ UPDATE / CREATE SPOUSE
-            if ($request->spouse) {
-                $member->spouse()->updateOrCreate(
-                    ['member_detail_id' => $member->id],
-                    $request->spouse
-                );
-            }
-
-            // ✅ RESET CO-MAKERS (same sa repeater behavior)
-            if ($request->coMakers) {
-                $member->coMakers()->delete();
-
-                foreach ($request->coMakers as $coMaker) {
-                    $member->coMakers()->create($coMaker);
-                }
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Member updated successfully',
-                'data' => $member->load(['spouse', 'coMakers']),
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
+        if (! $member) {
             return response()->json([
                 'status' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+                'message' => 'Member not found',
+            ], 404);
         }
-    }
 
+        /* =========================
+           PROFILE (FIXED)
+        ========================= */
+        if ($request->profile) {
+            $member->profile()->updateOrCreate(
+                ['profile_id' => $member->profile_id], // depende sa FK nimo
+                [
+                    'first_name' => $request->profile['first_name'] ?? null,
+                    'last_name' => $request->profile['last_name'] ?? null,
+                    'email' => $request->profile['email'] ?? null,
+                    'mobile_number' => $request->profile['mobile_number'] ?? null,
+                ]
+            );
+        }
+
+        /* =========================
+           MEMBER DETAILS
+        ========================= */
+        if ($request->member) {
+            $member->update([
+                'occupation' => $request->member['occupation'] ?? null,
+                'employer_name' => $request->member['employer_name'] ?? null,
+                'monthly_income' => $request->member['monthly_income'] ?? 0,
+            ]);
+        }
+
+        /* =========================
+           SPOUSE
+        ========================= */
+        if ($request->spouse) {
+            $member->spouse()->updateOrCreate(
+                ['member_detail_id' => $member->id],
+                [
+                    'full_name' => $request->spouse['full_name'] ?? null,
+                    'occupation' => $request->spouse['occupation'] ?? null,
+                    'monthly_income' => $request->spouse['monthly_income'] ?? 0,
+                ]
+            );
+        }
+
+        /* =========================
+           CO-MAKERS
+        ========================= */
+        if ($request->co_makers) {
+            $member->coMakers()->delete();
+
+            foreach ($request->co_makers as $coMaker) {
+                $member->coMakers()->create([
+                    'full_name' => $coMaker['full_name'] ?? null,
+                    'relationship' => $coMaker['relationship'] ?? null,
+                    'contact_number' => $coMaker['contact_number'] ?? null,
+                ]);
+            }
+        }
+
+        DB::commit();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Member updated successfully',
+            'data' => $member->load(['profile','spouse','coMakers']),
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        return response()->json([
+            'status' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
     /**
      * DELETE /api/member-details/{id}
      */
