@@ -128,13 +128,13 @@ class NotificationService
 
         $password = Str::random(12);
 
-       $user = User::create([
-        'profile_id' => $profile->profile_id,
-        'password'   => Hash::make($password),
-        'username'   => $profile->first_name . ' ' . $profile->last_name,
-        'must_change_password' => true,
-        'is_active'  => true,
-    ]);
+        $user = User::create([
+            'profile_id' => $profile->profile_id,
+            'password' => Hash::make($password),
+            'username' => $profile->first_name.' '.$profile->last_name,
+            'must_change_password' => true,
+            'is_active' => true,
+        ]);
 
         $this->ensureMemberRole($user);
 
@@ -380,8 +380,43 @@ class NotificationService
             return;
         }
 
+        $email = $profile->email;
+        $subject = $title;
+        $type = 'notification';
+        $referenceType = Notification::class;
+
+        // Check for duplicate within last 24 hours
+        $recentDuplicate = SentEmail::where('email', $email)
+            ->where('type', $type)
+            ->where('subject', $subject)
+            ->where('created_at', '>=', now()->subHours(24))
+            ->exists();
+
+        if ($recentDuplicate) {
+            Log::info("NotificationService: skipping duplicate email to {$email} - subject: {$subject}");
+
+            return;
+        }
+
         try {
-            Mail::queue(new GenericNotification($profile->email, $title, $message));
+            // Create tracking record
+            $sentEmail = SentEmail::create([
+                'profile_id' => $profile->profile_id,
+                'email' => $email,
+                'subject' => $subject,
+                'mailable_class' => GenericNotification::class,
+                'type' => $type,
+                'reference_type' => $referenceType,
+                'body' => $message,
+            ]);
+
+            // Send email
+            Mail::queue(new GenericNotification($email, $subject, $title, $message));
+
+            // Mark as sent
+            $sentEmail->update(['sent_at' => now()]);
+
+            Log::info("NotificationService: email sent to {$email}, sent_email_id={$sentEmail->id}");
         } catch (\Throwable $exception) {
             Log::warning("NotificationService: failed to send email notification to profile_id={$profile->profile_id} - {$exception->getMessage()}");
         }
@@ -411,7 +446,7 @@ class NotificationService
     }
 
     public function notifyUserAccountCreated(User $user): ?Notification
-     {
+    {
         $title = 'Account Created';
 
         $description = "Your account has been successfully created.\n\n"
@@ -447,12 +482,11 @@ class NotificationService
     }
 
     public function sendSms(string $mobileNumber, string $message): void
-{
-    try {
-        app(\App\Services\SmsService::class)->sendBulkSms([$mobileNumber], $message);
-    } catch (\Throwable $e) {
-        Log::warning("NotificationService: SMS failed - {$e->getMessage()}");
+    {
+        try {
+            app(SmsService::class)->sendBulkSms([$mobileNumber], $message);
+        } catch (\Throwable $e) {
+            Log::warning("NotificationService: SMS failed - {$e->getMessage()}");
+        }
     }
-}
-
 }
