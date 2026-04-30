@@ -48,6 +48,7 @@ class MemberDetailForm
                                         // Must dehydrate even when disabled so the value survives
                                         // the save payload and isn't silently wiped.
                                         ->dehydratedWhenHidden()
+                                        ->live()
                                         ->required(),
 
                                     Hidden::make('member_no'),
@@ -55,6 +56,14 @@ class MemberDetailForm
                                     Select::make('membership_type_id')
                                         ->label('Membership Type')
                                         ->relationship('membershipType', 'name')
+                                        ->searchable()
+                                        ->preload()
+                                        ->required(),
+
+                                    Select::make('branch_id')
+                                        ->label('Branch')
+                                        ->relationship('branch', 'name')
+                                        ->default(fn () => auth()->user()?->branchId())
                                         ->searchable()
                                         ->preload()
                                         ->required(),
