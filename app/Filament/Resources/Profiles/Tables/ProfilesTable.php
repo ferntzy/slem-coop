@@ -6,7 +6,6 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
-use app\Models\MemberDetail;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -15,7 +14,7 @@ class ProfilesTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->approved())
+            ->modifyQueryUsing(fn ($query) => $query->approved()->with(['branch', 'memberDetail.branch']))
             ->columns([
 
                 TextColumn::make('full_name')
@@ -44,9 +43,9 @@ class ProfilesTable
                     ->label('Role')
                     ->sortable(),
 
-                TextColumn::make('MemberDetail.branch.name')
+                TextColumn::make('branch')
                     ->label('Branch')
-                    ->sortable(),
+                    ->state(fn ($record): string => $record->branch?->name ?? $record->memberDetail?->branch?->name ?? '—'),
             ])
             ->filters([
                 //

@@ -59,15 +59,6 @@ class MemberDetailForm
                                         ->preload()
                                         ->required(),
 
-                                    Select::make('branch_id')
-                                        ->relationship('branch', 'name')
-                                        ->default(fn () => auth()->user()?->branchId())
-                                        ->disabled(fn () => auth()->user()?->isStaff())
-                                        // Dehydrate even when disabled so staff edits don't
-                                        // accidentally null out the branch on save.
-                                        ->dehydratedWhenHidden()
-                                        ->required(),
-
                                     Select::make('status')
                                         ->options([
                                             'Active' => 'Active',

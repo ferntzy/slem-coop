@@ -49,6 +49,7 @@ class Profile extends Model
         'civil_status',
         'tin',
         'address',
+        'branch_id',
         'roles_id',
     ];
 
@@ -65,6 +66,11 @@ class Profile extends Model
     public function memberDetail()
     {
         return $this->hasOne(MemberDetail::class, 'profile_id', 'profile_id');
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class, 'branch_id', 'branch_id');
     }
 
     public function membershipApplications()

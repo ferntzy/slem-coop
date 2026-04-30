@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Profiles\Pages;
 
 use App\Filament\Resources\Profiles\ProfileResource;
 use App\Models\Profile;
+use App\Models\Role;
 use App\Models\StaffDetail;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
@@ -12,8 +13,6 @@ class EditProfile extends EditRecord
 {
     protected static string $resource = ProfileResource::class;
 
-    protected ?int $staffBranchId = null;
-
     protected function getHeaderActions(): array
     {
         return [
@@ -21,28 +20,21 @@ class EditProfile extends EditRecord
         ];
     }
 
-    protected function mutateFormDataBeforeFill(array $data): array
-    {
-        $data['staff_branch_id'] = $this->record->staffDetail?->branch_id;
-
-        return $data;
-    }
-
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        $this->staffBranchId = $data['staff_branch_id'] ?? null;
-
-        unset($data['staff_branch_id']);
+        if (! $this->isBranchScopedRole((int) ($data['roles_id'] ?? $this->record->roles_id ?? 0))) {
+            $data['branch_id'] = null;
+        }
 
         return $data;
     }
 
     protected function afterSave(): void
     {
-        $this->syncStaffBranch($this->record);
+        $this->syncStaffDetail($this->record);
     }
 
-    protected function syncStaffBranch(Profile $profile): void
+    protected function syncStaffDetail(Profile $profile): void
     {
         $branchScopedRoleNames = [
             'Manager',
@@ -54,19 +46,31 @@ class EditProfile extends EditRecord
         ];
 
         if (in_array($profile->role?->name, $branchScopedRoleNames, true)) {
-            if ($this->staffBranchId) {
-                StaffDetail::updateOrCreate(
-                    ['profile_id' => $profile->profile_id],
-                    [
-                        'position' => $profile->role?->name,
-                        'branch_id' => $this->staffBranchId,
-                    ],
-                );
-            }
+            StaffDetail::updateOrCreate(
+                ['profile_id' => $profile->profile_id],
+                [
+                    'position' => $profile->role?->name,
+                ],
+            );
 
             return;
         }
 
         $profile->staffDetail?->delete();
+    }
+
+    protected function isBranchScopedRole(int $roleId): bool
+    {
+        return Role::query()
+            ->whereKey($roleId)
+            ->whereIn('name', [
+                'Manager',
+                'Staff',
+                'Cashier',
+                'Account Officer',
+                'Loan Officer',
+                'Teller',
+            ])
+            ->exists();
     }
 }
