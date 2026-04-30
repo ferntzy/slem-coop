@@ -23,6 +23,7 @@ use App\Http\Controllers\NewsEventController;
 use App\Http\Controllers\Notifications;
 use App\Http\Controllers\OrientationController;
 use App\Http\Controllers\OrientationSettingsController;
+use App\Http\Controllers\Payments;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SavingsAccount as ControllersSavingsAccount;
 use Illuminate\Http\Request;
@@ -58,6 +59,9 @@ Route::get('/inactive-members', [Members::class,  'inactiveMembers']);
 Route::get('/get-loans', [Loans::class, 'getLoans']);
 Route::get('/loan/{id}', [Loans::class, 'getLoanDetail']);
 Route::get('/loans-by-id/{id}', [Loans::class, 'getLoanAccountsById']);
+
+//payment
+Route::get('payment-status/{id}', [Payments::class, 'getPaymentStatus']);
 
 // loan officer apis
 // stat card data
