@@ -12,22 +12,28 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('profiles', function (Blueprint $table) {
-            $table->foreignId('branch_id')
-                ->nullable()
-                ->after('roles_id')
-                ->constrained('branches', 'branch_id')
-                ->nullOnDelete();
-        });
+        if (! Schema::hasColumn('profiles', 'branch_id')) {
+            Schema::table('profiles', function (Blueprint $table) {
+                $table->foreignId('branch_id')
+                    ->nullable()
+                    ->after('roles_id')
+                    ->constrained('branches', 'branch_id')
+                    ->nullOnDelete();
+            });
+        }
 
-        DB::table('profiles')
-            ->join('staff_details', 'profiles.profile_id', '=', 'staff_details.profile_id')
-            ->whereNull('profiles.branch_id')
-            ->update(['branch_id' => DB::raw('staff_details.branch_id')]);
+        DB::statement(<<<'SQL'
+            update profiles
+            inner join staff_details on profiles.profile_id = staff_details.profile_id
+            set profiles.branch_id = staff_details.branch_id
+            where profiles.branch_id is null
+        SQL);
 
-        Schema::table('staff_details', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('branch_id');
-        });
+        if (Schema::hasColumn('staff_details', 'branch_id')) {
+            Schema::table('staff_details', function (Blueprint $table) {
+                $table->dropConstrainedForeignId('branch_id');
+            });
+        }
     }
 
     /**
@@ -35,21 +41,27 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('staff_details', function (Blueprint $table) {
-            $table->foreignId('branch_id')
-                ->nullable()
-                ->after('staff_detailscol')
-                ->constrained('branches', 'branch_id')
-                ->nullOnDelete();
-        });
+        if (! Schema::hasColumn('staff_details', 'branch_id')) {
+            Schema::table('staff_details', function (Blueprint $table) {
+                $table->foreignId('branch_id')
+                    ->nullable()
+                    ->after('staff_detailscol')
+                    ->constrained('branches', 'branch_id')
+                    ->nullOnDelete();
+            });
+        }
 
-        DB::table('staff_details')
-            ->join('profiles', 'profiles.profile_id', '=', 'staff_details.profile_id')
-            ->whereNull('staff_details.branch_id')
-            ->update(['branch_id' => DB::raw('profiles.branch_id')]);
+        DB::statement(<<<'SQL'
+            update staff_details
+            inner join profiles on profiles.profile_id = staff_details.profile_id
+            set staff_details.branch_id = profiles.branch_id
+            where staff_details.branch_id is null
+        SQL);
 
-        Schema::table('profiles', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('branch_id');
-        });
+        if (Schema::hasColumn('profiles', 'branch_id')) {
+            Schema::table('profiles', function (Blueprint $table) {
+                $table->dropConstrainedForeignId('branch_id');
+            });
+        }
     }
 };
