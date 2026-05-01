@@ -2,12 +2,15 @@
 
 namespace App\Filament\Resources\MemberDetails\Schemas;
 
+use App\Filament\Widgets\RegularSavingsTransactionsTable;
 use App\Models\SavingsAccountTransaction;
 use App\Models\SavingsType;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Livewire;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -316,31 +319,6 @@ class MemberDetailInfolist
                     'maturity_action' => $transaction->maturity_action,
                     'transaction_date' => $transaction->transaction_date,
                     'maturity_date' => $maturityDate,
-                ];
-            })
-            ->sortByDesc(fn (array $transaction): string => sprintf(
-                '%s-%010d',
-                optional($transaction['transaction_date'])->format('Y-m-d H:i:s.u') ?? '',
-                $transaction['id']
-            ))
-            ->values()
-            ->all();
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    protected static function getRegularSavingsDisplayTransactions(int $profileId): array
-    {
-        return static::getRegularSavingsTransactions($profileId)
-            ->map(function (SavingsAccountTransaction $transaction): array {
-                return [
-                    'id' => (int) $transaction->id,
-                    'type' => $transaction->type,
-                    'amount' => static::getTransactionAmount($transaction),
-                    'status' => $transaction->status,
-                    'transaction_date' => $transaction->transaction_date,
-                    'notes' => $transaction->notes,
                 ];
             })
             ->sortByDesc(fn (array $transaction): string => sprintf(
@@ -688,94 +666,8 @@ class MemberDetailInfolist
                                     ])
                                     ->columns(2),
 
-                                Section::make('Regular Savings Transactions')
-                                    ->schema([
-                                        RepeatableEntry::make('regular_savings_transactions')
-                                            ->label('Latest 3 Transactions')
-                                            ->state(function ($record): array {
-                                                $transactions = collect(
-                                                    static::getRegularSavingsDisplayTransactions((int) $record->profile_id)
-                                                );
-
-                                                return static::getLatestTransactions($transactions);
-                                            })
-                                            ->schema([
-                                                TextEntry::make('type')
-                                                    ->badge()
-                                                    ->color(fn ($state) => match ($state) {
-                                                        'Deposit' => 'success',
-                                                        'Withdrawal' => 'warning',
-                                                        'Interest' => 'info',
-                                                        default => 'gray',
-                                                    }),
-
-                                                TextEntry::make('amount')
-                                                    ->label('Amount')
-                                                    ->money('PHP'),
-
-                                                TextEntry::make('status')
-                                                    ->badge()
-                                                    ->placeholder('-'),
-
-                                                TextEntry::make('transaction_date')
-                                                    ->label('Transaction Date')
-                                                    ->dateTime('M d, Y h:i A'),
-
-                                                TextEntry::make('notes')
-                                                    ->label('Notes')
-                                                    ->placeholder('-'),
-                                            ])
-                                            ->columns(5)
-                                            ->contained()
-                                            ->columnSpanFull(),
-
-                                        Section::make('More Regular Savings Transactions')
-                                            ->schema([
-                                                RepeatableEntry::make('older_regular_savings_transactions')
-                                                    ->label('Older Transactions')
-                                                    ->state(function ($record): array {
-                                                        $transactions = collect(
-                                                            static::getRegularSavingsDisplayTransactions((int) $record->profile_id)
-                                                        );
-
-                                                        return static::getOlderTransactions($transactions);
-                                                    })
-                                                    ->schema([
-                                                        TextEntry::make('type')
-                                                            ->badge()
-                                                            ->color(fn ($state) => match ($state) {
-                                                                'Deposit' => 'success',
-                                                                'Withdrawal' => 'warning',
-                                                                'Interest' => 'info',
-                                                                default => 'gray',
-                                                            }),
-
-                                                        TextEntry::make('amount')
-                                                            ->label('Amount')
-                                                            ->money('PHP'),
-
-                                                        TextEntry::make('status')
-                                                            ->badge()
-                                                            ->placeholder('-'),
-
-                                                        TextEntry::make('transaction_date')
-                                                            ->label('Transaction Date')
-                                                            ->dateTime('M d, Y h:i A'),
-
-                                                        TextEntry::make('notes')
-                                                            ->label('Notes')
-                                                            ->placeholder('-'),
-                                                    ])
-                                                    ->columns(5)
-                                                    ->contained()
-                                                    ->columnSpanFull(),
-                                            ])
-                                            ->collapsible()
-                                            ->collapsed()
-                                            ->visible(function ($record): bool {
-                                                return count(static::getRegularSavingsDisplayTransactions((int) $record->profile_id)) > 3;
-                                            }),
-                                    ]),
+                                Livewire::make(RegularSavingsTransactionsTable::class)
+                                    ->columnSpanFull(),
 
                                 Section::make('Time Deposit Overview')
                                     ->schema([
@@ -826,12 +718,17 @@ class MemberDetailInfolist
                                     ->columns(3),
 
                                 Section::make('Time Deposit Transactions')
+                                    ->extraAttributes([
+                                        'class' => 'max-w-full overflow-hidden',
+                                        'style' => 'max-width: 100%; overflow: hidden;',
+                                    ])
                                     ->schema([
                                         Section::make('Eligible for Maturity Option')
                                             ->description('Only time deposits within 7 days before maturity are listed here. If no action is taken, the system will automatically transfer the amount to Regular Savings on the maturity date.')
                                             ->schema([
                                                 RepeatableEntry::make('eligible_time_deposit_transactions')
                                                     ->label('Eligible Time Deposits')
+                                                    ->extraAttributes(['class' => 'min-w-[72rem]'])
                                                     ->state(function ($record): array {
                                                         return static::getEligibleTimeDepositDisplayTransactions((int) $record->profile_id);
                                                     })
@@ -937,6 +834,10 @@ class MemberDetailInfolist
 
                                         RepeatableEntry::make('time_deposit_transactions')
                                             ->label('Latest 3 Transactions')
+                                            ->extraAttributes([
+                                                'class' => 'w-full max-w-full overflow-x-auto',
+                                                'style' => 'width: 100%; max-width: 100%; overflow-x: auto;',
+                                            ])
                                             ->state(function ($record): array {
                                                 $transactions = collect(
                                                     static::getTimeDepositDisplayTransactions((int) $record->profile_id)
@@ -993,7 +894,17 @@ class MemberDetailInfolist
                                                     ->label('Notes')
                                                     ->placeholder('-'),
                                             ])
-                                            ->columns(9)
+                                            ->table([
+                                                TableColumn::make('Amount')->width('10rem'),
+                                                TableColumn::make('Term')->width('8rem'),
+                                                TableColumn::make('Status')->width('9rem'),
+                                                TableColumn::make('Maturity Option')->width('14rem'),
+                                                TableColumn::make('Deposit Date')->width('12rem'),
+                                                TableColumn::make('Maturity Date')->width('10rem'),
+                                                TableColumn::make('Transferred to Regular Savings')->width('14rem'),
+                                                TableColumn::make('Transfer Date')->width('12rem'),
+                                                TableColumn::make('Notes')->width('18rem'),
+                                            ])
                                             ->contained()
                                             ->columnSpanFull(),
 
@@ -1001,6 +912,10 @@ class MemberDetailInfolist
                                             ->schema([
                                                 RepeatableEntry::make('older_time_deposit_transactions')
                                                     ->label('Older Transactions')
+                                                    ->extraAttributes([
+                                                        'class' => 'w-full max-w-full overflow-x-auto',
+                                                        'style' => 'width: 100%; max-width: 100%; overflow-x: auto;',
+                                                    ])
                                                     ->state(function ($record): array {
                                                         $transactions = collect(
                                                             static::getTimeDepositDisplayTransactions((int) $record->profile_id)
@@ -1057,7 +972,17 @@ class MemberDetailInfolist
                                                             ->label('Notes')
                                                             ->placeholder('-'),
                                                     ])
-                                                    ->columns(9)
+                                                    ->table([
+                                                        TableColumn::make('Amount')->width('10rem'),
+                                                        TableColumn::make('Term')->width('8rem'),
+                                                        TableColumn::make('Status')->width('9rem'),
+                                                        TableColumn::make('Maturity Option')->width('14rem'),
+                                                        TableColumn::make('Deposit Date')->width('12rem'),
+                                                        TableColumn::make('Maturity Date')->width('10rem'),
+                                                        TableColumn::make('Transferred to Regular Savings')->width('14rem'),
+                                                        TableColumn::make('Transfer Date')->width('12rem'),
+                                                        TableColumn::make('Notes')->width('18rem'),
+                                                    ])
                                                     ->contained()
                                                     ->columnSpanFull(),
                                             ])
