@@ -105,7 +105,7 @@ Route::get('/account-officer/collections', [AccountDashboard::class, 'collection
 Route::get('/account-officer/loans', [AccountDashboard::class, 'activeLoanAccounts']);
 Route::get('/account-officer/pending-loans', [AccountDashboard::class, 'pendingLoanApplications']);
 Route::get('/account-officer/delinquent', [AccountDashboard::class, 'delinquentMembers']);
-Route::get('/members', [AccountMembersController::class, 'member']);
+Route::get('/all-members/{id}', [AccountMembersController::class, 'member']);
 Route::get('/members/{id}', [AccountMembersController::class, 'show']);
 Route::get('/loans', [AccountLoansController::class, 'Loans']);
 Route::get('/all-loans', [AccountLoansController::class, 'allLoans']);
