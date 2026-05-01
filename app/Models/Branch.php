@@ -21,4 +21,9 @@ class Branch extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    public function profiles()
+    {
+        return $this->hasMany(Profile::class, 'branch_id', 'branch_id');
+    }
 }

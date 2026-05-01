@@ -5,14 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\MemberDetail;
+use App\Models\Profile;
 
 class AccountMembersController extends Controller
 {
-    public function member()
+    public function member($id)
     {
+        $bid = Profile::where('profile_id', $id)->value('branch_id');
         // Eager load 'branch' and 'membershipType' relationships
         $activeMembers = MemberDetail::with(['branch', 'membershipType'])
             ->where('status', 'active')
+            ->where('branch_id', $bid)
             ->get()
             ->map(function ($member) {
                 return [
