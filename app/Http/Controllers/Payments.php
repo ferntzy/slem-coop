@@ -46,7 +46,8 @@ class Payments extends Controller
             ]);
 
             return response()->json([
-                'message' => 'payment was recorded successfully!'
+                'message' => 'payment was recorded successfully!',
+                'success' => 'ok'
             ], 200);
 
         }catch(Exception $e){
