@@ -39,7 +39,7 @@ class Payments extends Controller
                 'payment_method' => $request->payment_method,
                 'payment_date' => $request->payment_date,
                 'reference_number' => $request->or_number,
-                'posted_by_user_id' => $request->profileid,
+                'posted_by_user_id' => $request->profile_id,
                 'status' => 'Posted',
                 'notes' => $request->notes,
                 'member_name' => $membername
