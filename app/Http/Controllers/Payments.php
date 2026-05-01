@@ -28,7 +28,7 @@ class Payments extends Controller
 
     public function PayLoan(Request $request){
         try{
-            $pid = LoanAccount::where('looan_account_id', $request->loan_account_id)->value('profile_id');
+            $pid = LoanAccount::where('loan_account_id', $request->loan_account_id)->value('profile_id');
             $profile = Profile::where('profile_id', $pid)->first();
 
             $membername = $profile->firstname .' '.$profile->lastname;
