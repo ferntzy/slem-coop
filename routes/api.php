@@ -26,6 +26,7 @@ use App\Http\Controllers\OrientationSettingsController;
 use App\Http\Controllers\Payments;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SavingsAccount as ControllersSavingsAccount;
+use Faker\Provider\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -61,7 +62,8 @@ Route::get('/loan/{id}', [Loans::class, 'getLoanDetail']);
 Route::get('/loans-by-id/{id}', [Loans::class, 'getLoanAccountsById']);
 
 //payment
-Route::get('payment-status/{id}', [Payments::class, 'getPaymentStatus']);
+Route::get('/payment-status/{id}', [Payments::class, 'getPaymentStatus']);
+Route::post('/pay-loan', [Payments::class, 'PayLoan']);
 
 // loan officer apis
 // stat card data
