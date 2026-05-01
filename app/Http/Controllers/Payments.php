@@ -28,7 +28,7 @@ class Payments extends Controller
 
     public function PayLoan(Request $request){
         try{
-            $pid = LoanAccount::where('looan_account_id', $request->loan_account_id)->value('profile_id');
+            $pid = LoanAccount::where('loan_account_id', $request->loan_account_id)->value('profile_id');
             $profile = Profile::where('profile_id', $pid)->first();
 
             $membername = $profile->firstname .' '.$profile->lastname;
@@ -39,14 +39,15 @@ class Payments extends Controller
                 'payment_method' => $request->payment_method,
                 'payment_date' => $request->payment_date,
                 'reference_number' => $request->or_number,
-                'posted_by_user_id' => $request->profileid,
+                'posted_by_user_id' => $request->profile_id,
                 'status' => 'Posted',
                 'notes' => $request->notes,
                 'member_name' => $membername
             ]);
 
             return response()->json([
-                'message' => 'payment was recorded successfully!'
+                'message' => 'payment was recorded successfully!',
+                'success' => 'ok'
             ], 200);
 
         }catch(Exception $e){
