@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\LoanApplications\Pages;
 
 use App\Filament\Resources\LoanApplications\LoanApplicationsResource;
+use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewLoanApplications extends ViewRecord
@@ -12,5 +13,12 @@ class ViewLoanApplications extends ViewRecord
     public function getTitle(): string
     {
         return 'View '.$this->record->member?->profile?->first_name;
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            EditAction::make(),
+        ];
     }
 }
