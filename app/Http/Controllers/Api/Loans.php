@@ -297,4 +297,79 @@ class Loans extends Controller
             ]);
         }
     }
+
+    public function getPendingPayments(){
+        try {
+            $today = now()->toDateString();
+            $results = [];
+
+            $loanAccounts = LoanAccount::where('status', 'Active')
+                ->with(['profile', 'collectionsAndPostings' => function ($q) {
+                    $q->where('status', 'posted')->orderBy('payment_date');
+                }])
+                ->get();
+
+            foreach ($loanAccounts as $loan) {
+                $principal      = (float) $loan->principal_amount;
+                $monthlyRate    = (float) $loan->interest_rate / 100 / 12;
+                $termMonths     = (int) $loan->term_months;
+                $monthlyPayment = (float) $loan->monthly_amortization;
+                $releaseDate    = $loan->release_date;
+
+                $payments     = $loan->collectionsAndPostings;
+                $paymentPool  = 0.0;
+                $paymentIndex = 0;
+                $paymentCount = $payments->count();
+                $balance      = $principal;
+
+                for ($i = 1; $i <= $termMonths; $i++) {
+                    $dueDate = (clone $releaseDate)->addMonths($i);
+
+                    while (
+                        $paymentIndex < $paymentCount &&
+                        $payments[$paymentIndex]->payment_date <= $dueDate->toDateString()
+                    ) {
+                        $paymentPool += (float) $payments[$paymentIndex]->amount_paid;
+                        $paymentIndex++;
+                    }
+
+                    $interest       = round($balance * $monthlyRate, 2);
+                    $principalPay   = round($monthlyPayment - $interest, 2);
+                    $endingBalance  = max(round($balance - $principalPay, 2), 0);
+
+                    if ($paymentPool >= $monthlyPayment) {
+                        $paymentPool -= $monthlyPayment;
+                    } else {
+                        $dueDateStr = $dueDate->toDateString();
+                        $daysAhead  = now()->diffInDays($dueDate, false);
+
+                        if ($dueDateStr >= $today && $daysAhead <= 30) {
+                            $results[] = [
+                                'loan_account_id'   => $loan->loan_account_id,
+                                'period'            => $i,
+                                'due_date'          => $dueDateStr,
+                                'days_until_due'    => (int) $daysAhead,
+                                'monthly_payment'   => $monthlyPayment,
+                                'interest_payment'  => $interest,
+                                'principal_payment' => $principalPay,
+                                'ending_balance'    => $endingBalance,
+                                'member_name'       => $loan->profile?->full_name ?? 'Unknown',
+                                'profile_id'        => $loan->profile_id,
+                            ];
+                        }
+                    }
+
+                    $balance = $endingBalance;
+                }
+            }
+
+            // Sort by due date ascending
+            usort($results, fn($a, $b) => strcmp($a['due_date'], $b['due_date']));
+
+            return response()->json(['pending_payments' => $results]);
+
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Unable to get pending payments']);
+        }
+    }
 }
