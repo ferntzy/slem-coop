@@ -2,8 +2,6 @@
 
 use App\Http\Controllers\Api\AboutPageController;
 use App\Http\Controllers\Api\AccountDashboard;
-use App\Http\Controllers\Api\AccountLoanEditController;
-use App\Http\Controllers\Api\AccountLoansController;
 use App\Http\Controllers\Api\AccountMembersController;
 use App\Http\Controllers\Api\AccountOfficerController;
 use App\Http\Controllers\Api\ContactPageController;
@@ -13,16 +11,12 @@ use App\Http\Controllers\Api\MemberDetailsController;
 use App\Http\Controllers\Api\Members;
 use App\Http\Controllers\Api\ReportsController;
 use App\Http\Controllers\Api\RestructureApplicationController;
-use App\Http\Controllers\HeroNewsEventController;
 use App\Http\Controllers\LoanApplication as ControllersLoanApplication;
 use App\Http\Controllers\MembershipApplicationController;
 use App\Http\Controllers\MobileAuth\Auth;
 use App\Http\Controllers\MobileMemberGeneral;
-use App\Http\Controllers\NewsController;
-use App\Http\Controllers\NewsEventController;
 use App\Http\Controllers\Notifications;
 use App\Http\Controllers\OrientationController;
-use App\Http\Controllers\OrientationSettingsController;
 use App\Http\Controllers\Payments;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SavingsAccount as ControllersSavingsAccount;
@@ -46,6 +40,7 @@ Route::get('/active-all-loans', [MobileMemberGeneral::class, 'getNumberOfActiveL
 
 Route::get('/membership-types', [MembershipApplicationController::class, 'membershipTypes']);
 Route::get('/branches', [MembershipApplicationController::class, 'branches']);
+Route::get('/resolve-branch-by-municipality', [MembershipApplicationController::class, 'resolveBranchByMunicipality']);
 Route::post('/profiles', [ProfileController::class, 'store']);
 
 Route::post('/membership-application', [MembershipApplicationController::class, 'store']);
@@ -64,7 +59,7 @@ Route::get('/loan-accounts/pending-count', [Loans::class, 'getPendingPaymentCoun
 Route::get('/loan-accounts/pending-payments', [Loans::class, 'getPendingPayments']);
 Route::get('/loan-accounts/overdue-payments', [Loans::class, 'getOverduePayments']);
 
-//payment
+// payment
 Route::get('/payment-status/{id}', [Payments::class, 'getPaymentStatus']);
 Route::post('/pay-loan', [Payments::class, 'PayLoan']);
 
@@ -74,7 +69,7 @@ Route::get('/approved-loans', [Loans::class, 'getApprovedLoans']);
 Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
 
 // loan applications
-Route::get('/loan-applications', [Loans::class, 'getLoanApplications']);
+Route::get('/loan-applications/{id}', [Loans::class, 'getLoanApplications']);
 Route::post('/get-loan-application-detail', [Loans::class, 'getLoanApplication']);
 Route::post('/decline-loan-application', [Loans::class, 'declineLoanApplication']);
 Route::post('/approve-loan-application', [Loans::class, 'approveLoanApplication']);
@@ -103,20 +98,12 @@ Route::get('/account-officer/members', [AccountDashboard::class, 'activemembers'
 Route::get('/account-officer/loan-disbursements', [AccountDashboard::class, 'loanDisbursements']);
 Route::get('/account-officer/collections', [AccountDashboard::class, 'collections']);
 Route::get('/account-officer/loans', [AccountDashboard::class, 'activeLoanAccounts']);
-Route::get('/account-officer/pending-loans', [AccountDashboard::class, 'pendingLoanApplications']);
+
 Route::get('/account-officer/delinquent', [AccountDashboard::class, 'delinquentMembers']);
-Route::get('/account-officer/loan-disbursements', [AccountDashboard::class, 'loanDisbursements']);
-Route::get('/account-officer/collections', [AccountDashboard::class, 'collections']);
-Route::get('/account-officer/loans', [AccountDashboard::class, 'activeLoanAccounts']);
 Route::get('/account-officer/pending-loans', [AccountDashboard::class, 'pendingLoanApplications']);
 Route::get('/account-officer/delinquent', [AccountDashboard::class, 'delinquentMembers']);
 Route::get('/all-members/{id}', [AccountMembersController::class, 'member']);
 Route::get('/members/{id}', [AccountMembersController::class, 'show']);
-Route::get('/loans', [AccountLoansController::class, 'Loans']);
-Route::get('/all-loans', [AccountLoansController::class, 'allLoans']);
-Route::get('/loans/{id}', [AccountLoansController::class, 'show']);
-Route::get('/loan-edit', [AccountLoanEditController::class, 'index']);
-Route::get('/loan-edit/{id}', [AccountLoanEditController::class, 'show']);
 
 Route::prefix('member-details')->group(function () {
     Route::get('/', [MemberDetailsController::class, 'index']);
@@ -135,6 +122,8 @@ Route::post('/contact/submit', [ContactPageController::class, 'submit']);
 Route::get('/orientation', [OrientationController::class, 'show']);
 Route::post('/orientation/video-watched', [OrientationController::class, 'markVideoWatched']);
 Route::post('/orientation/submit', [OrientationController::class, 'submit']);
+
+Route::get('/orientation-settings', [OrientationSettingsController::class, 'show']);
 
 // member apis
 // member dashboard datas
@@ -158,5 +147,3 @@ Route::post('/member/fetch-unread-notifications', [Notifications::class, 'fetchU
 Route::post('/member/delete-notification', [Notifications::class, 'deleteNotification']);
 Route::post('/member/mark-notification-seen', [Notifications::class, 'markAsRead']);
 Route::get('/member/savings/{id}', [ControllersSavingsAccount::class, 'getSavingsAccount']);
-
-

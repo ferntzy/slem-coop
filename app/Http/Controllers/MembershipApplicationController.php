@@ -10,6 +10,7 @@ use App\Models\MembershipType;
 use App\Models\MemberSpouse;
 use App\Models\Profile;
 use App\Models\User;
+use App\Services\MunicipalityToBranchService;
 use App\Services\NotificationService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -37,6 +38,29 @@ class MembershipApplicationController extends Controller
         );
     }
 
+    public function resolveBranchByMunicipality(Request $request)
+    {
+        $municipality = $request->query('municipality');
+
+        if (! $municipality) {
+            return response()->json(['error' => 'Municipality parameter is required.'], 400);
+        }
+
+        $branchId = MunicipalityToBranchService::getBranchIdByMunicipality($municipality);
+
+        if (! $branchId) {
+            return response()->json(['error' => 'Municipality not mapped to any branch.'], 404);
+        }
+
+        $branch = Branch::where('branch_id', $branchId)->where('is_active', true)->first();
+
+        if (! $branch) {
+            return response()->json(['error' => 'Branch not found or inactive.'], 404);
+        }
+
+        return response()->json(['branch_id' => $branch->branch_id, 'name' => $branch->name]);
+    }
+
     public function store(Request $request)
     {
         // Validation block
@@ -54,7 +78,7 @@ class MembershipApplicationController extends Controller
                 'id_number' => 'nullable|string|max:100',
                 'house_no' => 'nullable|string|max:255',
                 'street_barangay' => 'nullable|string|max:255',
-                'municipality' => 'nullable|string|max:255',
+                'municipality' => 'required|string|max:255',
                 'province' => 'nullable|string|max:255',
                 'zip_code' => 'nullable|string|max:10',
                 'occupation' => 'nullable|string|max:100',
@@ -69,7 +93,7 @@ class MembershipApplicationController extends Controller
                 'dependents_count' => 'nullable|integer|min:0',
                 'children_in_school_count' => 'nullable|integer|min:0',
                 'membership_type_id' => 'required|exists:membership_types,membership_type_id',
-                'branch_id' => 'required|exists:branches,branch_id',
+                'branch_id' => 'nullable|exists:branches,branch_id',
                 'application_date' => 'required|date',
                 'remarks' => 'nullable|string',
                 'orientation_zoom_attended' => 'required|in:true,false,1,0',
@@ -89,6 +113,17 @@ class MembershipApplicationController extends Controller
                 // Co-makers data
                 'co_makers' => 'nullable|json',
             ]);
+
+            // Auto-resolve branch from municipality if not provided
+            if (! $validated['branch_id']) {
+                $resolvedBranchId = MunicipalityToBranchService::getBranchIdByMunicipality($validated['municipality']);
+                if (! $resolvedBranchId) {
+                    throw ValidationException::withMessages([
+                        'municipality' => 'The municipality is not mapped to any branch. Please contact support.',
+                    ]);
+                }
+                $validated['branch_id'] = $resolvedBranchId;
+            }
 
             $zoomAttended = filter_var($request->input('orientation_zoom_attended'), FILTER_VALIDATE_BOOLEAN);
             $videoCompleted = filter_var($request->input('orientation_video_completed'), FILTER_VALIDATE_BOOLEAN);
