@@ -81,7 +81,7 @@ export function MembershipInfo() {
       title: 'Regular Member',
       icon: UserCheck,
       description: 'Full membership with voting rights and access to all cooperative products and services.',
-      requirements: ['Must be 18+ years old', 'Resident of Service Area', 'Good moral character', 'Completed PMES'],
+      requirements: ['Resident of Service Area', 'Good moral character', 'Completed PMES'],
       shareCapital: '₱500 minimum',
       gradient: 'from-green-600 to-green-800',
     },
