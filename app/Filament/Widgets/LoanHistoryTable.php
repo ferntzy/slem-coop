@@ -1,29 +1,37 @@
 <?php
 
-namespace App\Filament\Resources\MemberDetails\RelationManagers;
+namespace App\Filament\Widgets;
 
+use App\Models\LoanApplication;
+use App\Models\MemberDetail;
 use App\Services\LoanAmortizationService;
 use App\Services\LoanScheduleService;
 use Filament\Actions\ViewAction;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Section;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
+use Filament\Tables\Enums\PaginationMode;
 use Filament\Tables\Enums\RecordActionsPosition;
+use Filament\Tables\Table;
+use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Database\Eloquent\Builder;
 
-class LoanHistoryRelationManager extends RelationManager
+class LoanHistoryTable extends BaseWidget
 {
-    protected static string $relationship = 'loanApplications';
+    public ?MemberDetail $record = null;
 
-    protected static ?string $title = 'Loan History';
+    protected static ?string $heading = 'Loan History';
 
-    protected static bool $shouldSkipAuthorization = true;
+    public function getColumnSpan(): int|string|array
+    {
+        return 'full';
+    }
 
     public function table(Table $table): Table
     {
         return $table
+            ->query($this->getTableQuery())
             ->columns([
                 TextColumn::make('loan_application_id')
                     ->label('Loan ID')
@@ -32,21 +40,12 @@ class LoanHistoryRelationManager extends RelationManager
                 TextColumn::make('type.name')
                     ->label('Loan Type')
                     ->sortable()
-                    ->placeholder('—'),
+                    ->placeholder('-'),
 
                 TextColumn::make('amount_requested')
                     ->label('Amount Requested')
                     ->money('PHP')
                     ->sortable(),
-
-                // TextColumn::make('term_months')
-                //     ->label('Term (Months)')
-                //     ->sortable(),
-
-                // TextColumn::make('purpose')
-                //     ->label('Purpose')
-                //     ->limit(40)
-                //     ->tooltip(fn ($record) => $record->purpose),
 
                 TextColumn::make('status')
                     ->badge()
@@ -64,29 +63,19 @@ class LoanHistoryRelationManager extends RelationManager
                     ->label('Submitted')
                     ->dateTime('M d, Y')
                     ->sortable()
-                    ->placeholder('—'),
-
-                // TextColumn::make('approved_at')
-                //     ->label('Approved')
-                //     ->dateTime('M d, Y')
-                //     ->sortable()
-                //     ->placeholder('—'),
+                    ->placeholder('-'),
             ])
             ->actions([
                 ViewAction::make('inspect')
-                      
-                        ->hiddenLabel()          // eye icon only, no text
-                        ->modalHeading('Loan Details')
-                        ->modalWidth('7xl')
-                        ->infolist([
+                    ->hiddenLabel()
+                    ->modalHeading('Loan Details')
+                    ->modalWidth('7xl')
+                    ->infolist([
                         Section::make('Loan Information')
                             ->schema([
-                                // TextEntry::make('loan_application_id')
-                                //     ->label('Loan ID'),
-
                                 TextEntry::make('type.name')
                                     ->label('Loan Type')
-                                    ->placeholder('—'),
+                                    ->placeholder('-'),
 
                                 TextEntry::make('amount_requested')
                                     ->label('Amount Requested')
@@ -97,7 +86,7 @@ class LoanHistoryRelationManager extends RelationManager
 
                                 TextEntry::make('purpose')
                                     ->label('Purpose')
-                                    ->placeholder('—'),
+                                    ->placeholder('-'),
 
                                 TextEntry::make('status')
                                     ->label('Status')
@@ -106,12 +95,12 @@ class LoanHistoryRelationManager extends RelationManager
                                 TextEntry::make('submitted_at')
                                     ->label('Submitted')
                                     ->dateTime('M d, Y')
-                                    ->placeholder('—'),
+                                    ->placeholder('-'),
 
                                 TextEntry::make('approved_at')
                                     ->label('Approved')
                                     ->dateTime('M d, Y')
-                                    ->placeholder('—'),
+                                    ->placeholder('-'),
                             ])
                             ->columns(2),
 
@@ -123,7 +112,7 @@ class LoanHistoryRelationManager extends RelationManager
                                     ->state(function ($record) {
                                         return (float) ($record->loanAccount->balance ?? $record->loanAccount->principal_amount ?? 0);
                                     })
-                                    ->placeholder('—'),
+                                    ->placeholder('-'),
 
                                 TextEntry::make('total_interest')
                                     ->label('Total Interest')
@@ -142,7 +131,7 @@ class LoanHistoryRelationManager extends RelationManager
 
                                         return (float) $schedule->sum(fn ($row) => (float) ($row['interest'] ?? 0));
                                     })
-                                    ->placeholder('—'),
+                                    ->placeholder('-'),
 
                                 TextEntry::make('total_penalty')
                                     ->label('Total Penalty')
@@ -161,7 +150,7 @@ class LoanHistoryRelationManager extends RelationManager
 
                                         return (float) $schedule->sum(fn ($row) => (float) ($row['penalty'] ?? 0));
                                     })
-                                    ->placeholder('—'),
+                                    ->placeholder('-'),
 
                                 TextEntry::make('total_payable_amount')
                                     ->label('Total Payable Amount')
@@ -185,7 +174,7 @@ class LoanHistoryRelationManager extends RelationManager
 
                                         return $remainingPrincipal + $totalInterest + $totalPenalty;
                                     })
-                                    ->placeholder('—'),
+                                    ->placeholder('-'),
 
                                 TextEntry::make('months_left')
                                     ->label('Months Left')
@@ -193,13 +182,13 @@ class LoanHistoryRelationManager extends RelationManager
                                         $loan = $record->loanAccount;
 
                                         if (! $loan) {
-                                            return '—';
+                                            return '-';
                                         }
 
                                         $term = (int) ($record->term_months ?? $loan->term_months ?? 0);
 
                                         if ($term <= 0) {
-                                            return '—';
+                                            return '-';
                                         }
 
                                         $schedule = app(LoanScheduleService::class)->build($loan);
@@ -217,7 +206,7 @@ class LoanHistoryRelationManager extends RelationManager
 
                                         return $monthsLeft.' months';
                                     })
-                                    ->placeholder('—'),
+                                    ->placeholder('-'),
 
                                 TextEntry::make('payment_progress')
                                     ->label('Payment Progress')
@@ -246,12 +235,13 @@ class LoanHistoryRelationManager extends RelationManager
                                         (float) $state <= 0.0 => 'gray',
                                         default => 'warning',
                                     })
-                                    ->placeholder('—'),
+                                    ->placeholder('-'),
+
                                 TextEntry::make('next_due_date')
                                     ->label('Next Due Date')
                                     ->state(function ($record) {
                                         if (! $record->loanAccount || ! $record->loanAccount->release_date) {
-                                            return '—';
+                                            return '-';
                                         }
 
                                         $schedule = collect(app(LoanAmortizationService::class)->generate(
@@ -263,9 +253,9 @@ class LoanHistoryRelationManager extends RelationManager
 
                                         $next = $schedule->first();
 
-                                        return $next['due_date'] ?? '—';
+                                        return $next['due_date'] ?? '-';
                                     })
-                                    ->placeholder('—'),
+                                    ->placeholder('-'),
 
                                 TextEntry::make('loanAccount.status')
                                     ->label('Loan Account Status')
@@ -276,7 +266,7 @@ class LoanHistoryRelationManager extends RelationManager
                                         'Defaulted' => 'danger',
                                         default => 'gray',
                                     })
-                                    ->placeholder('—'),
+                                    ->placeholder('-'),
                             ])
                             ->columns(3),
 
@@ -303,23 +293,22 @@ class LoanHistoryRelationManager extends RelationManager
                                         TextEntry::make('payment_date')
                                             ->label('Payment Date')
                                             ->date('M d, Y')
-                                            ->placeholder('—'),
+                                            ->placeholder('-'),
 
                                         TextEntry::make('amount_paid')
                                             ->label('Amount Paid')
                                             ->money('PHP')
-                                            ->placeholder('—'),
+                                            ->placeholder('-'),
 
                                         TextEntry::make('principal_paid')
                                             ->label('Principal Paid')
                                             ->money('PHP')
-                                            ->placeholder('—'),
+                                            ->placeholder('-'),
 
                                         TextEntry::make('interest_paid')
                                             ->label('Interest Paid')
                                             ->money('PHP')
-                                            ->placeholder('—'),
-
+                                            ->placeholder('-'),
                                     ])
                                     ->columns(2),
 
@@ -346,23 +335,22 @@ class LoanHistoryRelationManager extends RelationManager
                                                 TextEntry::make('payment_date')
                                                     ->label('Payment Date')
                                                     ->date('M d, Y')
-                                                    ->placeholder('—'),
+                                                    ->placeholder('-'),
 
                                                 TextEntry::make('amount_paid')
                                                     ->label('Amount Paid')
                                                     ->money('PHP')
-                                                    ->placeholder('—'),
+                                                    ->placeholder('-'),
 
                                                 TextEntry::make('principal_paid')
                                                     ->label('Principal Paid')
                                                     ->money('PHP')
-                                                    ->placeholder('—'),
+                                                    ->placeholder('-'),
 
                                                 TextEntry::make('interest_paid')
                                                     ->label('Interest Paid')
                                                     ->money('PHP')
-                                                    ->placeholder('—'),
-
+                                                    ->placeholder('-'),
                                             ])
                                             ->columns(2),
                                     ])
@@ -373,9 +361,25 @@ class LoanHistoryRelationManager extends RelationManager
                     ]),
             ])
             ->defaultSort('loan_application_id', 'desc')
-           ->actionsPosition(RecordActionsPosition::BeforeColumns)
+            ->actionsPosition(RecordActionsPosition::BeforeColumns)
+            ->paginationMode(PaginationMode::Default)
+            ->paginated([10, 25, 50])
+            ->queryStringIdentifier('memberLoanHistory')
             ->striped()
             ->emptyStateHeading('No loan applications found')
             ->emptyStateDescription('This member has no loan application records yet.');
+    }
+
+    protected function getTableQuery(): Builder
+    {
+        if (! $this->record) {
+            return LoanApplication::query()->whereRaw('1 = 0');
+        }
+
+        return $this->record
+            ->loanApplications()
+            ->getQuery()
+            ->with(['type', 'loanAccount'])
+            ->orderByDesc('loan_application_id');
     }
 }
