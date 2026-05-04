@@ -229,4 +229,72 @@ class Loans extends Controller
             ]);
         }
     }
+
+    public function getPendingPaymentCount(){
+        try{
+            $today = now()->toDateString();
+
+            // Get all active loan accounts
+            $loanAccounts = LoanAccount::where('status', 'Active')->get();
+
+            $pendingCount = 0;
+            $overdueCount = 0;
+
+            foreach ($loanAccounts as $loan) {
+                $principal     = (float) $loan->principal_amount;
+                $annualRate    = (float) $loan->interest_rate;
+                $monthlyRate   = $annualRate / 100 / 12;
+                $termMonths    = (int) $loan->term_months;
+                $monthlyPayment = (float) $loan->monthly_amortization;
+                $releaseDate   = $loan->release_date;
+
+                // Sum posted payments, sorted chronologically
+                $payments = $loan->collectionsAndPostings()
+                    ->where('status', 'posted')
+                    ->orderBy('payment_date')
+                    ->get(['amount_paid', 'payment_date']);
+
+                $paymentPool  = 0.0;
+                $paymentIndex = 0;
+                $paymentCount = $payments->count();
+
+                for ($i = 1; $i <= $termMonths; $i++) {
+                    $dueDate = (clone $releaseDate)->addMonths($i);
+
+                    // Absorb payments on or before this due date
+                    while (
+                        $paymentIndex < $paymentCount &&
+                        $payments[$paymentIndex]->payment_date <= $dueDate->toDateString()
+                    ) {
+                        $paymentPool += (float) $payments[$paymentIndex]->amount_paid;
+                        $paymentIndex++;
+                    }
+
+                    if ($paymentPool >= $monthlyPayment) {
+                        // Period is paid
+                        $paymentPool -= $monthlyPayment;
+                    } elseif ($dueDate->toDateString() < $today) {
+                        $overdueCount++;
+                    } else {
+                        $daysAhead = now()->diffInDays($dueDate, false);
+                        if ($daysAhead <= 30) {
+                            $pendingCount++;
+                        }
+                    }
+                }
+            }
+
+            return response()->json([
+                'pending_count' => $pendingCount,
+                'overdue_count' => $overdueCount,
+                'total'         => $pendingCount + $overdueCount,
+            ]);
+
+        }catch(Exception $e){
+            return response()->json([
+                'message' => 'Unable to get pending payment counts',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 }
