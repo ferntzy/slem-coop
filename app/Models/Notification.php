@@ -48,7 +48,7 @@ class Notification extends Model
 
         try {
             return match ($type) {
-                'loan_application' => route('filament.admin.resources.loan-applications.edit', ['record' => $id]),
+                'loan_application' => route('filament.admin.resources.loan-applications.view', ['record' => $id]),
                 'membership_application' => route('filament.admin.resources.membership-applications.edit', ['record' => $id]),
                 'member_detail' => route('filament.admin.resources.member-details.edit', ['record' => $id]),
                 'member' => route('filament.admin.resources.member-details.edit', ['record' => $id]),
