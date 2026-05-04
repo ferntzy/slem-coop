@@ -123,6 +123,8 @@ Route::get('/orientation', [OrientationController::class, 'show']);
 Route::post('/orientation/video-watched', [OrientationController::class, 'markVideoWatched']);
 Route::post('/orientation/submit', [OrientationController::class, 'submit']);
 
+Route::get('/orientation-settings', [OrientationSettingsController::class, 'show']);
+
 // member apis
 // member dashboard datas
 Route::post('/member/dashboard-data', [MobileMemberGeneral::class, 'getDashboardData']);
