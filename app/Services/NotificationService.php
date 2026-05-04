@@ -309,6 +309,7 @@ class NotificationService
 
         $notification = $this->notifyProfile($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
         $this->sendEmailNotification($profileId, $title, $description);
+        $this->sendSmsNotification($profileId, $description);
 
         return $notification;
     }
@@ -326,6 +327,7 @@ class NotificationService
 
         $notification = $this->notifyProfile($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
         $this->sendEmailNotification($profileId, $title, $description);
+        $this->sendSmsNotification($profileId, $description);
 
         return $notification;
     }
@@ -370,6 +372,26 @@ class NotificationService
         $description = "Your loan penalty configuration has been updated to '{$ruleName}' with a {$graceDays}-day grace period. {$details}";
 
         return $this->notifyProfile($profileId, $title, $description);
+    }
+
+    public function notifyDailyCollectionSubmitted(string $aoName, float $totalAmount): void
+    {
+        $title = 'Daily Collection Entry Submitted';
+        $description = "Daily collection entry submitted by {$aoName} with a total of ₱".number_format($totalAmount, 2).".";
+
+        $this->notifyRoles([
+            'Admin',
+            'super_admin',
+            'Manager',
+            'manager',
+            'Loan Manager',
+            'loan_manager',
+            'Branch Manager',
+            'branch_manager',
+            'HQ Manager',
+            'hq_manager',
+            'hqmanager',
+        ], $title, $description);
     }
 
     protected function sendEmailNotification(int|string $profileId, string $title, string $message): void
@@ -420,6 +442,17 @@ class NotificationService
         } catch (\Throwable $exception) {
             Log::warning("NotificationService: failed to send email notification to profile_id={$profile->profile_id} - {$exception->getMessage()}");
         }
+    }
+
+    protected function sendSmsNotification(int|string $profileId, string $message): void
+    {
+        $profile = Profile::where('profile_id', $profileId)->first();
+
+        if (! $profile || empty($profile->mobile_number)) {
+            return;
+        }
+
+        $this->sendSms($profile->mobile_number, $message);
     }
 
     protected function hasSentNotification(int $userId, string $title): bool
