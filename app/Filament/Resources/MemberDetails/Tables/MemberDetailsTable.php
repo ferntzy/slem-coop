@@ -19,6 +19,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Support\RawJs;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\RecordActionsPosition;
@@ -437,6 +438,8 @@ class MemberDetailsTable
                             TextInput::make('amount')
                                 ->label('Amount')
                                 ->numeric()
+                                ->mask(RawJs::make('$money($input)'))
+                                ->stripCharacters(',')
                                 ->prefix('PHP')
                                 ->minValue(function (callable $get): ?string {
                                     if ((int) $get('savings_type_id') !== 1) {

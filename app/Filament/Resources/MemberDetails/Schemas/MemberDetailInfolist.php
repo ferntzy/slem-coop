@@ -8,8 +8,8 @@ use App\Models\SavingsAccountTransaction;
 use App\Models\SavingsType;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\RepeatableEntry;
-use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Livewire;
 use Filament\Schemas\Components\Section;
@@ -833,12 +833,8 @@ class MemberDetailInfolist
                                                 return static::getEligibleTimeDepositDisplayTransactions((int) $record->profile_id) !== [];
                                             }),
 
-                                        RepeatableEntry::make('time_deposit_transactions')
+                                        ViewEntry::make('time_deposit_transactions_table')
                                             ->label('Latest 3 Transactions')
-                                            ->extraAttributes([
-                                                'class' => 'w-full max-w-full min-w-[107rem] overflow-x-auto',
-                                                'style' => 'width: 100%; max-width: 100%; min-width: 107rem; overflow-x: auto;',
-                                            ])
                                             ->state(function ($record): array {
                                                 $transactions = collect(
                                                     static::getTimeDepositDisplayTransactions((int) $record->profile_id)
@@ -846,77 +842,13 @@ class MemberDetailInfolist
 
                                                 return static::getLatestTransactions($transactions);
                                             })
-                                            ->schema([
-                                                TextEntry::make('amount')
-                                                    ->label('Amount')
-                                                    ->money('PHP'),
-
-                                                TextEntry::make('terms')
-                                                    ->label('Term')
-                                                    ->formatStateUsing(fn ($state) => $state ? $state.' month(s)' : '-'),
-
-                                                TextEntry::make('status')
-                                                    ->badge()
-                                                    ->color(fn ($state) => match ($state) {
-                                                        'ongoing' => 'warning',
-                                                        'completed' => 'success',
-                                                        'withdrawn' => 'gray',
-                                                        default => 'gray',
-                                                    }),
-
-                                                TextEntry::make('maturity_action')
-                                                    ->label('Maturity Option')
-                                                    ->formatStateUsing(fn ($state) => match ($state) {
-                                                        'renew_time_deposit' => 'Re-Time Deposit',
-                                                        'transfer_to_savings' => 'Transfer to Regular Savings',
-                                                        default => 'Auto-transfer to Regular Savings',
-                                                    }),
-
-                                                TextEntry::make('transaction_date')
-                                                    ->label('Deposit Date')
-                                                    ->dateTime('M d, Y h:i A'),
-
-                                                TextEntry::make('maturity_date')
-                                                    ->label('Maturity Date')
-                                                    ->date('M d, Y')
-                                                    ->placeholder('-'),
-
-                                                TextEntry::make('transferred_amount')
-                                                    ->label('Transferred to Regular Savings')
-                                                    ->money('PHP')
-                                                    ->placeholder('Not transferred yet'),
-
-                                                TextEntry::make('transfer_date')
-                                                    ->label('Transfer Date')
-                                                    ->dateTime('M d, Y h:i A')
-                                                    ->placeholder('-'),
-
-                                                TextEntry::make('notes')
-                                                    ->label('Notes')
-                                                    ->placeholder('-'),
-                                            ])
-                                            ->table([
-                                                TableColumn::make('Amount')->width('10rem'),
-                                                TableColumn::make('Term')->width('8rem'),
-                                                TableColumn::make('Status')->width('9rem'),
-                                                TableColumn::make('Maturity Option')->width('14rem'),
-                                                TableColumn::make('Deposit Date')->width('12rem'),
-                                                TableColumn::make('Maturity Date')->width('10rem'),
-                                                TableColumn::make('Transferred to Regular Savings')->width('14rem'),
-                                                TableColumn::make('Transfer Date')->width('12rem'),
-                                                TableColumn::make('Notes')->width('18rem'),
-                                            ])
-                                            ->contained()
+                                            ->view('filament.infolists.time-deposit-transactions-table')
                                             ->columnSpanFull(),
 
                                         Section::make('More Time Deposit Transactions')
                                             ->schema([
-                                                RepeatableEntry::make('older_time_deposit_transactions')
+                                                ViewEntry::make('older_time_deposit_transactions_table')
                                                     ->label('Older Transactions')
-                                                    ->extraAttributes([
-                                                        'class' => 'w-full max-w-full min-w-[107rem] overflow-x-auto',
-                                                        'style' => 'width: 100%; max-width: 100%; min-width: 107rem; overflow-x: auto;',
-                                                    ])
                                                     ->state(function ($record): array {
                                                         $transactions = collect(
                                                             static::getTimeDepositDisplayTransactions((int) $record->profile_id)
@@ -924,67 +856,7 @@ class MemberDetailInfolist
 
                                                         return static::getOlderTransactions($transactions);
                                                     })
-                                                    ->schema([
-                                                        TextEntry::make('amount')
-                                                            ->label('Amount')
-                                                            ->money('PHP'),
-
-                                                        TextEntry::make('terms')
-                                                            ->label('Term')
-                                                            ->formatStateUsing(fn ($state) => $state ? $state.' month(s)' : '-'),
-
-                                                        TextEntry::make('status')
-                                                            ->badge()
-                                                            ->color(fn ($state) => match ($state) {
-                                                                'ongoing' => 'warning',
-                                                                'completed' => 'success',
-                                                                'withdrawn' => 'gray',
-                                                                default => 'gray',
-                                                            }),
-
-                                                        TextEntry::make('maturity_action')
-                                                            ->label('Maturity Option')
-                                                            ->formatStateUsing(fn ($state) => match ($state) {
-                                                                'renew_time_deposit' => 'Re-Time Deposit',
-                                                                'transfer_to_savings' => 'Transfer to Regular Savings',
-                                                                default => 'Auto-transfer to Regular Savings',
-                                                            }),
-
-                                                        TextEntry::make('transaction_date')
-                                                            ->label('Deposit Date')
-                                                            ->dateTime('M d, Y h:i A'),
-
-                                                        TextEntry::make('maturity_date')
-                                                            ->label('Maturity Date')
-                                                            ->date('M d, Y')
-                                                            ->placeholder('-'),
-
-                                                        TextEntry::make('transferred_amount')
-                                                            ->label('Transferred to Regular Savings')
-                                                            ->money('PHP')
-                                                            ->placeholder('Not transferred yet'),
-
-                                                        TextEntry::make('transfer_date')
-                                                            ->label('Transfer Date')
-                                                            ->dateTime('M d, Y h:i A')
-                                                            ->placeholder('-'),
-
-                                                        TextEntry::make('notes')
-                                                            ->label('Notes')
-                                                            ->placeholder('-'),
-                                                    ])
-                                                    ->table([
-                                                        TableColumn::make('Amount')->width('10rem'),
-                                                        TableColumn::make('Term')->width('8rem'),
-                                                        TableColumn::make('Status')->width('9rem'),
-                                                        TableColumn::make('Maturity Option')->width('14rem'),
-                                                        TableColumn::make('Deposit Date')->width('12rem'),
-                                                        TableColumn::make('Maturity Date')->width('10rem'),
-                                                        TableColumn::make('Transferred to Regular Savings')->width('14rem'),
-                                                        TableColumn::make('Transfer Date')->width('12rem'),
-                                                        TableColumn::make('Notes')->width('18rem'),
-                                                    ])
-                                                    ->contained()
+                                                    ->view('filament.infolists.time-deposit-transactions-table')
                                                     ->columnSpanFull(),
                                             ])
                                             ->collapsible()
