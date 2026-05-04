@@ -17,10 +17,12 @@ use App\Models\MembershipType;
 use App\Models\PaymentAllocationSetting;
 use App\Models\PenaltyRule;
 use App\Models\ShareCapitalTransaction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -188,6 +190,8 @@ class CoopSettings extends Page
 
     public array $orientation_questions = [];
 
+    public array $zoom_orientation_schedules = [];
+
     // MEMBERSHIP - Municipality to Branch Mapping
     public array $municipality_to_branch_mapping = [];
 
@@ -275,6 +279,11 @@ class CoopSettings extends Page
         $this->orientation_questions = is_array($rawQuestions)
             ? $rawQuestions
             : (json_decode($rawQuestions ?: '[]', true) ?: []);
+
+        $rawSchedules = CoopSetting::get('zoom_orientation_schedules', []);
+        $this->zoom_orientation_schedules = is_array($rawSchedules)
+            ? $rawSchedules
+            : (json_decode($rawSchedules ?: '[]', true) ?: []);
 
         // MEMBERSHIP - Municipality to Branch Mapping
         $rawMapping = CoopSetting::get('municipality_to_branch_mapping', []);
@@ -512,6 +521,36 @@ class CoopSettings extends Page
                                         ->label('Note')
                                         ->content('The applicant must reach the passing score to become eligible for loan application.'),
                                 ]),
+
+                            Section::make('Zoom Orientation Schedules')
+                                ->description('Specific dates and times when live Zoom orientation is offered. Applicants who choose Zoom must apply on a scheduled date.')
+                                ->schema([
+                                    Repeater::make('zoom_orientation_schedules')
+                                        ->label('Scheduled Sessions')
+                                        ->schema([
+                                            DatePicker::make('date')
+                                                ->label('Date')
+                                                ->required()
+                                                ->native(false),
+                                            TimePicker::make('start_time')
+                                                ->label('Start Time')
+                                                ->seconds(false)
+                                                ->required(),
+                                            TimePicker::make('end_time')
+                                                ->label('End Time')
+                                                ->seconds(false),
+                                            TextInput::make('zoom_link')
+                                                ->label('Zoom Link (optional override)')
+                                                ->placeholder('Falls back to global Zoom Link if blank')
+                                                ->url()
+                                                ->columnSpanFull(),
+                                        ])
+                                        ->columns(3)
+                                        ->defaultItems(0)
+                                        ->collapsible()
+                                        ->itemLabel(fn (array $state): ?string => trim(($state['date'] ?? '').' '.($state['start_time'] ?? '')) ?: null)
+                                        ->columnSpanFull(),
+                                ]),
                         ]),
 
                     Tab::make('Membership')
@@ -621,6 +660,18 @@ class CoopSettings extends Page
         CoopSetting::set('orientation.passing_score', $this->orientation_passing_score, 'integer');
         CoopSetting::set('orientation.require_for_loan', $this->orientation_require_for_loan, 'boolean');
         CoopSetting::set('orientation.questions', $this->orientation_questions, 'json');
+
+        $schedules = collect($this->zoom_orientation_schedules)
+            ->filter(fn ($s) => ! empty($s['date']) && ! empty($s['start_time']))
+            ->map(fn ($s) => [
+                'date' => (string) $s['date'],
+                'start_time' => substr((string) $s['start_time'], 0, 5),
+                'end_time' => isset($s['end_time']) ? substr((string) $s['end_time'], 0, 5) : '',
+                'zoom_link' => (string) ($s['zoom_link'] ?? ''),
+            ])
+            ->values()
+            ->all();
+        CoopSetting::set('zoom_orientation_schedules', $schedules, 'json');
 
         // MEMBERSHIP - Municipality to Branch Mapping
         $mapping = collect($this->municipality_to_branch_mapping)
