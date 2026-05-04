@@ -737,25 +737,58 @@ export function MembershipApply() {
     }
 
     fetch(`/api/resolve-branch-by-municipality?municipality=${encodeURIComponent(municipality)}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          return res.json().then((data) => {
+            toast.error(data.error || 'Failed to resolve branch for this municipality.');
+            setResolvedBranch(null);
+            return null;
+          });
+        }
+        return res.json();
+      })
       .then((data) => {
-        if (data.branch_id && data.name) {
+        if (data && data.branch_id && data.name) {
           setResolvedBranch({ branch_id: data.branch_id, name: data.name });
           // Auto-set the branch_id in form2
           set2('branch_id', String(data.branch_id));
-        } else {
-          setResolvedBranch(null);
         }
       })
       .catch(() => {
+        toast.error('Failed to resolve branch. Please try again.');
         setResolvedBranch(null);
       });
   }, [watchedProfile?.municipality, set2]);
 
-  const submitProfile = (data: ProfileData) => {
-    setProfileData(data);
-    toast.success('Personal details saved.');
-    setStep(2);
+  const submitProfile = async (data: ProfileData) => {
+    // Validate that municipality is mapped to a branch
+    if (!data.municipality || data.municipality.trim() === '') {
+      toast.error('Municipality is required.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/resolve-branch-by-municipality?municipality=${encodeURIComponent(data.municipality)}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to resolve branch for this municipality.');
+        return;
+      }
+
+      const branchData = await response.json();
+      if (!branchData.branch_id) {
+        toast.error('Could not resolve a valid branch for this municipality.');
+        return;
+      }
+
+      // Municipality is valid, proceed to Step 2
+      setProfileData(data);
+      toast.success('Personal details saved.');
+      setStep(2);
+    } catch (error) {
+      toast.error('Failed to validate municipality. Please try again.');
+    }
   };
 
   const saveApplicationStep = (data: ApplicationData) => {
