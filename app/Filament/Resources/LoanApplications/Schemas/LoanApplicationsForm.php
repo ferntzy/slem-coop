@@ -232,8 +232,7 @@ class LoanApplicationsForm
                                         ->maxValue(function (callable $get) {
                                             return static::getLoanType($get)?->max_amount;
                                         })
-                                        // ->required(),
-                                        ->nullable(),
+                                        ->required(),
 
                                     TextInput::make('coop_fee_total')
                                         ->label('Total Coop Fee')
