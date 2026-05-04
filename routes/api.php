@@ -2,8 +2,6 @@
 
 use App\Http\Controllers\Api\AboutPageController;
 use App\Http\Controllers\Api\AccountDashboard;
-use App\Http\Controllers\Api\AccountLoanEditController;
-use App\Http\Controllers\Api\AccountLoansController;
 use App\Http\Controllers\Api\AccountMembersController;
 use App\Http\Controllers\Api\AccountOfficerController;
 use App\Http\Controllers\Api\ContactPageController;
@@ -13,13 +11,10 @@ use App\Http\Controllers\Api\MemberDetailsController;
 use App\Http\Controllers\Api\Members;
 use App\Http\Controllers\Api\ReportsController;
 use App\Http\Controllers\Api\RestructureApplicationController;
-use App\Http\Controllers\HeroNewsEventController;
 use App\Http\Controllers\LoanApplication as ControllersLoanApplication;
 use App\Http\Controllers\MembershipApplicationController;
 use App\Http\Controllers\MobileAuth\Auth;
 use App\Http\Controllers\MobileMemberGeneral;
-use App\Http\Controllers\NewsController;
-use App\Http\Controllers\NewsEventController;
 use App\Http\Controllers\Notifications;
 use App\Http\Controllers\OrientationController;
 use App\Http\Controllers\OrientationSettingsController;
@@ -64,7 +59,7 @@ Route::get('/loan-accounts/pending-count', [Loans::class, 'getPendingPaymentCoun
 Route::get('/loan-accounts/pending-payments', [Loans::class, 'getPendingPayments']);
 Route::get('/loan-accounts/overdue-payments', [Loans::class, 'getOverduePayments']);
 
-//payment
+// payment
 Route::get('/payment-status/{id}', [Payments::class, 'getPaymentStatus']);
 Route::post('/pay-loan', [Payments::class, 'PayLoan']);
 
@@ -128,6 +123,8 @@ Route::get('/orientation', [OrientationController::class, 'show']);
 Route::post('/orientation/video-watched', [OrientationController::class, 'markVideoWatched']);
 Route::post('/orientation/submit', [OrientationController::class, 'submit']);
 
+Route::get('/orientation-settings', [OrientationSettingsController::class, 'show']);
+
 // member apis
 // member dashboard datas
 Route::post('/member/dashboard-data', [MobileMemberGeneral::class, 'getDashboardData']);
@@ -150,5 +147,3 @@ Route::post('/member/fetch-unread-notifications', [Notifications::class, 'fetchU
 Route::post('/member/delete-notification', [Notifications::class, 'deleteNotification']);
 Route::post('/member/mark-notification-seen', [Notifications::class, 'markAsRead']);
 Route::get('/member/savings/{id}', [ControllersSavingsAccount::class, 'getSavingsAccount']);
-
-

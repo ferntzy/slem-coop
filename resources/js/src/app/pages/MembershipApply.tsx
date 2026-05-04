@@ -217,6 +217,35 @@ const phMobileFormat = (value: string): string => {
   return digits;
 };
 
+const getYouTubeVideoId = (rawLink: string): string | null => {
+  if (!rawLink) return null;
+
+  try {
+    const url = new URL(rawLink);
+    const host = url.hostname.replace(/^www\./, '');
+
+    if (host === 'youtu.be') {
+      return url.pathname.replace('/', '') || null;
+    }
+
+    if (host.endsWith('youtube.com')) {
+      if (url.pathname.startsWith('/embed/')) {
+        return url.pathname.split('/')[2] || null;
+      }
+
+      if (url.pathname.startsWith('/shorts/')) {
+        return url.pathname.split('/')[2] || null;
+      }
+
+      return url.searchParams.get('v');
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+};
+
 /* ─── Particles ─── */
 function Particles() {
   const colorClasses = [
@@ -639,11 +668,14 @@ export function MembershipApply() {
     }
   }, [initialTypeId, navigate]);
 
+  const resolvedVideoId = useMemo(
+    () => getYouTubeVideoId(orientationSettings.video_link),
+    [orientationSettings.video_link]
+  );
+
   useEffect(() => {
-    if (step !== 4 || !orientationSettings.video_link || videoInteracted) return;
-    const match = orientationSettings.video_link.match(/embed\/([a-zA-Z0-9_-]+)/);
-    if (!match?.[1]) return;
-    const videoId = match[1];
+    if (step !== 4 || !resolvedVideoId || videoInteracted) return;
+    const videoId = resolvedVideoId;
     const onPlayerStateChange = (event: any) => {
       if (event.data === 0) {
         setVideoInteracted(true);
@@ -672,7 +704,7 @@ export function MembershipApply() {
       }
     }, 100);
     return () => clearInterval(checkYT);
-  }, [step, orientationSettings.video_link, videoInteracted]);
+  }, [step, resolvedVideoId, videoInteracted]);
 
   useEffect(() => {
     const raw = localStorage.getItem(MEMBERSHIP_DRAFT_KEY);
@@ -1586,20 +1618,27 @@ export function MembershipApply() {
                         </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-4">Watch the orientation video completely.</p>
                         {orientationSettings.video_link ? (
-                          <div className="space-y-3">
-                            <div className="w-full bg-black rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
-                              <div id="orientation-video-player" className="w-full h-full" />
+                          resolvedVideoId ? (
+                            <div className="space-y-3">
+                              <div className="w-full bg-black rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                                <div id="orientation-video-player" className="w-full h-full" />
+                              </div>
+                              {videoInteracted ? (
+                                <div className="w-full rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-3 py-2.5 text-center text-sm text-green-700 dark:text-green-400 font-black uppercase tracking-widest">
+                                  ✓ Video Watched
+                                </div>
+                              ) : (
+                                <div className="w-full rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/40 px-3 py-2.5 text-center text-xs text-amber-700 dark:text-amber-400 font-medium">
+                                  Watch until the end to mark as watched
+                                </div>
+                              )}
                             </div>
-                            {videoInteracted ? (
-                              <div className="w-full rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-3 py-2.5 text-center text-sm text-green-700 dark:text-green-400 font-black uppercase tracking-widest">
-                                ✓ Video Watched
-                              </div>
-                            ) : (
-                              <div className="w-full rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/40 px-3 py-2.5 text-center text-xs text-amber-700 dark:text-amber-400 font-medium">
-                                Watch until the end to mark as watched
-                              </div>
-                            )}
-                          </div>
+                          ) : (
+                            <div className="w-full rounded-2xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-900/10 px-4 py-5 text-sm text-amber-800 dark:text-amber-300 text-center font-medium space-y-1">
+                              <p>Video link format is not supported yet.</p>
+                              <p className="text-xs text-amber-700/80 dark:text-amber-300/80">Use a YouTube link or embed URL (e.g., https://www.youtube.com/watch?v=VIDEO_ID).</p>
+                            </div>
+                          )
                         ) : (
                           <div className="w-full h-40 rounded-2xl border border-green-100 dark:border-green-900/40 bg-green-50/30 flex items-center justify-center text-sm text-gray-400 dark:text-gray-600 px-4 text-center font-medium">
                             No video link configured yet.
