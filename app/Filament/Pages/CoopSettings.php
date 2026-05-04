@@ -188,6 +188,9 @@ class CoopSettings extends Page
 
     public array $orientation_questions = [];
 
+    // MEMBERSHIP - Municipality to Branch Mapping
+    public array $municipality_to_branch_mapping = [];
+
     public function mount(): void
     {
         $this->branch_max_members = (int) CoopSetting::get('branch.max_members', 500);
@@ -272,6 +275,16 @@ class CoopSettings extends Page
         $this->orientation_questions = is_array($rawQuestions)
             ? $rawQuestions
             : (json_decode($rawQuestions ?: '[]', true) ?: []);
+
+        // MEMBERSHIP - Municipality to Branch Mapping
+        $rawMapping = CoopSetting::get('municipality_to_branch_mapping', []);
+        $mapping = is_array($rawMapping) ? $rawMapping : (json_decode($rawMapping ?: '[]', true) ?: []);
+        $this->municipality_to_branch_mapping = collect($mapping)->map(function ($municipalities, $branchName) {
+            return [
+                'branch_name' => $branchName,
+                'municipalities' => is_array($municipalities) ? implode(', ', $municipalities) : $municipalities,
+            ];
+        })->values()->all();
     }
 
     public function form(Schema $schema): Schema
@@ -500,6 +513,36 @@ class CoopSettings extends Page
                                         ->content('The applicant must reach the passing score to become eligible for loan application.'),
                                 ]),
                         ]),
+
+                    Tab::make('Membership')
+                        ->icon('heroicon-o-user-plus')
+                        ->schema([
+                            Section::make('Municipality to Branch Mapping')
+                                ->description('Configure which municipalities are assigned to each branch during membership application')
+                                ->schema([
+                                    Repeater::make('municipality_to_branch_mapping')
+                                        ->label('Branch Municipality Mappings')
+                                        ->schema([
+                                            TextInput::make('branch_name')
+                                                ->label('Branch Name')
+                                                ->required()
+                                                ->placeholder('e.g., Hilongos'),
+
+                                            TextInput::make('municipalities')
+                                                ->label('Municipalities')
+                                                ->required()
+                                                ->placeholder('Comma-separated list, e.g., Bato, Hilongos, Hindang, Inopacan')
+                                                ->helperText('Enter municipalities separated by commas')
+                                                ->columnSpanFull(),
+                                        ])
+                                        ->columns(2)
+                                        ->defaultItems(0)
+                                        ->minItems(1)
+                                        ->collapsible()
+                                        ->cloneable()
+                                        ->columnSpanFull(),
+                                ]),
+                        ]),
                 ]),
         ]);
     }
@@ -578,6 +621,16 @@ class CoopSettings extends Page
         CoopSetting::set('orientation.passing_score', $this->orientation_passing_score, 'integer');
         CoopSetting::set('orientation.require_for_loan', $this->orientation_require_for_loan, 'boolean');
         CoopSetting::set('orientation.questions', $this->orientation_questions, 'json');
+
+        // MEMBERSHIP - Municipality to Branch Mapping
+        $mapping = collect($this->municipality_to_branch_mapping)
+            ->mapWithKeys(function ($item) {
+                $municipalities = array_map('trim', explode(',', $item['municipalities'] ?? ''));
+
+                return [$item['branch_name'] => $municipalities];
+            })
+            ->toArray();
+        CoopSetting::set('municipality_to_branch_mapping', $mapping, 'json');
 
         Notification::make()
             ->title('Coop settings saved!')
