@@ -17,7 +17,6 @@ use App\Http\Controllers\MobileAuth\Auth;
 use App\Http\Controllers\MobileMemberGeneral;
 use App\Http\Controllers\Notifications;
 use App\Http\Controllers\OrientationController;
-use App\Http\Controllers\OrientationSettingsController;
 use App\Http\Controllers\Payments;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SavingsAccount as ControllersSavingsAccount;
@@ -41,6 +40,7 @@ Route::get('/active-all-loans', [MobileMemberGeneral::class, 'getNumberOfActiveL
 
 Route::get('/membership-types', [MembershipApplicationController::class, 'membershipTypes']);
 Route::get('/branches', [MembershipApplicationController::class, 'branches']);
+Route::get('/resolve-branch-by-municipality', [MembershipApplicationController::class, 'resolveBranchByMunicipality']);
 Route::post('/profiles', [ProfileController::class, 'store']);
 
 Route::post('/membership-application', [MembershipApplicationController::class, 'store']);
