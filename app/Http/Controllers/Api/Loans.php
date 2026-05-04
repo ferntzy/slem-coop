@@ -209,7 +209,16 @@ class Loans extends Controller
     {
         try {
             $pid = MemberDetail::where('id', $id)->value('profile_id');
-            $loanAccounts = LoanAccount::where('profile_id', $pid)->where('status', 'Active')->get();
+
+            $loanAccounts = LoanAccount::where('profile_id', $pid)
+                ->where('status', 'Active')
+                ->withSum(
+                    ['collectionsAndPostings as total_paid' => function ($query) {
+                        $query->where('status', 'posted'); // adjust to your posted/approved status value
+                    }],
+                    'amount_paid'
+                )
+                ->get();
 
             return response()->json([
                 'loanAccounts' => $loanAccounts,
