@@ -168,7 +168,7 @@ class LoanApplication extends Controller
             $loanTitle = 'Loan application submitted';
             $loanDesc = "Your loan application (#{$laid}) of PHP {$request->amountRequested} is now pending review.";
 
-            app(NotificationService::class)->notifyProfile(
+            app(NotificationService::class)->notifyProfileWithPush(
                 $request->profile_id,
                 $loanTitle,
                 $loanDesc
@@ -237,11 +237,15 @@ class LoanApplication extends Controller
                 throw new Exception('Unable to update loan application!');
             }
 
-            Notification::create([
-                'user_id' => $uid,
-                'title' => 'Loan Application',
-                'description' => 'Loan Application was successfully cancelled!',
-            ]);
+            if ($uid) {
+                app(NotificationService::class)->notifyUserWithPush(
+                    $uid,
+                    'Loan Application',
+                    'Loan Application was successfully cancelled!',
+                    notifiableType: 'loan_application',
+                    notifiableId: $request->loanApplicationId
+                );
+            }
 
             return response()->json([
                 'status' => 'Success',

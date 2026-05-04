@@ -13,16 +13,12 @@ use App\Http\Controllers\Api\MemberDetailsController;
 use App\Http\Controllers\Api\Members;
 use App\Http\Controllers\Api\ReportsController;
 use App\Http\Controllers\Api\RestructureApplicationController;
-use App\Http\Controllers\HeroNewsEventController;
 use App\Http\Controllers\LoanApplication as ControllersLoanApplication;
 use App\Http\Controllers\MembershipApplicationController;
 use App\Http\Controllers\MobileAuth\Auth;
 use App\Http\Controllers\MobileMemberGeneral;
-use App\Http\Controllers\NewsController;
-use App\Http\Controllers\NewsEventController;
 use App\Http\Controllers\Notifications;
 use App\Http\Controllers\OrientationController;
-use App\Http\Controllers\OrientationSettingsController;
 use App\Http\Controllers\Payments;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SavingsAccount as ControllersSavingsAccount;
@@ -60,7 +56,7 @@ Route::get('/get-loans', [Loans::class, 'getLoans']);
 Route::get('/loan/{id}', [Loans::class, 'getLoanDetail']);
 Route::get('/loans-by-id/{id}', [Loans::class, 'getLoanAccountsById']);
 
-//payment
+// payment
 Route::get('payment-status/{id}', [Payments::class, 'getPaymentStatus']);
 
 // loan officer apis
@@ -147,11 +143,18 @@ Route::post('/send-application-form', [ControllersLoanApplication::class, 'apply
 Route::post('/member/fetch-loan-applications', [ControllersLoanApplication::class, 'viewMemberLoanApplications']);
 Route::post('/cancel-loan-applications', [ControllersLoanApplication::class, 'cancelLoanApplication']);
 
+Route::get('/member/savings/{id}', [ControllersSavingsAccount::class, 'getSavingsAccount']);
+
 // member notifications
 Route::post('/member/fetch-notifications', [Notifications::class, 'fetchNotifications']);
 Route::post('/member/fetch-unread-notifications', [Notifications::class, 'fetchUnreadNotifications']);
 Route::post('/member/delete-notification', [Notifications::class, 'deleteNotification']);
-Route::post('/member/mark-notification-seen', [Notifications::class, 'markAsRead']);
-Route::get('/member/savings/{id}', [ControllersSavingsAccount::class, 'getSavingsAccount']);
+Route::post('/member/mark-as-read', [Notifications::class, 'markAsRead']);
 
-
+// Push notification routes
+Route::post('/member/register-push-token', [Notifications::class, 'registerPushToken']);
+Route::post('/member/deactivate-push-token', [Notifications::class, 'deactivatePushToken']);
+Route::post('/member/send-push-notification', [Notifications::class, 'sendPushNotificationToUser']);
+Route::post('/member/create-and-send-notification', [Notifications::class, 'createAndSendNotification']);
+Route::post('/member/send-bulk-notifications', [Notifications::class, 'sendBulkNotifications']);
+Route::post('/member/get-user-push-tokens', [Notifications::class, 'getUserPushTokens']);

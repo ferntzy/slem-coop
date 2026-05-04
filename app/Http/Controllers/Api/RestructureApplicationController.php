@@ -188,7 +188,7 @@ class RestructureApplicationController extends Controller
         $profileId = $loanApplication->member?->profile_id;
 
         if ($profileId) {
-            app(NotificationService::class)->notifyProfile(
+            app(NotificationService::class)->notifyProfileWithPush(
                 $profileId,
                 'Restructure application submitted',
                 "Your restructure application #{$record->restructure_application_id} has been submitted and is pending review.",
@@ -230,7 +230,9 @@ class RestructureApplicationController extends Controller
 
         $fromStatus = $record->status;
 
-        DB::transaction(function () use ($record, $fromStatus) {
+        $actor = auth()->user();
+
+        DB::transaction(function () use ($record, $fromStatus, $actor) {
             $record->update(['status' => 'Under Review']);
 
             RestructureApplicationStatusLog::create([
@@ -240,12 +242,22 @@ class RestructureApplicationController extends Controller
                 'changed_by_user_id' => auth()->id(),
                 'changed_at' => now(),
             ]);
+
+            if ($actor) {
+                app(NotificationService::class)->notifyUserWithPush(
+                    $actor->user_id,
+                    'Restructure under review',
+                    "You moved restructure application #{$record->restructure_application_id} to Under Review.",
+                    notifiableType: 'restructure_application',
+                    notifiableId: $record->restructure_application_id
+                );
+            }
         });
 
         $profileId = $record->loanApplication?->member?->profile_id;
 
         if ($profileId) {
-            app(NotificationService::class)->notifyProfile(
+            app(NotificationService::class)->notifyProfileWithPush(
                 $profileId,
                 'Restructure under review',
                 "Your restructure application #{$record->restructure_application_id} is now under review.",
@@ -302,7 +314,9 @@ class RestructureApplicationController extends Controller
         $fees = app(CoopFeeCalculatorService::class)->calculate('restructure', $principal);
         $fromStatus = $record->status;
 
-        $newLoan = DB::transaction(function () use ($record, $oldLoanAccount, $principal, $interestRate, $term, $releaseDate, $monthlyAmortization, $fees, $fromStatus) {
+        $actor = auth()->user();
+
+        $newLoan = DB::transaction(function () use ($record, $oldLoanAccount, $principal, $interestRate, $term, $releaseDate, $monthlyAmortization, $fees, $fromStatus, $actor) {
             $record->update([
                 'shared_capital_fee' => $fees['shared_capital_fee'] ?? 0,
                 'insurance_fee' => $fees['insurance_fee'] ?? 0,
@@ -325,6 +339,16 @@ class RestructureApplicationController extends Controller
                 'restructured_at' => now(),
                 'restructure_application_id' => $record->restructure_application_id,
             ]);
+
+            if ($actor) {
+                app(NotificationService::class)->notifyUserWithPush(
+                    $actor->user_id,
+                    'Restructure approved',
+                    "You approved restructure application #{$record->restructure_application_id}.",
+                    notifiableType: 'restructure_application',
+                    notifiableId: $record->restructure_application_id
+                );
+            }
 
             return LoanAccount::create([
                 'loan_application_id' => $record->loan_application_id,
@@ -351,7 +375,7 @@ class RestructureApplicationController extends Controller
         $profileId = $record->loanApplication?->member?->profile_id;
 
         if ($profileId) {
-            app(NotificationService::class)->notifyProfile(
+            app(NotificationService::class)->notifyProfileWithPush(
                 $profileId,
                 'Restructure approved',
                 "Your restructure application #{$record->restructure_application_id} has been approved.",
@@ -397,7 +421,9 @@ class RestructureApplicationController extends Controller
 
         $fromStatus = $record->status;
 
-        DB::transaction(function () use ($record, $fromStatus, $validated) {
+        $actor = auth()->user();
+
+        DB::transaction(function () use ($record, $fromStatus, $validated, $actor) {
             $record->update(['status' => 'Rejected']);
 
             RestructureApplicationStatusLog::create([
@@ -408,12 +434,22 @@ class RestructureApplicationController extends Controller
                 'reason' => $validated['reason'],
                 'changed_at' => now(),
             ]);
+
+            if ($actor) {
+                app(NotificationService::class)->notifyUserWithPush(
+                    $actor->user_id,
+                    'Restructure rejected',
+                    "You rejected restructure application #{$record->restructure_application_id}.",
+                    notifiableType: 'restructure_application',
+                    notifiableId: $record->restructure_application_id
+                );
+            }
         });
 
         $profileId = $record->loanApplication?->member?->profile_id;
 
         if ($profileId) {
-            app(NotificationService::class)->notifyProfile(
+            app(NotificationService::class)->notifyProfileWithPush(
                 $profileId,
                 'Restructure rejected',
                 "Your restructure application #{$record->restructure_application_id} has been rejected. Reason: {$validated['reason']}",
@@ -462,7 +498,7 @@ class RestructureApplicationController extends Controller
         $profileId = $record->loanApplication?->member?->profile_id;
 
         if ($profileId) {
-            app(NotificationService::class)->notifyProfile(
+            app(NotificationService::class)->notifyProfileWithPush(
                 $profileId,
                 'Restructure cancelled',
                 "Restructure application #{$record->restructure_application_id} has been cancelled.",

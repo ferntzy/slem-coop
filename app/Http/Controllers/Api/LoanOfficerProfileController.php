@@ -76,7 +76,7 @@ class LoanOfficerProfileController extends Controller
             ]);
 
             $actorName = Auth::user()?->profile?->full_name ?? Auth::user()?->username ?? 'Staff member';
-            app(NotificationService::class)->notifyUser(
+            app(NotificationService::class)->notifyUserWithPush(
                 $user->user_id,
                 'Profile updated by staff',
                 "Your profile was updated by {$actorName}. If you did not request this change, please contact support."
