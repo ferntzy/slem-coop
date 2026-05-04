@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\MemberDetails\Schemas;
 
+use App\Filament\Widgets\LoanHistoryTable;
 use App\Filament\Widgets\RegularSavingsTransactionsTable;
 use App\Models\SavingsAccountTransaction;
 use App\Models\SavingsType;
@@ -719,8 +720,8 @@ class MemberDetailInfolist
 
                                 Section::make('Time Deposit Transactions')
                                     ->extraAttributes([
-                                        'class' => 'max-w-full overflow-hidden',
-                                        'style' => 'max-width: 100%; overflow: hidden;',
+                                        'class' => 'w-full max-w-full overflow-x-auto',
+                                        'style' => 'width: 100%; max-width: 100%; overflow-x: auto;',
                                     ])
                                     ->schema([
                                         Section::make('Eligible for Maturity Option')
@@ -752,9 +753,9 @@ class MemberDetailInfolist
 
                                                         TextEntry::make('id')
                                                             ->label('Action')
-                                                            ->formatStateUsing(fn () => '')
-                                                            ->afterContent(fn ($state): Action => Action::make('re_time_deposit_'.$state)
-                                                                ->label('Re-Time Deposit')
+                                                            ->state('-')
+                                                            ->suffixAction(fn ($state): Action => Action::make('re_time_deposit_'.$state)
+                                                                ->label('Renew Time Deposit')
                                                                 ->icon('heroicon-o-arrow-path-rounded-square')
                                                                 ->button()
                                                                 ->requiresConfirmation()
@@ -835,8 +836,8 @@ class MemberDetailInfolist
                                         RepeatableEntry::make('time_deposit_transactions')
                                             ->label('Latest 3 Transactions')
                                             ->extraAttributes([
-                                                'class' => 'w-full max-w-full overflow-x-auto',
-                                                'style' => 'width: 100%; max-width: 100%; overflow-x: auto;',
+                                                'class' => 'w-full max-w-full min-w-[107rem] overflow-x-auto',
+                                                'style' => 'width: 100%; max-width: 100%; min-width: 107rem; overflow-x: auto;',
                                             ])
                                             ->state(function ($record): array {
                                                 $transactions = collect(
@@ -913,8 +914,8 @@ class MemberDetailInfolist
                                                 RepeatableEntry::make('older_time_deposit_transactions')
                                                     ->label('Older Transactions')
                                                     ->extraAttributes([
-                                                        'class' => 'w-full max-w-full overflow-x-auto',
-                                                        'style' => 'width: 100%; max-width: 100%; overflow-x: auto;',
+                                                        'class' => 'w-full max-w-full min-w-[107rem] overflow-x-auto',
+                                                        'style' => 'width: 100%; max-width: 100%; min-width: 107rem; overflow-x: auto;',
                                                     ])
                                                     ->state(function ($record): array {
                                                         $transactions = collect(
@@ -992,6 +993,13 @@ class MemberDetailInfolist
                                                 return count(static::getTimeDepositDisplayTransactions((int) $record->profile_id)) > 3;
                                             }),
                                     ]),
+                            ]),
+
+                        Tab::make('Loan History')
+                            ->icon('heroicon-o-clock')
+                            ->schema([
+                                Livewire::make(LoanHistoryTable::class)
+                                    ->columnSpanFull(),
                             ]),
                     ])
                     ->columnSpanFull(),
