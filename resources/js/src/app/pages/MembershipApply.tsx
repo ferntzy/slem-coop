@@ -818,6 +818,8 @@ export function MembershipApply() {
 
       setSubmitted(true);
       localStorage.removeItem(MEMBERSHIP_DRAFT_KEY);
+      clearFileFromDb('id_file_front');
+      clearFileFromDb('id_file_back');
       toast.success('Application submitted successfully!');
     } catch (err) {
       console.error('Network error:', err);
@@ -992,7 +994,6 @@ export function MembershipApply() {
                       <div className="space-y-1.5">
                         <Label className={labelClass}>
                           Birthdate <span className="text-red-500">*</span>
-                          <span className="ml-1 text-gray-400 normal-case font-medium">(must be {getMinimumAge(selectedTypeId)}+ years old)</span>
                         </Label>
                         <Input
                           type="date"
@@ -1014,6 +1015,7 @@ export function MembershipApply() {
                           className={inputClass}
                         />
                         {err1.birthdate && <p className="text-xs text-red-500 font-medium">{err1.birthdate.message}</p>}
+                        <span className="text-gray-400 normal-case font-medium text-sm">(must be {getMinimumAge(selectedTypeId)}+ years old)</span>
                       </div>
 
                       <div className="space-y-1.5">
