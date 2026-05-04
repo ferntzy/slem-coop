@@ -61,6 +61,7 @@ Route::get('/get-loans', [Loans::class, 'getLoans']);
 Route::get('/loan/{id}', [Loans::class, 'getLoanDetail']);
 Route::get('/loans-by-id/{id}', [Loans::class, 'getLoanAccountsById']);
 Route::get('/loan-accounts/pending-count', [Loans::class, 'getPendingPaymentCount']);
+Route::get('/loan-accounts/pending-payments', [Loans::class, 'getPendingPayments']);
 
 //payment
 Route::get('/payment-status/{id}', [Payments::class, 'getPaymentStatus']);
