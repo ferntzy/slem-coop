@@ -97,7 +97,7 @@ class ProfileController extends Controller
             );
 
             if ($user) {
-                app(NotificationService::class)->notifyUser(
+                app(NotificationService::class)->notifyUserWithPush(
                     $user->user_id,
                     'Profile update confirmed',
                     "Your {$updateType} was successfully updated."

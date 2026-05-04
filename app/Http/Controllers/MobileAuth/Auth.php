@@ -124,21 +124,22 @@ class Auth extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
-    } 
+    }
 
-    public function saveToken(Request $request){
+    public function saveToken(Request $request)
+    {
         $request->validate([
             'user_id' => 'required',
-            'token' => 'required'
+            'token' => 'required',
         ]);
 
         User::where('user_id', $request->user_id)
             ->update([
-                'fcm_token' => $request->token
+                'fcm_token' => $request->token,
             ]);
 
         return response()->json([
-            'message' => 'Token saved successfully'
+            'message' => 'Token saved successfully',
         ]);
     }
 }

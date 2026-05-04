@@ -174,10 +174,21 @@ class LoanApplicationController extends Controller
             );
 
             if ($profileId) {
-                app(NotificationService::class)->notifyProfile(
+                app(NotificationService::class)->notifyProfileWithPush(
                     $profileId,
                     'Loan application escalated for approval',
                     "Your loan application #{$record->loan_application_id} is under review and requires manager + admin approvals.",
+                    notifiableType: 'loan_application',
+                    notifiableId: $record->loan_application_id
+                );
+            }
+
+            $actor = auth()->user();
+            if ($actor) {
+                app(NotificationService::class)->notifyUserWithPush(
+                    $actor->user_id,
+                    'Loan application escalated',
+                    "You escalated loan application #{$record->loan_application_id} for manager/admin approval.",
                     notifiableType: 'loan_application',
                     notifiableId: $record->loan_application_id
                 );
@@ -192,7 +203,9 @@ class LoanApplicationController extends Controller
         $profileId = $record->member?->profile_id ?? null;
         $from = $record->status;
 
-        DB::transaction(function () use ($record, $from, $profileId) {
+        $actor = auth()->user();
+
+        DB::transaction(function () use ($record, $from, $profileId, $actor) {
 
             $record->update([
                 'status' => 'Approved',
@@ -216,7 +229,7 @@ class LoanApplicationController extends Controller
             ]);
 
             if ($profileId) {
-                app(NotificationService::class)->notifyProfile(
+                app(NotificationService::class)->notifyProfileWithPush(
                     $profileId,
                     'Loan application approved',
                     "Your loan application #{$record->loan_application_id} has been approved.",
@@ -231,6 +244,16 @@ class LoanApplicationController extends Controller
                 notifiableType: 'loan_application',
                 notifiableId: $record->loan_application_id
             );
+
+            if ($actor) {
+                app(NotificationService::class)->notifyUserWithPush(
+                    $actor->user_id,
+                    'Loan application approved',
+                    "You approved loan application #{$record->loan_application_id}.",
+                    notifiableType: 'loan_application',
+                    notifiableId: $record->loan_application_id
+                );
+            }
         });
 
         return response()->json(['message' => 'Loan application approved successfully. Please set the release date to create the loan account.']);
@@ -399,7 +422,9 @@ class LoanApplicationController extends Controller
         $profileId = $record->member?->profile_id ?? null;
         $from = $record->status;
 
-        DB::transaction(function () use ($record, $from, $profileId) {
+        $actor = auth()->user();
+
+        DB::transaction(function () use ($record, $from, $profileId, $actor) {
 
             $record->update(['status' => 'Under Review']);
 
@@ -412,7 +437,7 @@ class LoanApplicationController extends Controller
             ]);
 
             if ($profileId) {
-                app(NotificationService::class)->notifyProfile(
+                app(NotificationService::class)->notifyProfileWithPush(
                     $profileId,
                     'Loan under review',
                     "Your loan application #{$record->loan_application_id} is now under review."
@@ -423,6 +448,16 @@ class LoanApplicationController extends Controller
                 'Loan under review',
                 "Loan application #{$record->loan_application_id} moved to Under Review."
             );
+
+            if ($actor) {
+                app(NotificationService::class)->notifyUserWithPush(
+                    $actor->user_id,
+                    'Loan application under review',
+                    "You moved loan application #{$record->loan_application_id} to Under Review.",
+                    notifiableType: 'loan_application',
+                    notifiableId: $record->loan_application_id
+                );
+            }
         });
 
         return response()->json(['message' => 'Loan application marked as Under Review.']);
@@ -481,7 +516,9 @@ class LoanApplicationController extends Controller
         $profileId = $record->member?->profile_id ?? null;
         $from = $record->status;
 
-        DB::transaction(function () use ($record, $from, $profileId, $request) {
+        $actor = auth()->user();
+
+        DB::transaction(function () use ($record, $from, $profileId, $request, $actor) {
 
             $record->update(['status' => 'Rejected']);
 
@@ -503,7 +540,7 @@ class LoanApplicationController extends Controller
             ]);
 
             if ($profileId) {
-                app(NotificationService::class)->notifyProfile(
+                app(NotificationService::class)->notifyProfileWithPush(
                     $profileId,
                     'Loan application rejected',
                     "Your loan application #{$record->loan_application_id} has been rejected. Reason: {$request->reason}",
@@ -518,6 +555,16 @@ class LoanApplicationController extends Controller
                 notifiableType: 'loan_application',
                 notifiableId: $record->loan_application_id
             );
+
+            if ($actor) {
+                app(NotificationService::class)->notifyUserWithPush(
+                    $actor->user_id,
+                    'Loan application rejected',
+                    "You rejected loan application #{$record->loan_application_id}.",
+                    notifiableType: 'loan_application',
+                    notifiableId: $record->loan_application_id
+                );
+            }
         });
 
         return response()->json(['message' => 'Loan application rejected.']);

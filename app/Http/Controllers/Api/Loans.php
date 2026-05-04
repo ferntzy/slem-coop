@@ -10,11 +10,12 @@ use App\Models\LoanType;
 use App\Models\MemberDetail;
 use App\Models\Profile;
 use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
-use Google\Client as GoogleClient;
 
 class Loans extends Controller
 {
@@ -105,6 +106,30 @@ class Loans extends Controller
         try {
             LoanApplication::where('loan_application_id', $request->id)->update(['status' => 'Rejected']);
 
+            $memberId = LoanApplication::where('loan_application_id', $request->id)->value('member_id');
+            $profileId = $memberId ? MemberDetail::where('id', $memberId)->value('profile_id') : null;
+
+            if ($profileId) {
+                app(NotificationService::class)->notifyProfileWithPush(
+                    $profileId,
+                    'Loan application rejected',
+                    "Your loan application #{$request->id} has been rejected.",
+                    notifiableType: 'loan_application',
+                    notifiableId: (int) $request->id
+                );
+            }
+
+            $actor = Auth::guard('sanctum')->user() ?? auth()->user();
+            if ($actor) {
+                app(NotificationService::class)->notifyUserWithPush(
+                    $actor->user_id,
+                    'Loan application rejected',
+                    "You rejected loan application #{$request->id}.",
+                    notifiableType: 'loan_application',
+                    notifiableId: (int) $request->id
+                );
+            }
+
             return response()->json([
                 'success' => 'Loan application was successfully declined!',
             ], 200);
@@ -154,15 +179,46 @@ class Loans extends Controller
             if ($fcmToken) {
                 Http::withHeaders(['Content-Type' => 'application/json'])
                     ->post('https://exp.host/--/push/v2/send', [
-                        'to'    => $fcmToken,
+                        'to' => $fcmToken,
                         'title' => 'Loan Approved',
-                        'body'  => 'Your loan application has been approved!',
+                        'body' => 'Your loan application has been approved!',
                         'sound' => 'default',
-                        'data'  => [
-                            'type'                => 'loan_approved',
+                        'data' => [
+                            'type' => 'loan_approved',
                             'loan_application_id' => $request->id,
                         ],
                     ]);
+            }
+
+            if ($pid) {
+                if ($fcmToken) {
+                    app(NotificationService::class)->notifyProfile(
+                        $pid,
+                        'Loan application approved',
+                        'Your loan application has been approved!',
+                        notifiableType: 'loan_application',
+                        notifiableId: (int) $request->id
+                    );
+                } else {
+                    app(NotificationService::class)->notifyProfileWithPush(
+                        $pid,
+                        'Loan application approved',
+                        'Your loan application has been approved!',
+                        notifiableType: 'loan_application',
+                        notifiableId: (int) $request->id
+                    );
+                }
+            }
+
+            $actor = Auth::guard('sanctum')->user() ?? auth()->user();
+            if ($actor) {
+                app(NotificationService::class)->notifyUserWithPush(
+                    $actor->user_id,
+                    'Loan application approved',
+                    "You approved loan application #{$request->id}.",
+                    notifiableType: 'loan_application',
+                    notifiableId: (int) $request->id
+                );
             }
 
             return response()->json([

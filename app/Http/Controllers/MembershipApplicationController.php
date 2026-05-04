@@ -278,7 +278,7 @@ class MembershipApplicationController extends Controller
                 $user = User::where('profile_id', $profile->profile_id)->first();
 
                 if ($user) {
-                    $this->notificationService->notifyUser(
+                    $this->notificationService->notifyUserWithPush(
                         $user->user_id,
                         'Application received',
                         'Your membership application has been received and is pending review.',

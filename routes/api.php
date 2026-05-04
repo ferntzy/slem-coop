@@ -141,9 +141,20 @@ Route::post('/send-application-form', [ControllersLoanApplication::class, 'apply
 Route::post('/member/fetch-loan-applications', [ControllersLoanApplication::class, 'viewMemberLoanApplications']);
 Route::post('/cancel-loan-applications', [ControllersLoanApplication::class, 'cancelLoanApplication']);
 
+Route::get('/member/savings/{id}', [ControllersSavingsAccount::class, 'getSavingsAccount']);
+
 // member notifications
 Route::post('/member/fetch-notifications', [Notifications::class, 'fetchNotifications']);
 Route::post('/member/fetch-unread-notifications', [Notifications::class, 'fetchUnreadNotifications']);
 Route::post('/member/delete-notification', [Notifications::class, 'deleteNotification']);
+Route::post('/member/mark-as-read', [Notifications::class, 'markAsRead']);
+
+// Push notification routes
+Route::post('/member/register-push-token', [Notifications::class, 'registerPushToken']);
+Route::post('/member/deactivate-push-token', [Notifications::class, 'deactivatePushToken']);
+Route::post('/member/send-push-notification', [Notifications::class, 'sendPushNotificationToUser']);
+Route::post('/member/create-and-send-notification', [Notifications::class, 'createAndSendNotification']);
+Route::post('/member/send-bulk-notifications', [Notifications::class, 'sendBulkNotifications']);
+Route::post('/member/get-user-push-tokens', [Notifications::class, 'getUserPushTokens']);
 Route::post('/member/mark-notification-seen', [Notifications::class, 'markAsRead']);
 Route::get('/member/savings/{id}', [ControllersSavingsAccount::class, 'getSavingsAccount']);

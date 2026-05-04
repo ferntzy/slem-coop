@@ -9,6 +9,7 @@ use App\Models\Notification;
 use App\Models\Profile;
 use App\Models\SentEmail;
 use App\Models\User;
+use App\Traits\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -19,6 +20,8 @@ use Spatie\Permission\Models\Role;
 
 class NotificationService
 {
+    use Notifiable;
+
     public function notifyUser(
         int $userId,
         string $title,
@@ -38,6 +41,24 @@ class NotificationService
         ]);
     }
 
+    public function notifyUserWithPush(
+        int $userId,
+        string $title,
+        string $description,
+        bool $isRead = false,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null,
+        array $data = []
+    ): Notification {
+        $notification = $this->notifyUser($userId, $title, $description, $isRead, $notifiableType, $notifiableId);
+
+        $payload = array_merge($data, ['notification_id' => $notification->id]);
+
+        $this->sendPushNotification($userId, $title, $description, $payload);
+
+        return $notification;
+    }
+
     public function notifyProfile(
         string|int $profileId,
         string $title,
@@ -55,6 +76,34 @@ class NotificationService
         }
 
         return $this->notifyUser($user->user_id, $title, $description, $isRead, $notifiableType, $notifiableId);
+    }
+
+    public function notifyProfileWithPush(
+        string|int $profileId,
+        string $title,
+        string $description,
+        bool $isRead = false,
+        ?string $notifiableType = null,
+        ?int $notifiableId = null,
+        array $data = []
+    ): ?Notification {
+        $user = User::where('profile_id', $profileId)->first();
+
+        if (! $user) {
+            Log::warning("NotificationService: no user found for profile_id={ $profileId }");
+
+            return null;
+        }
+
+        return $this->notifyUserWithPush(
+            $user->user_id,
+            $title,
+            $description,
+            $isRead,
+            $notifiableType,
+            $notifiableId,
+            $data
+        );
     }
 
     public function notifyRoles(
@@ -227,7 +276,7 @@ class NotificationService
         }
         $description .= ' Thank you!';
 
-        return $this->notifyProfile($profileId, $title, $description);
+        return $this->notifyProfileWithPush($profileId, $title, $description);
     }
 
     public function notifyDocumentUpload(
@@ -264,7 +313,7 @@ class NotificationService
         $title = 'Payment '.ucfirst($status);
         $description = 'Your payment of ₱'.number_format($amount, 2)." has been {$status}.";
 
-        return $this->notifyProfile($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
+        return $this->notifyProfileWithPush($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
     }
 
     public function notifyPaymentEdited(
@@ -277,7 +326,7 @@ class NotificationService
         $title = 'Payment Edited';
         $description = 'Your payment was edited from ₱'.number_format($oldAmount, 2).' to ₱'.number_format($newAmount, 2).'.';
 
-        return $this->notifyProfile($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
+        return $this->notifyProfileWithPush($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
     }
 
     public function notifyPaymentVoided(
@@ -293,7 +342,7 @@ class NotificationService
             $description .= " Reason: {$reason}";
         }
 
-        return $this->notifyProfile($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
+        return $this->notifyProfileWithPush($profileId, $title, $description, notifiableType: $notifiableType, notifiableId: $notifiableId);
     }
 
     public function notifyDueDateReminder(

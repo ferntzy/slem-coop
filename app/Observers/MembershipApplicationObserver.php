@@ -75,7 +75,7 @@ class MembershipApplicationObserver
                 app(NotificationService::class)->createUserWithAutoPassword($profile);
 
                 // Notify applicant and admin team
-                app(NotificationService::class)->notifyProfile(
+                app(NotificationService::class)->notifyProfileWithPush(
                     $profile->profile_id,
                     'Membership application approved',
                     'Your membership application has been approved and an account has been created.',
