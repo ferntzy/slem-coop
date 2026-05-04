@@ -10,6 +10,7 @@
         "bacon/bacon-qr-code": "^2.0",
         "barryvdh/laravel-dompdf": "*",
         "bezhansalleh/filament-shield": "*",
+        "doctrine/dbal": "^4.4",
         "endroid/qr-code": "*",
         "filament/filament": "~4.0",
         "filament/infolists": "^4.9",

@@ -19,6 +19,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Support\RawJs;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\RecordActionsPosition;
@@ -355,10 +356,9 @@ class MemberDetailsTable
                                 ->live()
                                 ->afterStateUpdated(function ($state, callable $set, callable $get): void {
                                     $set('terms', null);
+                                    $set('amount', null);
 
                                     if (! $state) {
-                                        $set('amount', null);
-
                                         return;
                                     }
 
@@ -370,9 +370,8 @@ class MemberDetailsTable
 
                                     if ((int) $state === 1) {
                                         $set('terms', (int) ($type->minimum_terms ?? 4));
+                                        $set('amount', (float) ($type->minimum_initial_deposit ?? 0));
                                     }
-
-                                    $set('amount', (float) ($type->minimum_initial_deposit ?? 0));
                                 })
                                 ->required(),
 
@@ -439,8 +438,14 @@ class MemberDetailsTable
                             TextInput::make('amount')
                                 ->label('Amount')
                                 ->numeric()
+                                ->mask(RawJs::make('$money($input)'))
+                                ->stripCharacters(',')
                                 ->prefix('PHP')
                                 ->minValue(function (callable $get): ?string {
+                                    if ((int) $get('savings_type_id') !== 1) {
+                                        return '0.01';
+                                    }
+
                                     $type = static::getSavingsType($get);
 
                                     if (! $type) {
@@ -452,6 +457,10 @@ class MemberDetailsTable
                                     return $min > 0 ? $min : null;
                                 })
                                 ->rules(function (callable $get) {
+                                    if ((int) $get('savings_type_id') !== 1) {
+                                        return ['min:0.01'];
+                                    }
+
                                     $type = static::getSavingsType($get);
 
                                     if (! $type) {
@@ -463,6 +472,10 @@ class MemberDetailsTable
                                     return $min > 0 ? ["min:{$min}"] : [];
                                 })
                                 ->helperText(function (callable $get): ?string {
+                                    if ((int) $get('savings_type_id') !== 1) {
+                                        return 'Any positive amount is allowed for regular savings.';
+                                    }
+
                                     $type = static::getSavingsType($get);
 
                                     if (! $type) {

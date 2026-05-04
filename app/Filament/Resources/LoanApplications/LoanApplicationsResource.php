@@ -89,6 +89,7 @@ class LoanApplicationsResource extends Resource
         return [
             'index' => Pages\ListLoanApplications::route('/'),
             'create' => Pages\CreateLoanApplications::route('/create'),
+            'view' => Pages\ViewLoanApplications::route('/{record}'),
             'edit' => Pages\EditLoanApplications::route('/{record}/edit'),
         ];
     }
