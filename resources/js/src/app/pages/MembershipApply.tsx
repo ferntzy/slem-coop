@@ -217,35 +217,6 @@ const phMobileFormat = (value: string): string => {
   return digits;
 };
 
-const getYouTubeVideoId = (rawLink: string): string | null => {
-  if (!rawLink) return null;
-
-  try {
-    const url = new URL(rawLink);
-    const host = url.hostname.replace(/^www\./, '');
-
-    if (host === 'youtu.be') {
-      return url.pathname.replace('/', '') || null;
-    }
-
-    if (host.endsWith('youtube.com')) {
-      if (url.pathname.startsWith('/embed/')) {
-        return url.pathname.split('/')[2] || null;
-      }
-
-      if (url.pathname.startsWith('/shorts/')) {
-        return url.pathname.split('/')[2] || null;
-      }
-
-      return url.searchParams.get('v');
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
-};
-
 /* ─── Particles ─── */
 function Particles() {
   const colorClasses = [
@@ -460,7 +431,6 @@ export function MembershipApply() {
   const [spouseData, setSpouseData] = useState<SpouseData | null>(null);
   const [coMakersData, setCoMakersData] = useState<CoMakerData[]>([]);
   const [branches, setBranches] = useState<BranchOption[]>([]);
-  const [resolvedBranch, setResolvedBranch] = useState<BranchOption | null>(null);
 
   const [selectedTypeId, setSelectedTypeId] = useState<string>(
     MEMBERSHIP_TYPE_LABELS[initialTypeId] ? initialTypeId : '2'
@@ -477,6 +447,9 @@ export function MembershipApply() {
   const [assessmentAnswers, setAssessmentAnswers] = useState<Record<number, string>>({});
   const [zoomClicked, setZoomClicked] = useState(false);
   const [videoInteracted, setVideoInteracted] = useState(false);
+  const [orientationMethod, setOrientationMethod] = useState<'zoom' | 'video' | null>(null);
+  const [zoomScheduleToday, setZoomScheduleToday] = useState<{ available: boolean; date?: string; start_time?: string; end_time?: string; zoom_link?: string; next?: { date: string; start_time: string } | null } | null>(null);
+  const [zoomScheduleLoading, setZoomScheduleLoading] = useState(false);
   const [assessmentSubmitted, setAssessmentSubmitted] = useState(false);
 
   const membershipTypeLabel = MEMBERSHIP_TYPE_LABELS[selectedTypeId] ?? '';
@@ -576,6 +549,7 @@ export function MembershipApply() {
   const sex = watch1('sex');
   const civilStatus = watch1('civil_status');
   const idType = watch1('id_type');
+  const municipality = watch1('municipality');
   const monthlyIncomeRange = watch1('monthly_income_range');
   const watchedProfile = watch1();
   const watchedApplication = watch2();
@@ -611,8 +585,10 @@ export function MembershipApply() {
 
   const orientationComplete = useMemo(() => {
     if (!orientationSettings.require_for_loan) return true;
-    return zoomClicked && videoInteracted && assessmentSubmitted && assessmentPassed;
-  }, [zoomClicked, videoInteracted, assessmentSubmitted, assessmentPassed, orientationSettings.require_for_loan]);
+    if (!orientationMethod) return false;
+    const methodDone = orientationMethod === 'zoom' ? zoomClicked : videoInteracted;
+    return methodDone && assessmentSubmitted && assessmentPassed;
+  }, [orientationMethod, zoomClicked, videoInteracted, assessmentSubmitted, assessmentPassed, orientationSettings.require_for_loan]);
 
   useEffect(() => {
     setOrientationProgress((prev) => ({
@@ -669,14 +645,16 @@ export function MembershipApply() {
     }
   }, [initialTypeId, navigate]);
 
-  const resolvedVideoId = useMemo(
-    () => getYouTubeVideoId(orientationSettings.video_link),
-    [orientationSettings.video_link]
-  );
-
   useEffect(() => {
-    if (step !== 4 || !resolvedVideoId || videoInteracted) return;
-    const videoId = resolvedVideoId;
+    if (step !== 4 || orientationMethod !== 'video' || !orientationSettings.video_link || videoInteracted) return;
+    const url = orientationSettings.video_link;
+    const match =
+      url.match(/[?&]v=([a-zA-Z0-9_-]{11})/) ||
+      url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/) ||
+      url.match(/embed\/([a-zA-Z0-9_-]{11})/) ||
+      url.match(/shorts\/([a-zA-Z0-9_-]{11})/);
+    if (!match?.[1]) return;
+    const videoId = match[1];
     const onPlayerStateChange = (event: any) => {
       if (event.data === 0) {
         setVideoInteracted(true);
@@ -705,7 +683,17 @@ export function MembershipApply() {
       }
     }, 100);
     return () => clearInterval(checkYT);
-  }, [step, resolvedVideoId, videoInteracted]);
+  }, [step, orientationMethod, orientationSettings.video_link, videoInteracted]);
+
+  useEffect(() => {
+    if (step !== 4 || orientationMethod !== 'zoom') return;
+    setZoomScheduleLoading(true);
+    fetch('/api/orientation/zoom-schedule/today')
+      .then((res) => res.json())
+      .then((data) => setZoomScheduleToday(data))
+      .catch(() => setZoomScheduleToday({ available: false, next: null }))
+      .finally(() => setZoomScheduleLoading(false));
+  }, [step, orientationMethod]);
 
   useEffect(() => {
     const raw = localStorage.getItem(MEMBERSHIP_DRAFT_KEY);
@@ -760,67 +748,10 @@ export function MembershipApply() {
     return () => clearTimeout(timeout);
   }, [step, selectedTypeId, profileData, applicationData, spouseData, coMakersData, orientationProgress, watchedProfile, watchedApplication, watch3, idFileFront, idFileBack, saveFileToDb]);
 
-  // Watch municipality and resolve branch automatically
-  useEffect(() => {
-    const municipality = watchedProfile?.municipality;
-    if (!municipality || municipality.trim() === '') {
-      setResolvedBranch(null);
-      return;
-    }
-
-    fetch(`/api/resolve-branch-by-municipality?municipality=${encodeURIComponent(municipality)}`)
-      .then((res) => {
-        if (!res.ok) {
-          return res.json().then((data) => {
-            toast.error(data.error || 'Failed to resolve branch for this municipality.');
-            setResolvedBranch(null);
-            return null;
-          });
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data && data.branch_id && data.name) {
-          setResolvedBranch({ branch_id: data.branch_id, name: data.name });
-          // Auto-set the branch_id in form2
-          set2('branch_id', String(data.branch_id));
-        }
-      })
-      .catch(() => {
-        toast.error('Failed to resolve branch. Please try again.');
-        setResolvedBranch(null);
-      });
-  }, [watchedProfile?.municipality, set2]);
-
-  const submitProfile = async (data: ProfileData) => {
-    // Validate that municipality is mapped to a branch
-    if (!data.municipality || data.municipality.trim() === '') {
-      toast.error('Municipality is required.');
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/resolve-branch-by-municipality?municipality=${encodeURIComponent(data.municipality)}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(errorData.error || 'Failed to resolve branch for this municipality.');
-        return;
-      }
-
-      const branchData = await response.json();
-      if (!branchData.branch_id) {
-        toast.error('Could not resolve a valid branch for this municipality.');
-        return;
-      }
-
-      // Municipality is valid, proceed to Step 2
-      setProfileData(data);
-      toast.success('Personal details saved.');
-      setStep(2);
-    } catch (error) {
-      toast.error('Failed to validate municipality. Please try again.');
-    }
+  const submitProfile = (data: ProfileData) => {
+    setProfileData(data);
+    toast.success('Personal details saved.');
+    setStep(2);
   };
 
   const saveApplicationStep = (data: ApplicationData) => {
@@ -831,8 +762,10 @@ export function MembershipApply() {
   };
 
   const handleZoomClick = () => {
+    const link = zoomScheduleToday?.zoom_link || orientationSettings.zoom_link;
+    if (!link) return;
     setZoomClicked(true);
-    window.open(orientationSettings.zoom_link, '_blank');
+    window.open(link, '_blank');
   };
 
   const submitAssessment = () => {
@@ -847,8 +780,7 @@ export function MembershipApply() {
   const submitFinalApplication = async () => {
     if (!profileData) { toast.error('Personal data missing. Please go back to step 1.'); return; }
     if (!applicationData) { toast.error('Application details missing. Please go back to step 2.'); return; }
-    if (!profileData.municipality) { toast.error('Municipality is required for branch assignment. Please go back to step 1.'); return; }
-    if (!applicationData.branch_id) { toast.error('Branch could not be assigned for this municipality. Please contact support.'); return; }
+    if (!applicationData.branch_id) { toast.error('Please select a branch in step 2.'); return; }
     if (!orientationComplete) { toast.error('Please complete the orientation first.'); return; }
     if (!idFileFront || !idFileBack) { toast.error('Please upload both front and back of your ID.'); return; }
 
@@ -883,8 +815,6 @@ export function MembershipApply() {
 
       setSubmitted(true);
       localStorage.removeItem(MEMBERSHIP_DRAFT_KEY);
-      clearFileFromDb('id_file_front');
-      clearFileFromDb('id_file_back');
       toast.success('Application submitted successfully!');
     } catch (err) {
       console.error('Network error:', err);
@@ -1059,6 +989,7 @@ export function MembershipApply() {
                       <div className="space-y-1.5">
                         <Label className={labelClass}>
                           Birthdate <span className="text-red-500">*</span>
+                          <span className="ml-1 text-gray-400 normal-case font-medium">(must be {getMinimumAge(selectedTypeId)}+ years old)</span>
                         </Label>
                         <Input
                           type="date"
@@ -1080,7 +1011,6 @@ export function MembershipApply() {
                           className={inputClass}
                         />
                         {err1.birthdate && <p className="text-xs text-red-500 font-medium">{err1.birthdate.message}</p>}
-                        <span className="text-gray-400 normal-case font-medium text-sm">(must be {getMinimumAge(selectedTypeId)}+ years old)</span>
                       </div>
 
                       <div className="space-y-1.5">
@@ -1416,24 +1346,17 @@ export function MembershipApply() {
 
                         <div className="space-y-1.5">
                           <Label className={labelClass}>Branch <span className="text-red-500">*</span></Label>
-                          {resolvedBranch ? (
-                            <div className={`h-11 w-full rounded-xl border border-green-200 dark:border-green-900/50 bg-green-50/30 dark:bg-green-900/20 px-3 flex items-center text-sm text-gray-900 dark:text-white font-medium`}>
-                              {resolvedBranch.name}
-                            </div>
-                          ) : (
-                            <select
-                              {...reg2('branch_id', { required: 'Please select a branch.' })}
-                              className={`h-11 w-full rounded-xl border border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] px-3 text-sm text-gray-900 dark:text-white focus:border-green-500 dark:focus:border-green-400 focus:ring-2 focus:ring-green-500/20 appearance-none disabled:opacity-60 disabled:cursor-not-allowed`}
-                              disabled
-                            >
-                              <option value="">Select branch</option>
-                              {branches.map((branch) => (
-                                <option key={branch.branch_id} value={String(branch.branch_id)}>
-                                  {branch.name}
-                                </option>
-                              ))}
-                            </select>
-                          )}
+                          <select
+                            {...reg2('branch_id', { required: 'Please select a branch.' })}
+                            className={`h-11 w-full rounded-xl border border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] px-3 text-sm text-gray-900 dark:text-white focus:border-green-500 dark:focus:border-green-400 focus:ring-2 focus:ring-green-500/20 appearance-none`}
+                          >
+                            <option value="">Select branch</option>
+                            {branches.map((branch) => (
+                              <option key={branch.branch_id} value={String(branch.branch_id)}>
+                                {branch.name}
+                              </option>
+                            ))}
+                          </select>
                           {err2.branch_id && <p className="text-xs text-red-500 font-medium">{err2.branch_id.message}</p>}
                         </div>
 
@@ -1651,70 +1574,121 @@ export function MembershipApply() {
                   </div>
 
                   <CardContent className="space-y-6 p-6 sm:p-8">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10">
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-                            <CalendarCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
-                          </div>
-                          <h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Zoom Orientation</h3>
-                        </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-4">Attend the Zoom pre-membership orientation.</p>
-                        {orientationSettings.zoom_link ? (
+                    {!orientationMethod && (
+                      <div className="space-y-3">
+                        <p className="text-sm font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">Choose your orientation method</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <button
-                            onClick={handleZoomClick}
-                            className={`w-full inline-flex items-center justify-center ${zoomClicked ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-2 border-green-300 dark:border-green-700 rounded-full font-black uppercase tracking-widest text-xs py-3' : primaryButtonClass}`}
+                            type="button"
+                            onClick={() => setOrientationMethod('zoom')}
+                            className="text-left rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10 hover:border-green-400 hover:bg-green-50 transition"
                           >
-                            {zoomClicked ? '✓ Zoom Link Accessed' : 'Join Zoom Orientation'}
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                                <CalendarCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
+                              </div>
+                              <h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Zoom Meet</h3>
+                            </div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Attend the live Zoom orientation if scheduled today.</p>
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => setOrientationMethod('video')}
+                            className="text-left rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10 hover:border-green-400 hover:bg-green-50 transition"
+                          >
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                                <Video className="w-4 h-4 text-green-600 dark:text-green-400" />
+                              </div>
+                              <h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Orientation Video</h3>
+                            </div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Watch the recorded orientation video at your own pace.</p>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {orientationMethod === 'zoom' && (
+                      <div className="rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10">
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                              <CalendarCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            </div>
+                            <h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Zoom Orientation</h3>
+                          </div>
+                          {!zoomClicked && (
+                            <button type="button" onClick={() => { setOrientationMethod(null); setZoomScheduleToday(null); }} className="text-xs font-bold uppercase tracking-widest text-green-700 dark:text-green-400 hover:underline">Change method</button>
+                          )}
+                        </div>
+                        {zoomScheduleLoading ? (
+                          <div className="w-full rounded-2xl border border-green-100 bg-green-50/30 px-4 py-6 text-center text-sm text-gray-400 font-medium">Checking today's schedule…</div>
+                        ) : zoomScheduleToday?.available ? (
+                          <>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium mb-4">
+                              Today's session: <strong className="text-green-700 dark:text-green-400">{zoomScheduleToday.start_time}{zoomScheduleToday.end_time ? ` – ${zoomScheduleToday.end_time}` : ''}</strong>
+                            </p>
+                            <button
+                              onClick={handleZoomClick}
+                              className={`w-full inline-flex items-center justify-center ${zoomClicked ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-2 border-green-300 dark:border-green-700 rounded-full font-black uppercase tracking-widest text-xs py-3' : primaryButtonClass}`}
+                            >
+                              {zoomClicked ? '✓ Zoom Link Accessed' : 'Join Zoom Orientation'}
+                            </button>
+                            <p className="text-xs text-gray-400 dark:text-gray-600 mt-3 font-medium">
+                              {zoomClicked ? '✓ Thank you for attending the Zoom orientation. Proceed to the assessment below.' : 'Click the button above to join the Zoom meeting.'}
+                            </p>
+                          </>
                         ) : (
-                          <div className="w-full rounded-2xl border border-green-100 dark:border-green-900/40 bg-green-50/30 dark:bg-green-900/10 flex items-center justify-center text-sm text-gray-400 dark:text-gray-600 px-4 py-6 text-center font-medium">
-                            No Zoom link configured yet.
+                          <div className="w-full rounded-2xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-900/10 px-4 py-5 text-sm text-amber-800 dark:text-amber-300 font-medium text-center">
+                            There is no Zoom meeting today.
+                            {zoomScheduleToday?.next ? (
+                              <> Come back on <strong>{zoomScheduleToday.next.date}</strong> at <strong>{zoomScheduleToday.next.start_time}</strong>.</>
+                            ) : (
+                              <> No upcoming sessions are scheduled yet.</>
+                            )}
                           </div>
                         )}
-                        <p className="text-xs text-gray-400 dark:text-gray-600 mt-3 font-medium">
-                          {zoomClicked ? '✓ Thank you for attending the Zoom orientation.' : 'Click the button above to join the Zoom meeting.'}
-                        </p>
                       </div>
+                    )}
 
+                    {orientationMethod === 'video' && (
                       <div className="rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10">
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-                            <Video className="w-4 h-4 text-green-600 dark:text-green-400" />
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                              <Video className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            </div>
+                            <h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Orientation Video</h3>
                           </div>
-                          <h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Orientation Video</h3>
+                          {!videoInteracted && (
+                            <button type="button" onClick={() => setOrientationMethod(null)} className="text-xs font-bold uppercase tracking-widest text-green-700 dark:text-green-400 hover:underline">Change method</button>
+                          )}
                         </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-4">Watch the orientation video completely.</p>
                         {orientationSettings.video_link ? (
-                          resolvedVideoId ? (
-                            <div className="space-y-3">
-                              <div className="w-full bg-black rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
-                                <div id="orientation-video-player" className="w-full h-full" />
+                          <div className="space-y-3">
+                            <div className="w-full bg-black rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                              <div id="orientation-video-player" className="w-full h-full" />
+                            </div>
+                            {videoInteracted ? (
+                              <div className="w-full rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-3 py-2.5 text-center text-sm text-green-700 dark:text-green-400 font-black uppercase tracking-widest">
+                                ✓ Video Watched
                               </div>
-                              {videoInteracted ? (
-                                <div className="w-full rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-3 py-2.5 text-center text-sm text-green-700 dark:text-green-400 font-black uppercase tracking-widest">
-                                  ✓ Video Watched
-                                </div>
-                              ) : (
-                                <div className="w-full rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/40 px-3 py-2.5 text-center text-xs text-amber-700 dark:text-amber-400 font-medium">
-                                  Watch until the end to mark as watched
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="w-full rounded-2xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-900/10 px-4 py-5 text-sm text-amber-800 dark:text-amber-300 text-center font-medium space-y-1">
-                              <p>Video link format is not supported yet.</p>
-                              <p className="text-xs text-amber-700/80 dark:text-amber-300/80">Use a YouTube link or embed URL (e.g., https://www.youtube.com/watch?v=VIDEO_ID).</p>
-                            </div>
-                          )
+                            ) : (
+                              <div className="w-full rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/40 px-3 py-2.5 text-center text-xs text-amber-700 dark:text-amber-400 font-medium">
+                                Watch until the end to mark as watched
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <div className="w-full h-40 rounded-2xl border border-green-100 dark:border-green-900/40 bg-green-50/30 flex items-center justify-center text-sm text-gray-400 dark:text-gray-600 px-4 text-center font-medium">
                             No video link configured yet.
                           </div>
                         )}
                       </div>
-                    </div>
+                    )}
 
+                    {orientationMethod && (!(orientationMethod === 'zoom' && zoomScheduleToday && !zoomScheduleToday.available)) && (
                     <div className="rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
@@ -1781,15 +1755,16 @@ export function MembershipApply() {
                         </div>
                       )}
                     </div>
+                    )}
 
                     <div className="rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-5">
                       <p className="font-black uppercase tracking-widest text-xs text-green-700 dark:text-green-400 mb-4">Orientation Checklist</p>
                       <div className="space-y-3">
                         {[
-                          { label: 'Zoom Pre-Membership Orientation', done: zoomClicked },
-                          { label: 'Orientation Video', done: videoInteracted },
+                          ...(orientationMethod === 'zoom' ? [{ label: 'Zoom Pre-Membership Orientation', done: zoomClicked }] : []),
+                          ...(orientationMethod === 'video' ? [{ label: 'Orientation Video', done: videoInteracted }] : []),
                           { label: 'Assessment', done: assessmentSubmitted && assessmentPassed, failed: assessmentSubmitted && !assessmentPassed },
-                          { label: 'Certificate Generation', done: zoomClicked && videoInteracted && assessmentSubmitted && assessmentPassed },
+                          { label: 'Certificate Generation', done: orientationComplete },
                         ].map(({ label, done, failed }) => (
                           <div key={label} className="flex items-center justify-between gap-2">
                             <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{label}</span>

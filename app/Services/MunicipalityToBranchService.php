@@ -16,12 +16,12 @@ class MunicipalityToBranchService
             return null;
         }
 
+        $needle = mb_strtolower(trim($municipality));
         $mapping = self::getMunicipalitiesToBranchesMapping();
 
-        // Search for the municipality in the mapping
         foreach ($mapping as $branchName => $municipalities) {
-            if (in_array($municipality, $municipalities, true)) {
-                // Find the branch by name
+            $normalized = array_map(fn ($m) => mb_strtolower(trim((string) $m)), (array) $municipalities);
+            if (in_array($needle, $normalized, true)) {
                 $branch = Branch::where('name', $branchName)
                     ->where('is_active', true)
                     ->first();
