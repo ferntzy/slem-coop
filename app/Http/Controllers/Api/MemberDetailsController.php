@@ -199,7 +199,7 @@ class MemberDetailsController extends Controller
         ========================= */
         if ($request->co_makers) {
             $member->coMakers()->delete();
-
+    
             foreach ($request->co_makers as $coMaker) {
                 $member->coMakers()->create([
                     'full_name' => $coMaker['full_name'] ?? null,
