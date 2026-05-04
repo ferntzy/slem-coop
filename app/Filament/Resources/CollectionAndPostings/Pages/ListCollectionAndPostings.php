@@ -476,20 +476,16 @@ class ListCollectionAndPostings extends ListRecords
                                                             var all = Array.from(document.querySelectorAll('#schedule_table input[type=checkbox]'));
 
                                                             if (clicked.checked) {
-                                                                var blocked = all.some(function(cb) {
+                                                                all.forEach(function(cb) {
                                                                     var p = parseInt(cb.dataset.period, 10);
-                                                                    return p < clickedPeriod && !cb.checked;
+                                                                    if (p <= clickedPeriod) {
+                                                                        cb.checked = true;
+                                                                    }
                                                                 });
-
-                                                                if (blocked) {
-                                                                    clicked.checked = false;
-                                                                    alert('Please select the earliest unpaid due first.');
-                                                                    return;
-                                                                }
                                                             } else {
                                                                 all.forEach(function(cb) {
                                                                     var p = parseInt(cb.dataset.period, 10);
-                                                                    if (p > clickedPeriod) {
+                                                                    if (p >= clickedPeriod) {
                                                                         cb.checked = false;
                                                                     }
                                                                 });
@@ -595,7 +591,6 @@ class ListCollectionAndPostings extends ListRecords
                                     ->numeric()
                                     ->minValue(1)
                                     ->prefix('₱')
-                                    ->readOnly()
                                     ->default('0.00')
                                     ->placeholder('0.00')
                                     ->extraInputAttributes([
