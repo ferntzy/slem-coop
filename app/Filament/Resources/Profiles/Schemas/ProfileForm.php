@@ -49,31 +49,35 @@ class ProfileForm
                         'x-on:paste' => '$event.preventDefault()',
                     ]),
 
-                DatePicker::make('birthdate')
-                    ->required()
-                    ->maxDate(today()->subYears(18))
-                    ->rules([
-                        function () {
-                            return function (string $attribute, mixed $value, \Closure $fail) {
-                                if (! $value) {
-                                    return;
-                                }
+             DatePicker::make('birthdate')
+                        ->label('Birthdate')
+                        ->required()
+                        ->native(false)
+                        ->displayFormat('F d, Y')
+                        ->placeholder('Select your birthdate')
+                        ->prefixIcon('heroicon-o-calendar')
+                        ->closeOnDateSelection()
+                        ->defaultFocusedDate(now()->subYears(25))
+                        ->maxDate(today()->subYears(18))
+                        ->rules([
+                            function () {
+                                return function (string $attribute, mixed $value, \Closure $fail) {
+                                    if (! $value) return;
 
-                                $birthdate = Carbon::parse($value);
+                                    $birthdate = Carbon::parse($value);
 
-                                if ($birthdate->isToday() || $birthdate->isFuture()) {
-                                    $fail('Birthdate cannot be today or a future date.');
+                                    if ($birthdate->isToday() || $birthdate->isFuture()) {
+                                        $fail('Birthdate cannot be today or a future date.');
+                                        return;
+                                    }
 
-                                    return;
-                                }
-
-                                $age = $birthdate->age;
-                                if ($age < 18) {
-                                    $fail("You must be at least 18 years old. Current age: {$age} years.");
-                                }
-                            };
-                        },
-                    ]),
+                                    $age = $birthdate->age;
+                                    if ($age < 18) {
+                                        $fail("You must be at least 18 years old. Current age: {$age} years.");
+                                    }
+                                };
+                            },
+                        ]),
 
                 Select::make('sex')
                     ->options([

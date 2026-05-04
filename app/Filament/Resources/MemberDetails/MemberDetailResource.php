@@ -6,7 +6,6 @@ use App\Filament\Resources\MemberDetails\Pages\CreateMemberDetail;
 use App\Filament\Resources\MemberDetails\Pages\EditMemberDetail;
 use App\Filament\Resources\MemberDetails\Pages\ListMemberDetails;
 use App\Filament\Resources\MemberDetails\Pages\ViewMemberDetail;
-use App\Filament\Resources\MemberDetails\RelationManagers\LoanHistoryRelationManager;
 use App\Filament\Resources\MemberDetails\Schemas\MemberDetailForm;
 use App\Filament\Resources\MemberDetails\Schemas\MemberDetailInfolist;
 use App\Filament\Resources\MemberDetails\Tables\MemberDetailsTable;
@@ -53,9 +52,7 @@ class MemberDetailResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            LoanHistoryRelationManager::class,
-        ];
+        return [];
     }
 
     public static function getEloquentQuery(): Builder

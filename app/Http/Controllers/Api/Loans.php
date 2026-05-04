@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\LoanAccount;
 use App\Models\LoanApplication;
 use App\Models\LoanType;
 use App\Models\MemberDetail;
+use App\Models\Profile;
 use App\Models\User;
 use App\Services\NotificationService;
 use Carbon\Carbon;
@@ -55,11 +57,15 @@ class Loans extends Controller
         }
     }
 
-    public function getLoanApplications()
+    public function getLoanApplications($id)
     {
         try {
+            $bid = Profile::where('profile_id', $id)->value('branch_id');
             $lola = LoanApplication::with('member.profile.user')
                 ->where('status', 'Pending')
+                ->whereHas('member.profile', function ($query) use ($bid) {
+                    $query->where('branch_id', $bid);
+                })
                 ->get();
 
             return response()->json([
@@ -246,8 +252,10 @@ class Loans extends Controller
     public function getLoanDetail($id)
     {
         try {
-            $loan = LoanAccount::with('profile')
-                ->findOrFail($id);
+            $loan = LoanAccount::with(['profile', 'collectionsAndPostings' => function ($q) {
+                $q->where('status', 'posted')
+                ->orderBy('payment_date', 'desc');
+            }])->findOrFail($id);
 
             return response()->json([
                 'loan' => $loan,
@@ -265,7 +273,16 @@ class Loans extends Controller
     {
         try {
             $pid = MemberDetail::where('id', $id)->value('profile_id');
-            $loanAccounts = LoanAccount::where('profile_id', $pid)->where('status', 'Active')->get();
+
+            $loanAccounts = LoanAccount::where('profile_id', $pid)
+                ->where('status', 'Active')
+                ->withSum(
+                    ['collectionsAndPostings as total_paid' => function ($query) {
+                        $query->where('status', 'posted'); // adjust to your posted/approved status value
+                    }],
+                    'amount_paid'
+                )
+                ->get();
 
             return response()->json([
                 'loanAccounts' => $loanAccounts,
@@ -274,6 +291,222 @@ class Loans extends Controller
             return response()->json([
                 'message' => 'Unable to get loan accounts',
             ]);
+        }
+    }
+
+    public function getPendingPaymentCount(){
+        try{
+            $today = now()->toDateString();
+
+            // Get all active loan accounts
+            $loanAccounts = LoanAccount::where('status', 'Active')->get();
+
+            $pendingCount = 0;
+            $overdueCount = 0;
+
+            foreach ($loanAccounts as $loan) {
+                $principal     = (float) $loan->principal_amount;
+                $annualRate    = (float) $loan->interest_rate;
+                $monthlyRate   = $annualRate / 100 / 12;
+                $termMonths    = (int) $loan->term_months;
+                $monthlyPayment = (float) $loan->monthly_amortization;
+                $releaseDate   = $loan->release_date;
+
+                // Sum posted payments, sorted chronologically
+                $payments = $loan->collectionsAndPostings()
+                    ->where('status', 'posted')
+                    ->orderBy('payment_date')
+                    ->get(['amount_paid', 'payment_date']);
+
+                $paymentPool  = 0.0;
+                $paymentIndex = 0;
+                $paymentCount = $payments->count();
+
+                for ($i = 1; $i <= $termMonths; $i++) {
+                    $dueDate = (clone $releaseDate)->addMonths($i);
+
+                    // Absorb payments on or before this due date
+                    while (
+                        $paymentIndex < $paymentCount &&
+                        $payments[$paymentIndex]->payment_date <= $dueDate->toDateString()
+                    ) {
+                        $paymentPool += (float) $payments[$paymentIndex]->amount_paid;
+                        $paymentIndex++;
+                    }
+
+                    if ($paymentPool >= $monthlyPayment) {
+                        // Period is paid
+                        $paymentPool -= $monthlyPayment;
+                    } elseif ($dueDate->toDateString() < $today) {
+                        $overdueCount++;
+                    } else {
+                        $daysAhead = now()->diffInDays($dueDate, false);
+                        if ($daysAhead <= 30) {
+                            $pendingCount++;
+                        }
+                    }
+                }
+            }
+
+            return response()->json([
+                'pending_count' => $pendingCount,
+                'overdue_count' => $overdueCount,
+                'total'         => $pendingCount + $overdueCount,
+            ]);
+
+        }catch(Exception $e){
+            return response()->json([
+                'message' => 'Unable to get pending payment counts',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function getPendingPayments(){
+        try {
+            $today = now()->toDateString();
+            $results = [];
+
+            $loanAccounts = LoanAccount::where('status', 'Active')
+                ->with(['profile', 'collectionsAndPostings' => function ($q) {
+                    $q->where('status', 'posted')->orderBy('payment_date');
+                }])
+                ->get();
+
+            foreach ($loanAccounts as $loan) {
+                $principal      = (float) $loan->principal_amount;
+                $monthlyRate    = (float) $loan->interest_rate / 100 / 12;
+                $termMonths     = (int) $loan->term_months;
+                $monthlyPayment = (float) $loan->monthly_amortization;
+                $releaseDate    = $loan->release_date;
+
+                $payments     = $loan->collectionsAndPostings;
+                $paymentPool  = 0.0;
+                $paymentIndex = 0;
+                $paymentCount = $payments->count();
+                $balance      = $principal;
+
+                for ($i = 1; $i <= $termMonths; $i++) {
+                    $dueDate = (clone $releaseDate)->addMonths($i);
+
+                    while (
+                        $paymentIndex < $paymentCount &&
+                        $payments[$paymentIndex]->payment_date <= $dueDate->toDateString()
+                    ) {
+                        $paymentPool += (float) $payments[$paymentIndex]->amount_paid;
+                        $paymentIndex++;
+                    }
+
+                    $interest       = round($balance * $monthlyRate, 2);
+                    $principalPay   = round($monthlyPayment - $interest, 2);
+                    $endingBalance  = max(round($balance - $principalPay, 2), 0);
+
+                    if ($paymentPool >= $monthlyPayment) {
+                        $paymentPool -= $monthlyPayment;
+                    } else {
+                        $dueDateStr = $dueDate->toDateString();
+                        $daysAhead  = now()->diffInDays($dueDate, false);
+
+                        if ($dueDateStr >= $today && $daysAhead <= 30) {
+                            $results[] = [
+                                'loan_account_id'   => $loan->loan_account_id,
+                                'period'            => $i,
+                                'due_date'          => $dueDateStr,
+                                'days_until_due'    => (int) $daysAhead,
+                                'monthly_payment'   => $monthlyPayment,
+                                'interest_payment'  => $interest,
+                                'principal_payment' => $principalPay,
+                                'ending_balance'    => $endingBalance,
+                                'member_name'       => $loan->profile?->full_name ?? 'Unknown',
+                                'profile_id'        => $loan->profile_id,
+                            ];
+                        }
+                    }
+
+                    $balance = $endingBalance;
+                }
+            }
+
+            // Sort by due date ascending
+            usort($results, fn($a, $b) => strcmp($a['due_date'], $b['due_date']));
+
+            return response()->json(['pending_payments' => $results]);
+
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Unable to get pending payments']);
+        }
+    }
+
+    public function getOverduePayments()
+    {
+        try {
+            $today = now()->toDateString();
+            $results = [];
+
+            $loanAccounts = LoanAccount::where('status', 'Active')
+                ->with(['profile', 'collectionsAndPostings' => function ($q) {
+                    $q->where('status', 'posted')->orderBy('payment_date');
+                }])
+                ->get();
+
+            foreach ($loanAccounts as $loan) {
+                $principal      = (float) $loan->principal_amount;
+                $monthlyRate    = (float) $loan->interest_rate / 100 / 12;
+                $termMonths     = (int) $loan->term_months;
+                $monthlyPayment = (float) $loan->monthly_amortization;
+                $releaseDate    = $loan->release_date;
+
+                $payments     = $loan->collectionsAndPostings;
+                $paymentPool  = 0.0;
+                $paymentIndex = 0;
+                $paymentCount = $payments->count();
+                $balance      = $principal;
+
+                for ($i = 1; $i <= $termMonths; $i++) {
+                    $dueDate = (clone $releaseDate)->addMonths($i);
+
+                    while (
+                        $paymentIndex < $paymentCount &&
+                        $payments[$paymentIndex]->payment_date <= $dueDate->toDateString()
+                    ) {
+                        $paymentPool += (float) $payments[$paymentIndex]->amount_paid;
+                        $paymentIndex++;
+                    }
+
+                    $interest      = round($balance * $monthlyRate, 2);
+                    $principalPay  = round($monthlyPayment - $interest, 2);
+                    $endingBalance = max(round($balance - $principalPay, 2), 0);
+
+                    if ($paymentPool >= $monthlyPayment) {
+                        $paymentPool -= $monthlyPayment;
+                    } elseif ($dueDate->toDateString() < $today) {
+                        // This period is overdue
+                        $daysOverdue = now()->diffInDays($dueDate);
+                        $results[] = [
+                            'loan_account_id'   => $loan->loan_account_id,
+                            'period'            => $i,
+                            'due_date'          => $dueDate->toDateString(),
+                            'days_overdue'      => (int) $daysOverdue,
+                            'monthly_payment'   => $monthlyPayment,
+                            'interest_payment'  => $interest,
+                            'principal_payment' => $principalPay,
+                            'ending_balance'    => $endingBalance,
+                            'member_name'       => $loan->profile?->full_name ?? 'Unknown',
+                            'profile_id'        => $loan->profile_id,
+                        ];
+                    }
+
+                    $balance = $endingBalance;
+                }
+            }
+
+            // Sort by most overdue first
+            usort($results, fn($a, $b) => $b['days_overdue'] <=> $a['days_overdue']);
+
+            return response()->json(['overdue_payments' => $results]);
+
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Unable to get overdue payments']);
         }
     }
 }
