@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\LoanAccount;
 use App\Models\LoanApplication;
 use App\Models\LoanType;
 use App\Models\MemberDetail;
+use App\Models\Profile;
 use App\Models\User;
 use Carbon\Carbon;
 use Exception;
@@ -54,11 +56,15 @@ class Loans extends Controller
         }
     }
 
-    public function getLoanApplications()
+    public function getLoanApplications($id)
     {
         try {
+            $bid = Profile::where('profile_id', $id)->value('branch_id');
             $lola = LoanApplication::with('member.profile.user')
                 ->where('status', 'Pending')
+                ->whereHas('member.profile', function ($query) use ($bid) {
+                    $query->where('branch_id', $bid);
+                })
                 ->get();
 
             return response()->json([
@@ -190,8 +196,10 @@ class Loans extends Controller
     public function getLoanDetail($id)
     {
         try {
-            $loan = LoanAccount::with('profile')
-                ->findOrFail($id);
+            $loan = LoanAccount::with(['profile', 'collectionsAndPostings' => function ($q) {
+                $q->where('status', 'posted')
+                ->orderBy('payment_date', 'desc');
+            }])->findOrFail($id);
 
             return response()->json([
                 'loan' => $loan,

@@ -74,7 +74,7 @@ Route::get('/approved-loans', [Loans::class, 'getApprovedLoans']);
 Route::get('/pending-loans', [Loans::class, 'getPendingLoans']);
 
 // loan applications
-Route::get('/loan-applications', [Loans::class, 'getLoanApplications']);
+Route::get('/loan-applications/{id}', [Loans::class, 'getLoanApplications']);
 Route::post('/get-loan-application-detail', [Loans::class, 'getLoanApplication']);
 Route::post('/decline-loan-application', [Loans::class, 'declineLoanApplication']);
 Route::post('/approve-loan-application', [Loans::class, 'approveLoanApplication']);
@@ -103,20 +103,12 @@ Route::get('/account-officer/members', [AccountDashboard::class, 'activemembers'
 Route::get('/account-officer/loan-disbursements', [AccountDashboard::class, 'loanDisbursements']);
 Route::get('/account-officer/collections', [AccountDashboard::class, 'collections']);
 Route::get('/account-officer/loans', [AccountDashboard::class, 'activeLoanAccounts']);
-Route::get('/account-officer/pending-loans', [AccountDashboard::class, 'pendingLoanApplications']);
+
 Route::get('/account-officer/delinquent', [AccountDashboard::class, 'delinquentMembers']);
-Route::get('/account-officer/loan-disbursements', [AccountDashboard::class, 'loanDisbursements']);
-Route::get('/account-officer/collections', [AccountDashboard::class, 'collections']);
-Route::get('/account-officer/loans', [AccountDashboard::class, 'activeLoanAccounts']);
 Route::get('/account-officer/pending-loans', [AccountDashboard::class, 'pendingLoanApplications']);
 Route::get('/account-officer/delinquent', [AccountDashboard::class, 'delinquentMembers']);
 Route::get('/all-members/{id}', [AccountMembersController::class, 'member']);
 Route::get('/members/{id}', [AccountMembersController::class, 'show']);
-Route::get('/loans', [AccountLoansController::class, 'Loans']);
-Route::get('/all-loans', [AccountLoansController::class, 'allLoans']);
-Route::get('/loans/{id}', [AccountLoansController::class, 'show']);
-Route::get('/loan-edit', [AccountLoanEditController::class, 'index']);
-Route::get('/loan-edit/{id}', [AccountLoanEditController::class, 'show']);
 
 Route::prefix('member-details')->group(function () {
     Route::get('/', [MemberDetailsController::class, 'index']);
