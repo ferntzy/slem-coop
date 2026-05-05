@@ -11,8 +11,10 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Columns\CheckboxColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB as FacadesDB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
@@ -23,21 +25,33 @@ class UsersTable
     {
         return $table
             ->columns([
-                ImageColumn::make('profile.image_path')
+                // Avatar: use image_path from users table, fallback to initials from profile
+                ViewColumn::make('avatar_display')
                     ->label('Avatar')
-                    ->circular()
-                    ->getStateUsing(function ($record) {
-                        if (! empty($record->profile?->image_path)) {
-                            return Storage::url($record->profile->image_path);
+                    ->view('filament.tables.columns.avatar-with-initials')
+                    ->state(function ($record) {
+                        $imagePath = $record->image_path ?? null;
+
+                        // Build full URL if image_path exists on the user
+                        $avatarUrl = null;
+                        if ($imagePath) {
+                            // Handle both absolute URLs and relative paths
+                            $avatarUrl = Str::startsWith($imagePath, ['http://', 'https://'])
+                                ? $imagePath
+                                : url($imagePath); // image_path is stored as "images/avatar_x.jpg"
                         }
 
-                        if (! empty($record->avatar)) {
-                            return Str::startsWith($record->avatar, ['http://', 'https://'])
-                                ? $record->avatar
-                                : Storage::url($record->avatar);
-                        }
+                        // Fallback initials from profile
+                        $firstName = $record->profile?->first_name ?? '';
+                        $lastName  = $record->profile?->last_name  ?? '';
+                        $initials  = strtoupper(
+                            substr($firstName, 0, 1) . substr($lastName, 0, 1)
+                        ) ?: '?';
 
-                        return null;
+                        return [
+                            'url'      => $avatarUrl,
+                            'initials' => $initials,
+                        ];
                     }),
 
                 TextColumn::make('coop_id')
@@ -54,7 +68,7 @@ class UsersTable
                     ->searchable()
                     ->sortable(query: function (Builder $query, string $direction): Builder {
                         return $query->orderBy(
-                            Profile::select(DB::raw("CONCAT(first_name, ' ', middle_name, ' ', last_name)"))
+                            Profile::select(FacadesDB::raw("CONCAT(first_name, ' ', middle_name, ' ', last_name)"))
                                 ->whereColumn('profiles.profile_id', 'users.profile_id')
                                 ->limit(1),
                             $direction
@@ -67,6 +81,7 @@ class UsersTable
                     ->width(80)
                     ->height(80)
                     ->url(fn ($record) => $record->qr_code ? Storage::url($record->qr_code) : null),
+
                 CheckboxColumn::make('is_active')
                     ->label('Active')
                     ->sortable(),
@@ -79,7 +94,7 @@ class UsersTable
                     ->label('Print QR')
                     ->icon('heroicon-o-magnifying-glass-plus')
                     ->color('gray')
-                    ->modalHeading(fn ($record) => $record->username.' — QR Code')
+                    ->modalHeading(fn ($record) => $record->username . ' — QR Code')
                     ->modalContent(function ($record): HtmlString {
                         if (! $record->qr_code) {
                             return new HtmlString('

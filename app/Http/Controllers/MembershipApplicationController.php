@@ -38,6 +38,85 @@ class MembershipApplicationController extends Controller
         );
     }
 
+    public function zoomScheduleToday()
+    {
+        $tz = 'Asia/Manila';
+        $now = \Carbon\Carbon::now($tz);
+        $today = $now->toDateString();
+
+        $raw = \App\Models\CoopSetting::get('zoom_orientation_schedules', []);
+        $schedules = is_array($raw) ? $raw : (json_decode($raw ?: '[]', true) ?: []);
+
+        $globalLink = (string) \App\Models\CoopSetting::get('zoom_link', '');
+
+        $todays = [];
+        $upcoming = [];
+        foreach ($schedules as $s) {
+            $date = (string) ($s['date'] ?? '');
+            $start = (string) ($s['start_time'] ?? '');
+            $end = (string) ($s['end_time'] ?? '');
+            if ($date === '' || $start === '') {
+                continue;
+            }
+            $startAt = \Carbon\Carbon::parse("$date $start", $tz);
+            $endAt = $end !== '' ? \Carbon\Carbon::parse("$date $end", $tz) : $startAt->copy()->addHour();
+            $link = (string) ($s['zoom_link'] ?? '') ?: $globalLink;
+
+            if ($date === $today && $endAt->gt($now)) {
+                $todays[] = compact('startAt', 'endAt', 'link') + ['date' => $date, 'start_time' => $start, 'end_time' => $end];
+            } elseif ($startAt->gt($now)) {
+                $upcoming[] = compact('startAt') + ['date' => $date, 'start_time' => $start];
+            }
+        }
+
+        usort($todays, fn ($a, $b) => $a['startAt'] <=> $b['startAt']);
+        usort($upcoming, fn ($a, $b) => $a['startAt'] <=> $b['startAt']);
+
+        if (! empty($todays)) {
+            $t = $todays[0];
+
+            return response()->json([
+                'available' => true,
+                'date' => $t['date'],
+                'start_time' => $t['start_time'],
+                'end_time' => $t['end_time'],
+                'zoom_link' => $t['link'],
+            ]);
+        }
+
+        return response()->json([
+            'available' => false,
+            'next' => empty($upcoming) ? null : [
+                'date' => $upcoming[0]['date'],
+                'start_time' => $upcoming[0]['start_time'],
+            ],
+        ]);
+    }
+
+    public function municipalities()
+    {
+        $mapping = MunicipalityToBranchService::getMunicipalitiesToBranchesMapping();
+        $activeBranchNames = Branch::where('is_active', true)->pluck('name')->all();
+
+        $list = [];
+        foreach ($mapping as $branchName => $municipalities) {
+            if (! in_array($branchName, $activeBranchNames, true)) {
+                continue;
+            }
+            foreach ((array) $municipalities as $municipality) {
+                $name = trim((string) $municipality);
+                if ($name !== '') {
+                    $list[] = $name;
+                }
+            }
+        }
+
+        $list = array_values(array_unique($list));
+        sort($list, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return response()->json($list);
+    }
+
     public function resolveBranchByMunicipality(Request $request)
     {
         $municipality = $request->query('municipality');

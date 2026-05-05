@@ -67,9 +67,17 @@ class Loans extends Controller
                     $query->where('branch_id', $bid);
                 })
                 ->get();
+            
+            $lola = LoanApplication::with('member.profile.user')
+                ->where('status', 'Pending')
+                // ->whereHas('member.profile', function ($query) use ($bid) {
+                //     $query->where('branch_id', $bid);
+                // })
+                ->get();
 
             return response()->json([
                 'lola' => $lola,
+                'bid' => $bid
             ]);
         } catch (Exception $e) {
             return response()->json([
