@@ -90,7 +90,7 @@ export function MembershipInfo() {
       title: 'Associate Member',
       icon: Users,
       description: 'Limited membership for those who cannot meet regular membership requirements.',
-      requirements: ['Students or Minors', 'Non-residents of area', 'Immediate family of members', 'Completed PMES'],
+      requirements: ['Must be 18+ years old','Students or Minors', 'Non-residents of area', 'Immediate family of members', 'Completed PMES'],
       shareCapital: '₱250 minimum',
       gradient: 'from-emerald-600 to-emerald-800',
     },
