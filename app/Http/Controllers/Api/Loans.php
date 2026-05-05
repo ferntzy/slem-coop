@@ -70,6 +70,7 @@ class Loans extends Controller
 
             return response()->json([
                 'lola' => $lola,
+                'bid' => $bid
             ]);
         } catch (Exception $e) {
             return response()->json([
