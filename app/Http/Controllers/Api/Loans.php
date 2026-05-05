@@ -60,13 +60,10 @@ class Loans extends Controller
     public function getLoanApplications($id)
     {
         try {
-           $bid = MemberDetail::whereHas('profile', function ($q) use ($id) {
-                $q->where('profile_id', $id);
-            })->value('branch_id');
-
-            $lola = LoanApplication::with(['member.profile', 'member.branch'])
+            $bid = Profile::where('profile_id', $id)->value('branch_id');
+            $lola = LoanApplication::with('member.profile.user')
                 ->where('status', 'Pending')
-                ->whereHas('member', function ($query) use ($bid) {
+                ->whereHas('member.profile', function ($query) use ($bid) {
                     $query->where('branch_id', $bid);
                 })
                 ->get();
