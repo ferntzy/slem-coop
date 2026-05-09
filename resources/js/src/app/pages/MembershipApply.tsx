@@ -989,7 +989,6 @@ export function MembershipApply() {
                       <div className="space-y-1.5">
                         <Label className={labelClass}>
                           Birthdate <span className="text-red-500">*</span>
-                          <span className="ml-1 text-gray-400 normal-case font-medium">(must be {getMinimumAge(selectedTypeId)}+ years old)</span>
                         </Label>
                         <Input
                           type="date"
@@ -1010,6 +1009,7 @@ export function MembershipApply() {
                           })}
                           className={inputClass}
                         />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Must be {getMinimumAge(selectedTypeId)}+ years old</p>
                         {err1.birthdate && <p className="text-xs text-red-500 font-medium">{err1.birthdate.message}</p>}
                       </div>
 

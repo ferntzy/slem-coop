@@ -81,7 +81,7 @@ export function MembershipInfo() {
       title: 'Regular Member',
       icon: UserCheck,
       description: 'Full membership with voting rights and access to all cooperative products and services.',
-      requirements: ['Must be 18+ years old','Students or Minors', 'Non-residents of area', 'Immediate family of members', 'Completed PMES'],
+      requirements: ['Students or Minors', 'Non-residents of area', 'Immediate family of members', 'Completed PMES', 'Must be 18+ years old'],
       shareCapital: '₱500 minimum',
       gradient: 'from-green-600 to-green-800',
     },
