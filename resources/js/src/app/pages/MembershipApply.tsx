@@ -14,201 +14,451 @@ import {
   Check,
   Loader2,
   ChevronLeft,
+  ChevronRight,
   Star,
   Users,
   Video,
   CalendarCheck,
   FileBadge,
   ArrowRight,
-  ChevronDown,
+  Calendar,
+  X,
 } from 'lucide-react';
 
+/* ════════════════════════════════════════════════════════════════
+   BIRTHDATE PICKER — helpers + component (self-contained)
+════════════════════════════════════════════════════════════════ */
+const CAL_MONTHS = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December',
+];
+const CAL_DOW = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+function calParseDate(str: string): Date | null {
+  if (!str) return null;
+  const [y, m, d] = str.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function calToDateString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function calCalcAge(dateStr: string): number | null {
+  if (!dateStr) return null;
+  const today = new Date();
+  const birth = calParseDate(dateStr);
+  if (!birth) return null;
+  let age = today.getFullYear() - birth.getFullYear();
+  const md = today.getMonth() - birth.getMonth();
+  if (md < 0 || (md === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+function calFormatDisplay(dateStr: string): string | null {
+  if (!dateStr) return null;
+  const d = calParseDate(dateStr);
+  if (!d) return null;
+  return d.toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function buildCalendarGrid(year: number, month: number) {
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrev = new Date(year, month, 0).getDate();
+  const cells: { day: number; type: 'prev' | 'current' | 'next' }[] = [];
+  for (let i = firstDay - 1; i >= 0; i--) cells.push({ day: daysInPrev - i, type: 'prev' });
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, type: 'current' });
+  const remaining = 42 - cells.length;
+  for (let d = 1; d <= remaining; d++) cells.push({ day: d, type: 'next' });
+  return cells;
+}
+
+type BirthdatePickerProps = {
+  value: string;
+  onChange: (iso: string) => void;
+  minAge?: number;
+  error?: string;
+  required?: boolean;
+};
+
+function BirthdatePicker({ value, onChange, minAge = 18, error, required }: BirthdatePickerProps) {
+  const today = new Date();
+  const maxDate = new Date(today.getFullYear() - minAge, today.getMonth(), today.getDate());
+
+  const initDate = value ? (calParseDate(value) ?? maxDate) : maxDate;
+  const [viewYear, setViewYear] = useState(initDate.getFullYear());
+  const [viewMonth, setViewMonth] = useState(initDate.getMonth());
+  const [open, setOpen] = useState(false);
+  const [animating, setAnimating] = useState(false);
+  const [direction, setDirection] = useState<'left' | 'right' | null>(null);
+
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const age = calCalcAge(value);
+  const eligible = age !== null && age >= minAge;
+  const cells = buildCalendarGrid(viewYear, viewMonth);
+
+  const yearOptions: number[] = [];
+  for (let y = maxDate.getFullYear(); y >= maxDate.getFullYear() - 100; y--) yearOptions.push(y);
+
+  function navigate(delta: number) {
+    if (animating) return;
+    setDirection(delta === -1 ? 'right' : 'left');
+    setAnimating(true);
+    setTimeout(() => {
+      let m = viewMonth + delta;
+      let y = viewYear;
+      if (m < 0) { m = 11; y--; }
+      if (m > 11) { m = 0; y++; }
+      setViewMonth(m);
+      setViewYear(y);
+      setAnimating(false);
+      setDirection(null);
+    }, 180);
+  }
+
+  function selectDay(cell: { day: number; type: string }) {
+    let y = viewYear, m = viewMonth;
+    if (cell.type === 'prev') { m--; if (m < 0) { m = 11; y--; } }
+    if (cell.type === 'next') { m++; if (m > 11) { m = 0; y++; } }
+    const selected = new Date(y, m, cell.day);
+    if (selected > maxDate) return;
+    onChange(calToDateString(selected));
+    setTimeout(() => setOpen(false), 160);
+  }
+
+  const handleOverlayClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === overlayRef.current) setOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open]);
+
+  useEffect(() => {
+    if (value) {
+      const d = calParseDate(value);
+      if (d) { setViewYear(d.getFullYear()); setViewMonth(d.getMonth()); }
+    }
+  }, [value]);
+
+  /* ── Prevent body scroll when open ── */
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
+  function cellState(cell: { day: number; type: string }) {
+    let y = viewYear, m = viewMonth;
+    if (cell.type === 'prev') { m--; if (m < 0) { m = 11; y--; } }
+    if (cell.type === 'next') { m++; if (m > 11) { m = 0; y++; } }
+    const cellDate = new Date(y, m, cell.day);
+    const cellStr = calToDateString(cellDate);
+    const isSelected = value === cellStr;
+    const isDisabled = cellDate > maxDate;
+    const todayStr = calToDateString(today);
+    const isToday = cellStr === todayStr;
+    return { isSelected, isDisabled, isToday };
+  }
+
+  return (
+    <>
+      {/* ── Trigger Button ── */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        className={[
+          'w-full flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium text-left',
+          'transition-all duration-200 bg-white dark:bg-[#0d1410]',
+          'focus:outline-none focus:ring-2',
+          error
+            ? 'border-red-400 dark:border-red-600 focus:ring-red-500/20'
+            : value
+              ? 'border-green-400 dark:border-green-600 focus:ring-green-500/20'
+              : 'border-green-200 dark:border-green-900/50 hover:border-green-400 dark:hover:border-green-700 focus:ring-green-500/20',
+        ].join(' ')}
+      >
+        <Calendar className={`w-5 h-5 flex-shrink-0 ${value ? 'text-green-600 dark:text-green-400' : 'text-green-400 dark:text-green-700'}`} />
+        <span className={value ? 'text-gray-800 dark:text-gray-100' : 'text-gray-400 dark:text-gray-600'}>
+          {value ? calFormatDisplay(value) : 'Select birthdate'}
+        </span>
+        {value && age !== null ? (
+          <span className={`ml-auto flex-shrink-0 text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded-full ${eligible ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'}`}>
+            {age} yrs
+          </span>
+        ) : (
+          <ChevronRight className="w-4 h-4 ml-auto flex-shrink-0 text-green-400 dark:text-green-700" />
+        )}
+      </button>
+
+      {/* ── Centered Modal Overlay ── */}
+      {open && (
+        <div
+          ref={overlayRef}
+          onClick={handleOverlayClick}
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.50)', backdropFilter: 'blur(3px)', animation: 'bpFadeIn .15s ease' }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Select birthdate"
+        >
+          <div
+            className="bg-white dark:bg-[#111b17] rounded-[1.75rem] shadow-2xl shadow-black/40 overflow-hidden w-full"
+            style={{ maxWidth: '420px', animation: 'bpScaleIn .2s cubic-bezier(.34,1.4,.64,1)' }}
+          >
+            {/* ── Green Header ── */}
+            <div className="bg-gradient-to-br from-green-600 to-green-700 dark:from-green-800 dark:to-green-900 px-6 pt-6 pb-5">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-green-200 dark:text-green-400 mb-1">
+                    Date of Birth
+                  </p>
+                  <p className="text-white font-black text-2xl leading-tight">
+                    {value ? calFormatDisplay(value) : 'Choose a date'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="w-9 h-9 mt-0.5 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-colors flex-shrink-0"
+                  aria-label="Close calendar"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {/* Age eligibility badge */}
+              {value && age !== null ? (
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${eligible ? 'bg-white/20 text-white' : 'bg-red-500/30 text-red-100'}`}>
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${eligible ? 'bg-green-300' : 'bg-red-300'}`} />
+                  Age {age} · {eligible ? `Eligible (${minAge}+)` : `Must be ${minAge}+`}
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-white/10 text-white/70">
+                  <span className="w-2 h-2 rounded-full bg-white/40 flex-shrink-0" />
+                  Must be {minAge}+ years old
+                </div>
+              )}
+            </div>
+
+            {/* ── Month / Year Navigation ── */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-green-100 dark:border-green-900/40 bg-white dark:bg-[#111b17]">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="w-10 h-10 rounded-xl border-2 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-400 transition-colors"
+                aria-label="Previous month"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-center gap-1">
+                <select
+                  value={viewMonth}
+                  onChange={(e) => setViewMonth(Number(e.target.value))}
+                  className="text-sm font-black text-green-700 dark:text-green-400 bg-transparent border-none outline-none cursor-pointer appearance-none text-center uppercase tracking-wide pr-1"
+                  aria-label="Select month"
+                >
+                  {CAL_MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
+                </select>
+                <select
+                  value={viewYear}
+                  onChange={(e) => setViewYear(Number(e.target.value))}
+                  className="text-sm font-black text-green-700 dark:text-green-400 bg-transparent border-none outline-none cursor-pointer appearance-none text-center"
+                  aria-label="Select year"
+                >
+                  {yearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => navigate(1)}
+                className="w-10 h-10 rounded-xl border-2 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-400 transition-colors"
+                aria-label="Next month"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* ── Day-of-week header ── */}
+            <div className="grid grid-cols-7 bg-green-50 dark:bg-green-900/20 border-b border-green-100 dark:border-green-900/40">
+              {CAL_DOW.map((d) => (
+                <div key={d} className="text-center py-3 text-[11px] font-black uppercase tracking-widest text-green-600 dark:text-green-500">
+                  {d}
+                </div>
+              ))}
+            </div>
+
+            {/* ── Day Grid ── */}
+            <div
+              className="grid grid-cols-7 gap-1 p-4 bg-white dark:bg-[#111b17]"
+              style={{
+                opacity: animating ? 0 : 1,
+                transform: animating ? `translateX(${direction === 'left' ? '-14px' : '14px'})` : 'translateX(0)',
+                transition: 'opacity .18s ease, transform .18s ease',
+              }}
+            >
+              {cells.map((cell, idx) => {
+                const { isSelected, isDisabled, isToday } = cellState(cell);
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    disabled={isDisabled}
+                    onClick={() => !isDisabled && selectDay(cell)}
+                    className={[
+                      'h-12 w-full rounded-xl flex items-center justify-center text-sm transition-all duration-150 select-none',
+                      isDisabled
+                        ? 'opacity-25 cursor-not-allowed'
+                        : 'cursor-pointer',
+                      cell.type !== 'current' && !isSelected
+                        ? 'text-gray-300 dark:text-gray-700'
+                        : '',
+                      isSelected
+                        ? 'bg-green-600 dark:bg-green-500 text-white font-black shadow-lg shadow-green-500/30 scale-105'
+                        : isToday && !isDisabled
+                          ? 'border-2 border-green-500 dark:border-green-400 text-green-700 dark:text-green-400 font-black hover:bg-green-50 dark:hover:bg-green-900/30'
+                          : cell.type === 'current' && !isDisabled
+                            ? 'text-gray-700 dark:text-gray-200 font-medium hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-300'
+                            : !isDisabled
+                              ? 'hover:bg-green-50/50 dark:hover:bg-green-900/10'
+                              : '',
+                    ].join(' ')}
+                    aria-label={`${CAL_MONTHS[viewMonth]} ${cell.day}, ${viewYear}`}
+                    aria-pressed={isSelected}
+                    aria-disabled={isDisabled}
+                  >
+                    {cell.day}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ── Footer ── */}
+            <div className="px-5 py-4 bg-green-50 dark:bg-green-900/20 border-t border-green-100 dark:border-green-900/40 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => { setViewYear(maxDate.getFullYear()); setViewMonth(maxDate.getMonth()); }}
+                className="text-xs font-black uppercase tracking-widest text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors"
+              >
+                Jump to eligible
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-xs font-black uppercase tracking-widest px-5 py-2.5 rounded-full bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-400 text-white shadow-md shadow-green-500/20 transition-all"
+              >
+                {value ? 'Confirm' : 'Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes bpFadeIn  { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes bpScaleIn { from { opacity: 0; transform: scale(.92) translateY(10px) } to { opacity: 1; transform: scale(1) translateY(0) } }
+      `}</style>
+    </>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CONSTANTS
+════════════════════════════════════════════════════════════════ */
 const MEMBERSHIP_DRAFT_KEY = 'membership_application_draft_v2';
 
 const MEMBERSHIP_TYPES = [
-  {
-    id: '2',
-    label: 'Regular Member',
-    description: 'Full voting rights, eligible for all benefits and services.',
-    icon: Star,
-  },
-  {
-    id: '1',
-    label: 'Associate Member',
-    description: 'Limited participation, ideal for those exploring membership.',
-    icon: Users,
-  },
+  { id: '2', label: 'Regular Member',   description: 'Full voting rights, eligible for all benefits and services.', icon: Star },
+  { id: '1', label: 'Associate Member', description: 'Limited participation, ideal for those exploring membership.', icon: Users },
 ];
 
-const MEMBERSHIP_TYPE_LABELS: Record<string, string> = {
-  '2': 'Regular Member',
-  '1': 'Associate Member',
-};
+const MEMBERSHIP_TYPE_LABELS: Record<string, string> = { '2': 'Regular Member', '1': 'Associate Member' };
 
 const ID_TYPES = [
-  'TIN',
-  'Philippine National ID (PhilSys ID)',
-  'Passport',
-  "Driver's License",
-  'UMID (SSS/GSIS ID)',
-  'PRC ID (for licensed professionals)',
-  "Voter's ID (if still available)",
-  'Postal ID',
-  'Senior Citizen ID',
-  'PWD ID',
+  'TIN', 'Philippine National ID (PhilSys ID)', 'Passport', "Driver's License",
+  'UMID (SSS/GSIS ID)', 'PRC ID (for licensed professionals)', "Voter's ID (if still available)",
+  'Postal ID', 'Senior Citizen ID', 'PWD ID',
 ];
 
 const MONTHLY_INCOME_RANGES = [
-  'Below ₱10,000',
-  '₱10,000 – ₱20,000',
-  '₱20,001 – ₱30,000',
-  '₱30,001 – ₱50,000',
-  '₱50,001 – ₱100,000',
-  'Above ₱100,000',
+  'Below ₱10,000', '₱10,000 – ₱20,000', '₱20,001 – ₱30,000',
+  '₱30,001 – ₱50,000', '₱50,001 – ₱100,000', 'Above ₱100,000',
 ];
 
-const SOURCE_OF_INCOME_OPTIONS = [
-  'Employment',
-  'Business',
-  'Remittance',
-  'Pension/Retirement',
-  'Agriculture',
-  'Others',
-];
+const SOURCE_OF_INCOME_OPTIONS = ['Employment','Business','Remittance','Pension/Retirement','Agriculture','Others'];
 
-const MEMBERSHIP_AGE_REQUIREMENTS: Record<string, number> = {
-  '1': 16,
-  '2': 18,
-};
-
-const getMinimumAge = (membershipTypeId: string): number => {
-  return MEMBERSHIP_AGE_REQUIREMENTS[membershipTypeId] ?? 18;
-};
+const MEMBERSHIP_AGE_REQUIREMENTS: Record<string, number> = { '1': 16, '2': 18 };
+const getMinimumAge = (id: string) => MEMBERSHIP_AGE_REQUIREMENTS[id] ?? 18;
 
 const calculateAge = (birthdate: string): number => {
   const today = new Date();
   const birth = new Date(birthdate);
   let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--;
-  }
+  const md = today.getMonth() - birth.getMonth();
+  if (md < 0 || (md === 0 && today.getDate() < birth.getDate())) age--;
   return age;
 };
 
-// ─── Max birthdate: today minus minimum age ───
-const getMaxBirthdate = (membershipTypeId: string): string => {
-  const minAge = getMinimumAge(membershipTypeId);
-  const max = new Date();
-  max.setFullYear(max.getFullYear() - minAge);
-  return max.toISOString().split('T')[0];
-};
-
+/* ════════════════════════════════════════════════════════════════
+   TYPES
+════════════════════════════════════════════════════════════════ */
 type ProfileData = {
-  first_name: string;
-  middle_name: string;
-  last_name: string;
-  email: string;
-  mobile_number: string;
-  birthdate: string;
-  sex: string;
-  civil_status: string;
-  id_type: string;
-  id_number: string;
-  house_no: string;
-  street_barangay: string;
-  municipality: string;
-  province: string;
-  zip_code: string;
-  occupation: string;
-  employer_name: string;
-  monthly_income_range: string;
-  source_of_income: string;
-  monthly_income: string;
-  years_in_business: string;
-  emergency_full_name: string;
-  emergency_phone: string;
-  emergency_relationship: string;
-  dependents_count: string;
-  children_in_school_count: string;
+  first_name: string; middle_name: string; last_name: string;
+  email: string; mobile_number: string; birthdate: string;
+  sex: string; civil_status: string; id_type: string; id_number: string;
+  house_no: string; street_barangay: string; municipality: string;
+  province: string; zip_code: string; occupation: string;
+  employer_name: string; monthly_income_range: string;
+  source_of_income: string; monthly_income: string;
+  years_in_business: string; emergency_full_name: string;
+  emergency_phone: string; emergency_relationship: string;
+  dependents_count: string; children_in_school_count: string;
 };
-
 type SpouseData = {
-  full_name: string;
-  birthdate: string;
-  occupation: string;
-  employer_name: string;
-  source_of_income: string;
-  monthly_income: string;
+  full_name: string; birthdate: string; occupation: string;
+  employer_name: string; source_of_income: string; monthly_income: string;
 };
-
 type CoMakerData = {
-  full_name: string;
-  relationship: string;
-  contact_number: string;
-  address: string;
-  occupation: string;
-  employer_name: string;
-  monthly_income: string;
+  full_name: string; relationship: string; contact_number: string;
+  address: string; occupation: string; employer_name: string; monthly_income: string;
 };
-
 type ApplicationData = {
-  application_date: string;
-  membership_type_id: string;
-  branch_id: string;
-  remarks: string;
+  application_date: string; membership_type_id: string; branch_id: string; remarks: string;
 };
-
-type BranchOption = {
-  branch_id: number;
-  name: string;
-};
-
-type OrientationProgress = {
-  zoom_attended: boolean;
-  video_completed: boolean;
-  assessment_passed: boolean;
-  certificate_generated: boolean;
-};
-
+type BranchOption    = { branch_id: number; name: string };
+type OrientationProgress = { zoom_attended: boolean; video_completed: boolean; assessment_passed: boolean; certificate_generated: boolean };
 type DraftData = {
-  step: number;
-  selectedTypeId: string;
-  profileData: ProfileData | null;
-  applicationData: ApplicationData | null;
+  step: number; selectedTypeId: string;
+  profileData: ProfileData | null; applicationData: ApplicationData | null;
   orientationProgress: OrientationProgress;
-  spouseData: SpouseData | null;
-  coMakersData: CoMakerData[];
+  spouseData: SpouseData | null; coMakersData: CoMakerData[];
   idFileName: string | null;
 };
-
-type OrientationQuestion = {
-  question: string;
-  choices: Array<{ value: string }> | string[];
-  correct_answer: string;
-};
-
-type OrientationSettings = {
-  zoom_link: string;
-  video_link: string;
-  passing_score: number;
-  require_for_loan: boolean;
-  questions: OrientationQuestion[];
-};
+type OrientationQuestion = { question: string; choices: Array<{ value: string }> | string[]; correct_answer: string };
+type OrientationSettings = { zoom_link: string; video_link: string; passing_score: number; require_for_loan: boolean; questions: OrientationQuestion[] };
 
 const emptyOrientationProgress: OrientationProgress = {
-  zoom_attended: false,
-  video_completed: false,
-  assessment_passed: false,
-  certificate_generated: false,
+  zoom_attended: false, video_completed: false, assessment_passed: false, certificate_generated: false,
 };
 
-/* ─── Shared input helpers ─── */
-// Strips non-digits and enforces max length
-const digitsOnly = (value: string, maxLen = 999) =>
-  value.replace(/[^0-9]/g, '').slice(0, maxLen);
+/* ════════════════════════════════════════════════════════════════
+   SHARED INPUT HELPERS
+════════════════════════════════════════════════════════════════ */
+const digitsOnly = (value: string, maxLen = 999) => value.replace(/[^0-9]/g, '').slice(0, maxLen);
 
-// Strips non-digits, enforces 09 prefix, max 11 digits
 const phMobileFormat = (value: string): string => {
   let digits = value.replace(/[^0-9]/g, '').slice(0, 11);
   if (digits.length >= 2 && !digits.startsWith('09')) {
@@ -217,61 +467,42 @@ const phMobileFormat = (value: string): string => {
   return digits;
 };
 
-/* ─── Particles ─── */
+/* ════════════════════════════════════════════════════════════════
+   SUB-COMPONENTS
+════════════════════════════════════════════════════════════════ */
 function Particles() {
   const colorClasses = [
-    'bg-green-300 dark:bg-green-600',
-    'bg-green-400 dark:bg-green-500',
-    'bg-green-200 dark:bg-green-700',
-    'bg-green-500 dark:bg-green-800',
+    'bg-green-300 dark:bg-green-600','bg-green-400 dark:bg-green-500',
+    'bg-green-200 dark:bg-green-700','bg-green-500 dark:bg-green-800',
   ];
   const particles = Array.from({ length: 24 }, (_, i) => ({
-    id: i,
-    size: Math.random() * 5 + 3,
-    x: Math.random() * 100,
-    delay: Math.random() * 8,
-    duration: Math.random() * 10 + 12,
+    id: i, size: Math.random() * 5 + 3, x: Math.random() * 100,
+    delay: Math.random() * 8, duration: Math.random() * 10 + 12,
     opacity: Math.random() * 0.5 + 0.2,
     colorClass: colorClasses[Math.floor(Math.random() * colorClasses.length)],
   }));
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {particles.map(p => (
-        <div
-          key={p.id}
-          className={`absolute rounded-full ${p.colorClass}`}
-          style={{
-            width: p.size,
-            height: p.size,
-            left: `${p.x}%`,
-            bottom: '-10px',
-            opacity: p.opacity,
-            animation: `floatUp ${p.duration}s ${p.delay}s infinite linear`,
-          }}
-        />
+        <div key={p.id} className={`absolute rounded-full ${p.colorClass}`} style={{ width: p.size, height: p.size, left: `${p.x}%`, bottom: '-10px', opacity: p.opacity, animation: `floatUp ${p.duration}s ${p.delay}s infinite linear` }} />
       ))}
     </div>
   );
 }
 
-/* ─── Section Divider ─── */
 function SectionDivider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3 pt-2">
       <div className="h-px flex-1 bg-green-200 dark:bg-green-900/50" />
-      <span className="text-[10px] font-black uppercase tracking-widest text-green-600 dark:text-green-400">
-        {label}
-      </span>
+      <span className="text-[10px] font-black uppercase tracking-widest text-green-600 dark:text-green-400">{label}</span>
       <div className="h-px flex-1 bg-green-200 dark:bg-green-900/50" />
     </div>
   );
 }
 
-/* ─── Step Indicator ─── */
 function StepIndicator({ current }: { current: number }) {
-  const steps = ['Personal', 'Application', 'Spouse & Co-Makers', 'Orientation'];
-  const fullLabels = ['Personal Details', 'Application & Documents', 'Spouse & Co-Makers', 'Orientation'];
-
+  const steps = ['Personal','Application','Spouse & Co-Makers','Orientation'];
+  const fullLabels = ['Personal Details','Application & Documents','Spouse & Co-Makers','Orientation'];
   return (
     <div className="mb-10 overflow-x-auto scrollbar-hide -mx-4 px-4">
       <div className="flex items-start min-w-max mx-auto w-full justify-center gap-0">
@@ -279,37 +510,17 @@ function StepIndicator({ current }: { current: number }) {
           const stepNum = i + 1;
           const done = stepNum < current;
           const active = stepNum === current;
-
           return (
             <div key={i} className="flex items-center">
               <div className="flex flex-col items-center w-16 sm:w-28">
-                <div
-                  className={`
-                    w-10 h-10 rounded-full flex items-center justify-center font-black text-xs border-2 transition-all duration-300 flex-shrink-0
-                    ${done ? 'bg-green-600 dark:bg-green-500 border-green-600 dark:border-green-500 text-white' : ''}
-                    ${active ? 'bg-green-600 dark:bg-green-400 border-green-600 dark:border-green-400 text-white scale-110 shadow-lg shadow-green-500/30 dark:shadow-green-400/20' : ''}
-                    ${!done && !active ? 'bg-white dark:bg-[#0d1410] border-green-200 dark:border-green-900 text-gray-400 dark:text-gray-600' : ''}
-                  `}
-                >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs border-2 transition-all duration-300 flex-shrink-0 ${done ? 'bg-green-600 dark:bg-green-500 border-green-600 dark:border-green-500 text-white' : ''} ${active ? 'bg-green-600 dark:bg-green-400 border-green-600 dark:border-green-400 text-white scale-110 shadow-lg shadow-green-500/30 dark:shadow-green-400/20' : ''} ${!done && !active ? 'bg-white dark:bg-[#0d1410] border-green-200 dark:border-green-900 text-gray-400 dark:text-gray-600' : ''}`}>
                   {done ? <Check className="w-4 h-4" /> : stepNum}
                 </div>
-                <span
-                  className={`mt-2 text-[10px] sm:hidden font-black uppercase tracking-widest text-center leading-tight px-0.5
-                    ${active ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-600'}`}
-                >
-                  {label}
-                </span>
-                <span
-                  className={`mt-2 text-[10px] font-black uppercase tracking-widest text-center leading-tight hidden sm:block max-w-[100px]
-                    ${active ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-600'}`}
-                >
-                  {fullLabels[i]}
-                </span>
+                <span className={`mt-2 text-[10px] sm:hidden font-black uppercase tracking-widest text-center leading-tight px-0.5 ${active ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-600'}`}>{label}</span>
+                <span className={`mt-2 text-[10px] font-black uppercase tracking-widest text-center leading-tight hidden sm:block max-w-[100px] ${active ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-600'}`}>{fullLabels[i]}</span>
               </div>
               {i < steps.length - 1 && (
-                <div
-                  className={`w-6 sm:w-14 h-0.5 mb-6 flex-shrink-0 transition-all duration-500 ${done ? 'bg-green-600 dark:bg-green-500' : 'bg-green-100 dark:bg-green-900/40'}`}
-                />
+                <div className={`w-6 sm:w-14 h-0.5 mb-6 flex-shrink-0 transition-all duration-500 ${done ? 'bg-green-600 dark:bg-green-500' : 'bg-green-100 dark:bg-green-900/40'}`} />
               )}
             </div>
           );
@@ -319,88 +530,42 @@ function StepIndicator({ current }: { current: number }) {
   );
 }
 
-/* ─── File Drop Zone ─── */
-function FileDropZone({
-  label,
-  required,
-  inputRef,
-  onChange,
-  fileName,
-  helperText,
-}: {
-  label: string;
-  required?: boolean;
+function FileDropZone({ label, required, inputRef, onChange, fileName, helperText }: {
+  label: string; required?: boolean;
   inputRef: React.RefObject<HTMLInputElement>;
   onChange: (file: File | null) => void;
-  fileName?: string;
-  helperText?: string;
+  fileName?: string; helperText?: string;
 }) {
   const [dragging, setDragging] = useState(false);
-
   return (
     <div className="space-y-1.5">
       <Label className="text-xs font-black uppercase tracking-widest text-gray-600 dark:text-gray-400">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </Label>
       <div
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); onChange(e.dataTransfer.files?.[0] ?? null); }}
         onClick={() => inputRef.current?.click()}
-        className={`
-          flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed
-          cursor-pointer min-h-[100px] px-4 py-6 text-center transition-all duration-200
-          ${dragging
-            ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-            : fileName
-              ? 'border-green-400 dark:border-green-600 bg-green-50/50 dark:bg-green-900/10'
-              : 'border-green-200 dark:border-green-900/60 bg-green-50/20 dark:bg-[#0d1410] hover:bg-green-50/50 dark:hover:bg-green-900/10'}
-        `}
+        className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed cursor-pointer min-h-[100px] px-4 py-6 text-center transition-all duration-200 ${dragging ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : fileName ? 'border-green-400 dark:border-green-600 bg-green-50/50 dark:bg-green-900/10' : 'border-green-200 dark:border-green-900/60 bg-green-50/20 dark:bg-[#0d1410] hover:bg-green-50/50 dark:hover:bg-green-900/10'}`}
       >
         <Upload className={`w-5 h-5 ${fileName ? 'text-green-600 dark:text-green-400' : 'text-green-400 dark:text-green-600'}`} />
         {fileName ? (
           <span className="text-sm font-bold text-green-700 dark:text-green-400 break-all">{fileName}</span>
         ) : (
-          <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-            Tap to <span className="text-green-600 dark:text-green-400 font-black">Browse</span>
-          </span>
+          <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">Tap to <span className="text-green-600 dark:text-green-400 font-black">Browse</span></span>
         )}
         {helperText && <span className="text-xs text-gray-400 dark:text-gray-600">{helperText}</span>}
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png"
-          className="hidden"
-          onChange={(e) => onChange(e.target.files?.[0] ?? null)}
-        />
+        <input ref={inputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => onChange(e.target.files?.[0] ?? null)} />
       </div>
     </div>
   );
 }
 
-/* ─── Membership Type Card ─── */
-function MembershipTypeCard({
-  type,
-  selected,
-  onSelect,
-}: {
-  type: typeof MEMBERSHIP_TYPES[0];
-  selected: boolean;
-  onSelect: () => void;
-}) {
+function MembershipTypeCard({ type, selected, onSelect }: { type: typeof MEMBERSHIP_TYPES[0]; selected: boolean; onSelect: () => void }) {
   const Icon = type.icon;
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`
-        relative w-full text-left rounded-2xl border-2 p-4 transition-all duration-200 cursor-pointer
-        ${selected
-          ? 'border-green-500 dark:border-green-400 bg-green-50/50 dark:bg-green-900/20 shadow-lg shadow-green-500/10'
-          : 'border-green-100 dark:border-green-900/40 bg-white dark:bg-[#111b17] hover:border-green-300 dark:hover:border-green-700'}
-      `}
-    >
+    <button type="button" onClick={onSelect} className={`relative w-full text-left rounded-2xl border-2 p-4 transition-all duration-200 cursor-pointer ${selected ? 'border-green-500 dark:border-green-400 bg-green-50/50 dark:bg-green-900/20 shadow-lg shadow-green-500/10' : 'border-green-100 dark:border-green-900/40 bg-white dark:bg-[#111b17] hover:border-green-300 dark:hover:border-green-700'}`}>
       <div className={`absolute top-4 right-4 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selected ? 'border-green-500 dark:border-green-400 bg-green-500 dark:bg-green-400' : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-transparent'}`}>
         {selected && <div className="w-2 h-2 rounded-full bg-white" />}
       </div>
@@ -417,6 +582,41 @@ function MembershipTypeCard({
   );
 }
 
+/* ════════════════════════════════════════════════════════════════
+   HERO SECTION
+════════════════════════════════════════════════════════════════ */
+function HeroSection({ heroVisible, membershipTypeLabel }: { heroVisible: boolean; membershipTypeLabel: string }) {
+  return (
+    <section className="relative min-h-[50dvh] sm:min-h-[60dvh] flex items-center justify-center overflow-hidden">
+      <div className="absolute inset-0 bg-[url('/src/images/bghd.jpg')] bg-cover bg-center" style={{ transition: 'transform 20s linear', transform: heroVisible ? 'scale(1)' : 'scale(1.05)' }} />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-green-50/80 to-green-100/90 dark:from-[#022c22]/95 dark:via-[#064e3b]/95 dark:to-[#065f46]/95 transition-colors duration-500" />
+      <Particles />
+      <div className={`relative z-10 max-w-7xl mx-auto px-6 text-center transition-all duration-1000 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+        <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-green-200/50 dark:bg-white/10 border border-green-300 dark:border-white/20 backdrop-blur-md">
+          <div className="w-2.5 h-2.5 bg-green-600 dark:bg-green-400 rounded-full animate-pulse" />
+          <span className="text-xs sm:text-sm text-green-900 dark:text-white/90 font-medium uppercase tracking-widest">Application Form</span>
+        </div>
+        <h1 className="text-4xl sm:text-6xl font-extrabold mb-4 uppercase tracking-tight text-gray-900 dark:text-white leading-[0.95]">
+          Membership{' '}
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-700 to-green-500 dark:from-green-400 dark:to-green-200">Application</span>
+        </h1>
+        {membershipTypeLabel && (
+          <p className="text-base sm:text-lg text-gray-600 dark:text-white/70 mb-2 font-medium">
+            Applying as:{' '}
+            <span className="text-green-700 dark:text-green-400 font-black uppercase tracking-wide">{membershipTypeLabel}</span>
+          </p>
+        )}
+        <p className="text-base sm:text-lg text-gray-700 dark:text-white/70 max-w-xl mx-auto font-medium leading-relaxed">
+          Complete the form below to begin your journey with us.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+════════════════════════════════════════════════════════════════ */
 export function MembershipApply() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -431,19 +631,9 @@ export function MembershipApply() {
   const [spouseData, setSpouseData] = useState<SpouseData | null>(null);
   const [coMakersData, setCoMakersData] = useState<CoMakerData[]>([]);
   const [branches, setBranches] = useState<BranchOption[]>([]);
-
-  const [selectedTypeId, setSelectedTypeId] = useState<string>(
-    MEMBERSHIP_TYPE_LABELS[initialTypeId] ? initialTypeId : '2'
-  );
-
+  const [selectedTypeId, setSelectedTypeId] = useState<string>(MEMBERSHIP_TYPE_LABELS[initialTypeId] ? initialTypeId : '2');
   const [orientationProgress, setOrientationProgress] = useState<OrientationProgress>(emptyOrientationProgress);
-  const [orientationSettings, setOrientationSettings] = useState<OrientationSettings>({
-    zoom_link: '',
-    video_link: '',
-    passing_score: 75,
-    require_for_loan: true,
-    questions: [],
-  });
+  const [orientationSettings, setOrientationSettings] = useState<OrientationSettings>({ zoom_link: '', video_link: '', passing_score: 75, require_for_loan: true, questions: [] });
   const [assessmentAnswers, setAssessmentAnswers] = useState<Record<number, string>>({});
   const [zoomClicked, setZoomClicked] = useState(false);
   const [videoInteracted, setVideoInteracted] = useState(false);
@@ -455,52 +645,37 @@ export function MembershipApply() {
   const membershipTypeLabel = MEMBERSHIP_TYPE_LABELS[selectedTypeId] ?? '';
 
   const [idFileFront, setIdFileFront] = useState<File | null>(null);
-  const [idFileBack, setIdFileBack] = useState<File | null>(null);
-
+  const [idFileBack,  setIdFileBack]  = useState<File | null>(null);
   const idFrontRef = useRef<HTMLInputElement>(null!);
-  const idBackRef = useRef<HTMLInputElement>(null!);
+  const idBackRef  = useRef<HTMLInputElement>(null!);
 
-  const dbPromise = useMemo(() => {
-    return new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open('membership_app', 1);
-      request.onupgradeneeded = (e) => {
-        const db = (e.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains('files')) {
-          db.createObjectStore('files');
-        }
-      };
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }, []);
+  /* ── IndexedDB for file persistence ── */
+  const dbPromise = useMemo(() => new Promise<IDBDatabase>((resolve, reject) => {
+    const req = indexedDB.open('membership_app', 1);
+    req.onupgradeneeded = (e) => {
+      const db = (e.target as IDBOpenDBRequest).result;
+      if (!db.objectStoreNames.contains('files')) db.createObjectStore('files');
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror  = () => reject(req.error);
+  }), []);
 
   const saveFileToDb = useCallback(async (key: string, file: File) => {
     try {
       const db = await dbPromise;
       const tx = db.transaction('files', 'readwrite');
       tx.objectStore('files').put(file, key);
-      return new Promise<void>((resolve, reject) => {
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      });
-    } catch (error) {
-      console.error('Failed to save file to IndexedDB:', error);
-    }
+      return new Promise<void>((res, rej) => { tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); });
+    } catch (e) { console.error('Failed to save file:', e); }
   }, [dbPromise]);
 
   const getFileFromDb = useCallback(async (key: string): Promise<File | null> => {
     try {
       const db = await dbPromise;
       const tx = db.transaction('files', 'readonly');
-      const request = tx.objectStore('files').get(key);
-      return new Promise((resolve) => {
-        request.onsuccess = () => resolve(request.result || null);
-        request.onerror = () => { console.error('Failed to get file from IndexedDB:', request.error); resolve(null); };
-      });
-    } catch (error) {
-      console.error('Failed to get file from IndexedDB:', error);
-      return null;
-    }
+      const req = tx.objectStore('files').get(key);
+      return new Promise((res) => { req.onsuccess = () => res(req.result || null); req.onerror = () => res(null); });
+    } catch { return null; }
   }, [dbPromise]);
 
   const clearFileFromDb = useCallback(async (key: string) => {
@@ -508,78 +683,46 @@ export function MembershipApply() {
       const db = await dbPromise;
       const tx = db.transaction('files', 'readwrite');
       tx.objectStore('files').delete(key);
-    } catch (error) {
-      console.error('Failed to clear file from IndexedDB:', error);
-    }
+    } catch (e) { console.error('Failed to clear file:', e); }
   }, [dbPromise]);
 
-  const {
-    register: reg1,
-    handleSubmit: handle1,
-    formState: { errors: err1 },
-    setValue: set1,
-    watch: watch1,
-  } = useForm<ProfileData>();
+  /* ── Forms ── */
+  const { register: reg1, handleSubmit: handle1, formState: { errors: err1 }, setValue: set1, watch: watch1, reset: reset1 } = useForm<ProfileData>();
+  const { register: reg2, handleSubmit: handle2, formState: { errors: err2 }, setValue: set2, watch: watch2, reset: reset2 } = useForm<ApplicationData>({ defaultValues: { application_date: new Date().toISOString().split('T')[0], remarks: '', membership_type_id: selectedTypeId, branch_id: '' } });
+  const { register: reg3, handleSubmit: handle3, setValue: set3, watch: watch3, reset: reset3 } = useForm<SpouseData>();
+  const { register: reg4, handleSubmit: handle4, setValue: set4, watch: watch4, reset: reset4 } = useForm<CoMakerData>();
 
-  const {
-    register: reg2,
-    handleSubmit: handle2,
-    formState: { errors: err2 },
-    setValue: set2,
-    watch: watch2,
-  } = useForm<ApplicationData>({
-    defaultValues: { application_date: new Date().toISOString().split('T')[0], remarks: '', membership_type_id: selectedTypeId, branch_id: '' },
-  });
-
-  const {
-    register: reg3,
-    handleSubmit: handle3,
-    setValue: set3,
-    watch: watch3,
-  } = useForm<SpouseData>();
-
-  const {
-    register: reg4,
-    handleSubmit: handle4,
-    setValue: set4,
-    watch: watch4,
-  } = useForm<CoMakerData>();
-
-  const sourceOfIncome = watch1('source_of_income');
-  const sex = watch1('sex');
-  const civilStatus = watch1('civil_status');
-  const idType = watch1('id_type');
-  const municipality = watch1('municipality');
+  const sourceOfIncome   = watch1('source_of_income');
+  const sex              = watch1('sex');
+  const civilStatus      = watch1('civil_status');
+  const idType           = watch1('id_type');
   const monthlyIncomeRange = watch1('monthly_income_range');
-  const watchedProfile = watch1();
+  const birthdateValue   = watch1('birthdate');
+  const spouseBirthdateValue = watch3('birthdate');
+  const watchedProfile   = watch1();
   const watchedApplication = watch2();
 
+  /* ── Orientation helpers ── */
   const normalizedQuestions = useMemo(() => {
-    let rawQuestions: any = orientationSettings.questions;
-    if (typeof rawQuestions === 'string') {
-      try { rawQuestions = JSON.parse(rawQuestions); } catch { rawQuestions = []; }
-    }
-    if (!Array.isArray(rawQuestions)) rawQuestions = [];
-    return rawQuestions.map((q: any) => {
-      let rawChoices = q?.choices ?? [];
-      if (typeof rawChoices === 'string') {
-        try { rawChoices = JSON.parse(rawChoices); } catch { rawChoices = []; }
-      }
-      if (!Array.isArray(rawChoices)) rawChoices = [];
-      return { ...q, choices: rawChoices.map((choice: any) => typeof choice === 'string' ? choice : choice?.value ?? '') };
+    let raw: any = orientationSettings.questions;
+    if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch { raw = []; } }
+    if (!Array.isArray(raw)) raw = [];
+    return raw.map((q: any) => {
+      let choices = q?.choices ?? [];
+      if (typeof choices === 'string') { try { choices = JSON.parse(choices); } catch { choices = []; } }
+      if (!Array.isArray(choices)) choices = [];
+      return { ...q, choices: choices.map((c: any) => typeof c === 'string' ? c : c?.value ?? '') };
     });
   }, [orientationSettings.questions]);
 
-  const correctCount = useMemo(() => {
-    return normalizedQuestions.filter((q: any, index: number) => {
-      const selected = (assessmentAnswers[index] ?? '').trim().toLowerCase();
-      const correct = (q.correct_answer ?? '').trim().toLowerCase();
-      return selected === correct;
-    }).length;
-  }, [normalizedQuestions, assessmentAnswers]);
+  const correctCount = useMemo(() =>
+    normalizedQuestions.filter((q: any, i: number) => {
+      const sel = (assessmentAnswers[i] ?? '').trim().toLowerCase();
+      return sel === (q.correct_answer ?? '').trim().toLowerCase();
+    }).length, [normalizedQuestions, assessmentAnswers]);
 
-  const totalQuestions = normalizedQuestions.length;
-  const assessmentScore = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+  const totalQuestions   = normalizedQuestions.length;
+  const assessmentScore  = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
   const assessmentPassed = totalQuestions > 0 && assessmentScore >= orientationSettings.passing_score;
   const allQuestionsAnswered = totalQuestions > 0 && normalizedQuestions.every((_: any, idx: number) => assessmentAnswers[idx] !== undefined && assessmentAnswers[idx] !== '');
 
@@ -590,52 +733,41 @@ export function MembershipApply() {
     return methodDone && assessmentSubmitted && assessmentPassed;
   }, [orientationMethod, zoomClicked, videoInteracted, assessmentSubmitted, assessmentPassed, orientationSettings.require_for_loan]);
 
+  /* ── Effects ── */
   useEffect(() => {
     setOrientationProgress((prev) => ({
       ...prev,
-      zoom_attended: zoomClicked,
-      video_completed: videoInteracted,
+      zoom_attended: zoomClicked, video_completed: videoInteracted,
       assessment_passed: assessmentSubmitted && assessmentPassed,
       certificate_generated: zoomClicked && videoInteracted && assessmentSubmitted && assessmentPassed,
     }));
   }, [zoomClicked, videoInteracted, assessmentSubmitted, assessmentPassed]);
 
-  useEffect(() => {
-    const t = setTimeout(() => setHeroVisible(true), 100);
-    return () => clearTimeout(t);
-  }, []);
+  useEffect(() => { const t = setTimeout(() => setHeroVisible(true), 100); return () => clearTimeout(t); }, []);
 
   useEffect(() => {
     fetch('/api/branches')
-      .then((res) => res.json())
-      .then((data) => {
-        const options = Array.isArray(data) ? data : [];
-        setBranches(options);
-        if (options.length === 1) {
-          set2('branch_id', String(options[0].branch_id));
-        }
-      })
-      .catch(() => {
-        toast.error('Failed to load branch options.');
-      });
+      .then(r => r.json()).then(data => {
+        const opts = Array.isArray(data) ? data : [];
+        setBranches(opts);
+        if (opts.length === 1) set2('branch_id', String(opts[0].branch_id));
+      }).catch(() => toast.error('Failed to load branch options.'));
 
     fetch('/api/orientation-settings')
-      .then((res) => res.json())
-      .then((data) => {
+      .then(r => r.json()).then(data => {
+        const requireForLoan = data?.require_for_loan;
+        const isRequired = requireForLoan !== false && requireForLoan !== 'false' && requireForLoan !== 0 && requireForLoan !== '0';
         setOrientationSettings({
-          zoom_link: data?.zoom_link ?? '',
-          video_link: data?.video_link ?? '',
+          zoom_link: data?.zoom_link ?? '', video_link: data?.video_link ?? '',
           passing_score: Number(data?.passing_score ?? 75),
-          require_for_loan: Boolean(data?.require_for_loan ?? true),
+          require_for_loan: isRequired,
           questions: Array.isArray(data?.questions) || typeof data?.questions === 'string' ? data.questions : [],
         });
-      })
-      .catch(() => { toast.error('Failed to load orientation settings.'); });
+      }).catch(() => toast.error('Failed to load orientation settings.'));
 
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
+    document.getElementsByTagName('script')[0]?.parentNode?.insertBefore(tag, document.getElementsByTagName('script')[0]);
   }, []);
 
   useEffect(() => {
@@ -648,53 +780,30 @@ export function MembershipApply() {
   useEffect(() => {
     if (step !== 4 || orientationMethod !== 'video' || !orientationSettings.video_link || videoInteracted) return;
     const url = orientationSettings.video_link;
-    const match =
-      url.match(/[?&]v=([a-zA-Z0-9_-]{11})/) ||
-      url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/) ||
-      url.match(/embed\/([a-zA-Z0-9_-]{11})/) ||
-      url.match(/shorts\/([a-zA-Z0-9_-]{11})/);
+    const match = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/) || url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/) || url.match(/embed\/([a-zA-Z0-9_-]{11})/) || url.match(/shorts\/([a-zA-Z0-9_-]{11})/);
     if (!match?.[1]) return;
     const videoId = match[1];
-    const onPlayerStateChange = (event: any) => {
-      if (event.data === 0) {
-        setVideoInteracted(true);
-        toast.success('Video watched! You can now proceed with the assessment.');
-      }
+    const onState = (event: any) => { if (event.data === 0) { setVideoInteracted(true); toast.success('Video watched! Proceed with the assessment.'); } };
+    const init = () => {
+      const el = document.getElementById('orientation-video-player');
+      if (!el) return;
+      new (window as any).YT.Player('orientation-video-player', { videoId, width: el.offsetWidth || '100%', height: Math.round((el.offsetWidth || 640) * 9 / 16), playerVars: { rel: 0, modestbranding: 1 }, events: { onStateChange: onState } });
     };
-    const initPlayer = () => {
-      const container = document.getElementById('orientation-video-player');
-      if (!container) return;
-      new (window as any).YT.Player('orientation-video-player', {
-        videoId,
-        width: container.offsetWidth || '100%',
-        height: Math.round((container.offsetWidth || 640) * 9 / 16),
-        playerVars: { rel: 0, modestbranding: 1 },
-        events: { onStateChange: onPlayerStateChange },
-      });
-    };
-    if (typeof (window as any).YT !== 'undefined' && (window as any).YT.Player) {
-      initPlayer();
-      return;
-    }
-    const checkYT = setInterval(() => {
-      if (typeof (window as any).YT !== 'undefined' && (window as any).YT.Player) {
-        clearInterval(checkYT);
-        initPlayer();
-      }
-    }, 100);
-    return () => clearInterval(checkYT);
+    if ((window as any).YT?.Player) { init(); return; }
+    const check = setInterval(() => { if ((window as any).YT?.Player) { clearInterval(check); init(); } }, 100);
+    return () => clearInterval(check);
   }, [step, orientationMethod, orientationSettings.video_link, videoInteracted]);
 
   useEffect(() => {
     if (step !== 4 || orientationMethod !== 'zoom') return;
     setZoomScheduleLoading(true);
     fetch('/api/orientation/zoom-schedule/today')
-      .then((res) => res.json())
-      .then((data) => setZoomScheduleToday(data))
+      .then(r => r.json()).then(data => setZoomScheduleToday(data))
       .catch(() => setZoomScheduleToday({ available: false, next: null }))
       .finally(() => setZoomScheduleLoading(false));
   }, [step, orientationMethod]);
 
+  /* ── Draft restore ── */
   useEffect(() => {
     const raw = localStorage.getItem(MEMBERSHIP_DRAFT_KEY);
     if (!raw) return;
@@ -703,7 +812,7 @@ export function MembershipApply() {
       if (draft.selectedTypeId && MEMBERSHIP_TYPE_LABELS[draft.selectedTypeId]) setSelectedTypeId(draft.selectedTypeId);
       if (draft.profileData) {
         setProfileData(draft.profileData);
-        Object.entries(draft.profileData).forEach(([key, value]) => set1(key as keyof ProfileData, value ?? ''));
+        Object.entries(draft.profileData).forEach(([k, v]) => set1(k as keyof ProfileData, v ?? ''));
       }
       if (draft.applicationData) {
         setApplicationData(draft.applicationData);
@@ -712,116 +821,75 @@ export function MembershipApply() {
         set2('branch_id', draft.applicationData.branch_id ?? '');
         set2('membership_type_id', draft.applicationData.membership_type_id ?? draft.selectedTypeId ?? selectedTypeId);
       }
-      if (draft.spouseData) {
-        setSpouseData(draft.spouseData);
-        Object.entries(draft.spouseData).forEach(([key, value]) => set3(key as keyof SpouseData, value ?? ''));
-      }
-      if (draft.coMakersData && draft.coMakersData.length > 0) setCoMakersData(draft.coMakersData);
+      if (draft.spouseData) { setSpouseData(draft.spouseData); Object.entries(draft.spouseData).forEach(([k, v]) => set3(k as keyof SpouseData, v ?? '')); }
+      if (draft.coMakersData?.length) setCoMakersData(draft.coMakersData);
       if (draft.orientationProgress) setOrientationProgress(draft.orientationProgress);
       setStep(draft.step ?? 1);
       if (draft.idFileName) {
-        getFileFromDb('id_file_front').then((file) => { if (file) setIdFileFront(file); });
-        getFileFromDb('id_file_back').then((file) => { if (file) setIdFileBack(file); });
+        getFileFromDb('id_file_front').then(f => { if (f) setIdFileFront(f); });
+        getFileFromDb('id_file_back').then(f => { if (f) setIdFileBack(f); });
       }
-    } catch {
-      console.error('Failed to restore draft');
-    }
+    } catch { console.error('Failed to restore draft'); }
   }, [set1, set2, set3, selectedTypeId, getFileFromDb]);
 
+  /* ── Draft auto-save ── */
   useEffect(() => {
     const timeout = setTimeout(async () => {
-      const currentProfile = { ...watchedProfile, ...profileData };
-      const currentApplication = { ...watchedApplication, ...applicationData };
-      const currentSpouse = watch3();
       const draft: DraftData = {
         step, selectedTypeId,
-        profileData: currentProfile as ProfileData,
-        applicationData: currentApplication as ApplicationData,
-        spouseData: (Object.values(currentSpouse).some(v => v) ? currentSpouse : null) as SpouseData | null,
+        profileData: { ...watchedProfile, ...profileData } as ProfileData,
+        applicationData: { ...watchedApplication, ...applicationData } as ApplicationData,
+        spouseData: (Object.values(watch3()).some(v => v) ? watch3() : null) as SpouseData | null,
         coMakersData, orientationProgress,
         idFileName: (idFileFront?.name || idFileBack?.name) ?? null,
       };
       localStorage.setItem(MEMBERSHIP_DRAFT_KEY, JSON.stringify(draft));
       if (idFileFront) await saveFileToDb('id_file_front', idFileFront);
-      if (idFileBack) await saveFileToDb('id_file_back', idFileBack);
+      if (idFileBack)  await saveFileToDb('id_file_back', idFileBack);
     }, 500);
     return () => clearTimeout(timeout);
   }, [step, selectedTypeId, profileData, applicationData, spouseData, coMakersData, orientationProgress, watchedProfile, watchedApplication, watch3, idFileFront, idFileBack, saveFileToDb]);
 
-  const submitProfile = (data: ProfileData) => {
-    setProfileData(data);
-    toast.success('Personal details saved.');
-    setStep(2);
-  };
-
-  const saveApplicationStep = (data: ApplicationData) => {
-    const finalData = { ...data, membership_type_id: selectedTypeId };
-    setApplicationData(finalData);
-    toast.success('Application details saved.');
-    setStep(3);
-  };
-
-  const handleZoomClick = () => {
-    const link = zoomScheduleToday?.zoom_link || orientationSettings.zoom_link;
-    if (!link) return;
-    setZoomClicked(true);
-    window.open(link, '_blank');
-  };
-
-  const submitAssessment = () => {
-    if (allQuestionsAnswered) {
-      setAssessmentSubmitted(true);
-      toast.success('Assessment submitted! Your score is shown below.');
-    } else {
-      toast.error('Please answer all questions before submitting.');
-    }
-  };
+  /* ── Handlers ── */
+  const submitProfile = (data: ProfileData) => { setProfileData(data); toast.success('Personal details saved.'); setStep(2); };
+  const saveApplicationStep = (data: ApplicationData) => { setApplicationData({ ...data, membership_type_id: selectedTypeId }); toast.success('Application details saved.'); setStep(3); };
+  const handleZoomClick = () => { const link = zoomScheduleToday?.zoom_link || orientationSettings.zoom_link; if (!link) return; setZoomClicked(true); window.open(link, '_blank'); };
+  const submitAssessment = () => { allQuestionsAnswered ? (setAssessmentSubmitted(true), toast.success('Assessment submitted!')) : toast.error('Please answer all questions.'); };
 
   const submitFinalApplication = async () => {
-    if (!profileData) { toast.error('Personal data missing. Please go back to step 1.'); return; }
-    if (!applicationData) { toast.error('Application details missing. Please go back to step 2.'); return; }
+    if (!profileData)           { toast.error('Personal data missing. Go back to step 1.'); return; }
+    if (!applicationData)       { toast.error('Application details missing. Go back to step 2.'); return; }
     if (!applicationData.branch_id) { toast.error('Please select a branch in step 2.'); return; }
-    if (!orientationComplete) { toast.error('Please complete the orientation first.'); return; }
+    if (!orientationComplete)   { toast.error('Please complete the orientation first.'); return; }
     if (!idFileFront || !idFileBack) { toast.error('Please upload both front and back of your ID.'); return; }
-
     setSaving(true);
     try {
-      const formData = new FormData();
-      Object.entries(profileData).forEach(([k, v]) => { if (v && String(v).trim()) formData.append(k, String(v)); });
-      formData.append('membership_type_id', selectedTypeId);
-      formData.append('application_date', applicationData.application_date);
-      formData.append('branch_id', applicationData.branch_id);
-      if (applicationData.remarks && applicationData.remarks.trim()) formData.append('remarks', applicationData.remarks);
-      if (spouseData && spouseData.full_name && spouseData.full_name.trim()) {
-        Object.entries(spouseData).forEach(([k, v]) => { if (v && String(v).trim()) formData.append(`spouse_${k}`, String(v)); });
-      }
-      const validCoMakers = coMakersData.filter(cm => cm.full_name && cm.full_name.trim());
-      if (validCoMakers.length > 0) formData.append('co_makers', JSON.stringify(validCoMakers));
-      formData.append('orientation_zoom_attended', String(orientationProgress.zoom_attended));
-      formData.append('orientation_video_completed', String(orientationProgress.video_completed));
-      formData.append('orientation_assessment_passed', String(orientationProgress.assessment_passed));
-      formData.append('orientation_certificate_generated', String(orientationProgress.certificate_generated));
-      if (assessmentScore) formData.append('orientation_score', String(assessmentScore));
-      if (idFileFront) formData.append('id_document_front', idFileFront);
-      if (idFileBack) formData.append('id_document_back', idFileBack);
-
-      const res = await fetch('/api/membership-application', {
-        method: 'POST',
-        headers: { Accept: 'application/json' },
-        body: formData,
-      });
+      const fd = new FormData();
+      Object.entries(profileData).forEach(([k, v]) => { if (v && String(v).trim()) fd.append(k, String(v)); });
+      fd.append('membership_type_id', selectedTypeId);
+      fd.append('application_date', applicationData.application_date);
+      fd.append('branch_id', applicationData.branch_id);
+      if (applicationData.remarks?.trim()) fd.append('remarks', applicationData.remarks);
+      if (spouseData?.full_name?.trim()) Object.entries(spouseData).forEach(([k, v]) => { if (v && String(v).trim()) fd.append(`spouse_${k}`, String(v)); });
+      const validCM = coMakersData.filter(cm => cm.full_name?.trim());
+      if (validCM.length) fd.append('co_makers', JSON.stringify(validCM));
+      fd.append('orientation_zoom_attended',        String(orientationProgress.zoom_attended));
+      fd.append('orientation_video_completed',      String(orientationProgress.video_completed));
+      fd.append('orientation_assessment_passed',    String(orientationProgress.assessment_passed));
+      fd.append('orientation_certificate_generated',String(orientationProgress.certificate_generated));
+      if (assessmentScore) fd.append('orientation_score', String(assessmentScore));
+      fd.append('id_document_front', idFileFront);
+      fd.append('id_document_back',  idFileBack);
+      const res = await fetch('/api/membership-application', { method: 'POST', headers: { Accept: 'application/json' }, body: fd });
       const json = await res.json();
       if (!res.ok) { toast.error(`${json.message}${json.error ? '\n' + json.error : ''}`); return; }
-
       setSubmitted(true);
       localStorage.removeItem(MEMBERSHIP_DRAFT_KEY);
       toast.success('Application submitted successfully!');
     } catch (err) {
       console.error('Network error:', err);
-      toast.error('Network error. Your draft is still saved in this browser.');
-    } finally {
-      setSaving(false);
-    }
+      toast.error('Network error. Your draft is still saved.');
+    } finally { setSaving(false); }
   };
 
   const resetForm = () => {
@@ -829,6 +897,7 @@ export function MembershipApply() {
     setSpouseData(null); setCoMakersData([]); setOrientationProgress(emptyOrientationProgress);
     setAssessmentAnswers({}); setZoomClicked(false); setVideoInteracted(false);
     setAssessmentSubmitted(false); setIdFileFront(null); setIdFileBack(null);
+    reset1(); reset2(); reset3(); reset4();
     clearFileFromDb('id_file_front'); clearFileFromDb('id_file_back');
     localStorage.removeItem(MEMBERSHIP_DRAFT_KEY);
     window.location.reload();
@@ -836,19 +905,21 @@ export function MembershipApply() {
 
   const clearDraft = () => {
     localStorage.removeItem(MEMBERSHIP_DRAFT_KEY);
-    clearFileFromDb('id_file_front');
-    clearFileFromDb('id_file_back');
+    reset1(); reset2(); reset3(); reset4();
+    clearFileFromDb('id_file_front'); clearFileFromDb('id_file_back');
     toast.success('Saved draft cleared.');
     window.location.reload();
   };
 
-  const labelClass = 'text-xs font-black uppercase tracking-widest text-gray-600 dark:text-gray-400';
-  const inputClass = 'rounded-xl border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] focus:border-green-500 dark:focus:border-green-400 focus:ring-green-500/20';
-  const cardClass = 'rounded-[2rem] border border-green-100 dark:border-green-900/30 bg-white dark:bg-[#111b17] shadow-sm';
-  const cardHeaderClass = 'bg-gradient-to-r from-green-600 to-green-700 dark:from-green-900/60 dark:to-green-800/40 rounded-t-[1.9rem] p-6';
-  const navButtonClass = 'rounded-full border-2 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 font-black uppercase tracking-widest text-xs px-8 py-3 gap-2';
+  /* ── Style constants ── */
+  const labelClass       = 'text-xs font-black uppercase tracking-widest text-gray-600 dark:text-gray-400';
+  const inputClass       = 'rounded-xl border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] focus:border-green-500 dark:focus:border-green-400 focus:ring-green-500/20';
+  const cardClass        = 'rounded-[2rem] border border-green-100 dark:border-green-900/30 bg-white dark:bg-[#111b17] shadow-sm';
+  const cardHeaderClass  = 'bg-gradient-to-r from-green-600 to-green-700 dark:from-green-900/60 dark:to-green-800/40 rounded-t-[1.9rem] p-6';
+  const navButtonClass   = 'rounded-full border-2 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 font-black uppercase tracking-widest text-xs px-8 py-3 gap-2';
   const primaryButtonClass = 'rounded-full bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-400 text-white font-black uppercase tracking-widest text-xs px-8 py-3 shadow-lg shadow-green-500/20';
 
+  /* ── Success screen ── */
   if (submitted) {
     return (
       <div className="flex flex-col bg-white dark:bg-[#0a0f0c] text-gray-900 dark:text-white transition-colors duration-500">
@@ -856,23 +927,15 @@ export function MembershipApply() {
         <section className="py-24 flex items-center justify-center px-4 bg-green-50/30 dark:bg-[#0d1410]">
           <Card className="max-w-md w-full rounded-[2rem] border border-green-100 dark:border-green-900/30 shadow-2xl bg-white dark:bg-[#111b17] text-center overflow-hidden">
             <div className="bg-gradient-to-br from-green-600 to-green-800 dark:from-green-900/60 dark:to-green-800/40 p-10 flex flex-col items-center">
-              <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mb-4 shadow-lg">
-                <Check className="w-8 h-8 text-white" />
-              </div>
+              <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mb-4 shadow-lg"><Check className="w-8 h-8 text-white" /></div>
               <h2 className="text-2xl font-black text-white uppercase tracking-tight">Application Submitted!</h2>
             </div>
             <CardContent className="pt-8 pb-10 space-y-4 px-8">
               <p className="text-gray-600 dark:text-gray-400 font-medium leading-relaxed">
-                Thank you for applying as a{' '}
-                <strong className="text-green-700 dark:text-green-400 font-black">{membershipTypeLabel}</strong>.
+                Thank you for applying as a{' '}<strong className="text-green-700 dark:text-green-400 font-black">{membershipTypeLabel}</strong>.
                 We will review your application and contact you within 5–7 business days.
               </p>
-              <button
-                onClick={resetForm}
-                className={`mt-4 w-full inline-flex items-center justify-center ${primaryButtonClass}`}
-              >
-                Submit Another Application
-              </button>
+              <button onClick={resetForm} className={`mt-4 w-full inline-flex items-center justify-center ${primaryButtonClass}`}>Submit Another Application</button>
             </CardContent>
           </Card>
         </section>
@@ -882,13 +945,16 @@ export function MembershipApply() {
 
   if (!initialTypeId || !MEMBERSHIP_TYPE_LABELS[initialTypeId]) return null;
 
+  /* ════════════════════════════════════════════════════════════════
+     RENDER
+  ════════════════════════════════════════════════════════════════ */
   return (
     <>
       <style>{`
-        @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 0.2; } 100% { transform: translateY(-100vh) scale(0.5); opacity: 0; } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes floatUp { 0% { transform:translateY(0) scale(1); opacity:.2; } 100% { transform:translateY(-100vh) scale(.5); opacity:0; } }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+        .scrollbar-hide::-webkit-scrollbar { display:none; }
+        .scrollbar-hide { -ms-overflow-style:none; scrollbar-width:none; }
       `}</style>
 
       <div className="flex flex-col bg-white dark:bg-[#0a0f0c] text-gray-900 dark:text-white transition-colors duration-500">
@@ -900,22 +966,16 @@ export function MembershipApply() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
               <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-green-100/60 dark:bg-white/10 border border-green-300 dark:border-white/20 backdrop-blur-md">
                 <div className="w-2 h-2 bg-green-600 dark:bg-green-400 rounded-full animate-pulse" />
-                <span className="text-xs font-black text-green-900 dark:text-white/90 uppercase tracking-widest">
-                  Applying as: {membershipTypeLabel}
-                </span>
+                <span className="text-xs font-black text-green-900 dark:text-white/90 uppercase tracking-widest">Applying as: {membershipTypeLabel}</span>
               </div>
-              <button
-                type="button"
-                onClick={clearDraft}
-                className="text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors border border-gray-200 dark:border-gray-800 rounded-full px-4 py-2"
-              >
+              <button type="button" onClick={clearDraft} className="text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors border border-gray-200 dark:border-gray-800 rounded-full px-4 py-2">
                 Clear Saved Draft
               </button>
             </div>
 
             <StepIndicator current={step} />
 
-            {/* ── STEP 1 ── */}
+            {/* ══════════════════ STEP 1 ══════════════════ */}
             {step === 1 && (
               <form onSubmit={handle1(submitProfile)}>
                 <Card className={cardClass}>
@@ -956,26 +1016,14 @@ export function MembershipApply() {
                         <Input type="email" {...reg1('email', { required: 'Required' })} className={inputClass} />
                         {err1.email && <p className="text-xs text-red-500 font-medium">{err1.email.message}</p>}
                       </div>
-
-                      {/* ── Mobile Number (PH format) ── */}
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Mobile number <span className="text-red-500">*</span></Label>
                         <div className="flex items-center rounded-xl border border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] overflow-hidden focus-within:border-green-500 dark:focus-within:border-green-400 focus-within:ring-2 focus-within:ring-green-500/20">
-                         {/* <span className="px-3 text-sm font-black text-gray-500 dark:text-gray-400 border-r border-green-200 dark:border-green-900/50 select-none">+63</span> */}
                           <Input
-                            inputMode="numeric"
-                            placeholder="09XXXXXXXXX"
-                            maxLength={11}
+                            inputMode="numeric" placeholder="09XXXXXXXXX" maxLength={11}
                             className="border-0 shadow-none focus-visible:ring-0 rounded-none bg-transparent"
-                            {...reg1('mobile_number', {
-                              required: 'Required',
-                              pattern: { value: /^09\d{9}$/, message: 'Must be a valid PH number starting with 09 (e.g. 09123456789)' },
-                            })}
-                            onInput={(e) => {
-                              const input = e.currentTarget;
-                              input.value = phMobileFormat(input.value);
-                              set1('mobile_number', input.value, { shouldValidate: true });
-                            }}
+                            {...reg1('mobile_number', { required: 'Required', pattern: { value: /^09\d{9}$/, message: 'Must be a valid PH number starting with 09' } })}
+                            onInput={(e) => { const i = e.currentTarget; i.value = phMobileFormat(i.value); set1('mobile_number', i.value, { shouldValidate: true }); }}
                             onPaste={(e) => e.preventDefault()}
                             onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
                           />
@@ -984,30 +1032,36 @@ export function MembershipApply() {
                       </div>
                     </div>
 
+                    {/* ── Birthdate, Sex, Civil Status row ── */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {/* ── Birthdate — max capped at minAge years ago ── */}
+
+                      {/* ── BIRTHDATE — custom picker ── */}
                       <div className="space-y-1.5">
-                        <Label className={labelClass}>
-                          Birthdate <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          type="date"
-                          max={getMaxBirthdate(selectedTypeId)}
+                        <Label className={labelClass}>Birthdate <span className="text-red-500">*</span></Label>
+                        {/* Hidden input keeps react-hook-form validation working */}
+                        <input
+                          type="hidden"
                           {...reg1('birthdate', {
                             required: 'Birthdate is required',
                             validate: {
-                              notFuture: (value) => {
+                              notFuture: (v) => {
                                 const today = new Date().toISOString().split('T')[0];
-                                return value < today || 'Birthdate cannot be today or in the future';
+                                return v < today || 'Birthdate cannot be today or in the future';
                               },
-                              ageRequirement: (value) => {
+                              ageRequirement: (v) => {
                                 const minAge = getMinimumAge(selectedTypeId);
-                                const age = calculateAge(value);
+                                const age = calculateAge(v);
                                 return age >= minAge || `You must be at least ${minAge} years old (your age: ${age})`;
                               },
                             },
                           })}
-                          className={inputClass}
+                        />
+                        <BirthdatePicker
+                          value={birthdateValue ?? ''}
+                          onChange={(iso) => set1('birthdate', iso, { shouldValidate: true, shouldDirty: true })}
+                          minAge={getMinimumAge(selectedTypeId)}
+                          error={err1.birthdate?.message}
+                          required
                         />
                         <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Must be {getMinimumAge(selectedTypeId)}+ years old</p>
                         {err1.birthdate && <p className="text-xs text-red-500 font-medium">{err1.birthdate.message}</p>}
@@ -1025,6 +1079,7 @@ export function MembershipApply() {
                         </Select>
                         {err1.sex && <p className="text-xs text-red-500 font-medium">{err1.sex.message}</p>}
                       </div>
+
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Civil status <span className="text-red-500">*</span></Label>
                         <input type="hidden" {...reg1('civil_status', { required: 'Required' })} />
@@ -1050,29 +1105,17 @@ export function MembershipApply() {
                         <input type="hidden" {...reg1('id_type', { required: 'Required' })} />
                         <Select value={idType || ''} onValueChange={(v) => set1('id_type', v, { shouldValidate: true, shouldDirty: true })}>
                           <SelectTrigger className={inputClass}><SelectValue placeholder="Select ID type" /></SelectTrigger>
-                          <SelectContent>
-                            {ID_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                          </SelectContent>
+                          <SelectContent>{ID_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                         </Select>
                         {err1.id_type && <p className="text-xs text-red-500 font-medium">{err1.id_type.message}</p>}
                       </div>
-
-                      {/* ── ID Number — digits only ── */}
                       <div className="space-y-1.5">
                         <Label className={labelClass}>ID Number <span className="text-red-500">*</span></Label>
                         <Input
-                          inputMode="numeric"
-                          placeholder="Enter ID number"
-                          {...reg1('id_number', {
-                            required: 'Required',
-                            pattern: { value: /^[0-9]+$/, message: 'ID number must contain digits only' },
-                          })}
+                          inputMode="numeric" placeholder="Enter ID number"
+                          {...reg1('id_number', { required: 'Required', pattern: { value: /^[0-9]+$/, message: 'ID number must contain digits only' } })}
                           className={inputClass}
-                          onInput={(e) => {
-                            const input = e.currentTarget;
-                            input.value = digitsOnly(input.value);
-                            set1('id_number', input.value, { shouldValidate: true });
-                          }}
+                          onInput={(e) => { const i = e.currentTarget; i.value = digitsOnly(i.value); set1('id_number', i.value, { shouldValidate: true }); }}
                           onPaste={(e) => e.preventDefault()}
                           onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
                         />
@@ -1109,15 +1152,10 @@ export function MembershipApply() {
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Zip code <span className="text-red-500">*</span></Label>
                         <Input
-                          inputMode="numeric"
-                          maxLength={4}
+                          inputMode="numeric" maxLength={4}
                           {...reg1('zip_code', { required: 'Required', pattern: { value: /^\d{4}$/, message: 'Must be a 4-digit zip code' } })}
                           className={inputClass}
-                          onInput={(e) => {
-                            const input = e.currentTarget;
-                            input.value = digitsOnly(input.value, 4);
-                            set1('zip_code', input.value, { shouldValidate: true });
-                          }}
+                          onInput={(e) => { const i = e.currentTarget; i.value = digitsOnly(i.value, 4); set1('zip_code', i.value, { shouldValidate: true }); }}
                           onPaste={(e) => e.preventDefault()}
                           onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
                         />
@@ -1145,9 +1183,7 @@ export function MembershipApply() {
                         <input type="hidden" {...reg1('source_of_income', { required: 'Required' })} />
                         <Select value={sourceOfIncome || ''} onValueChange={(v) => set1('source_of_income', v, { shouldValidate: true, shouldDirty: true })}>
                           <SelectTrigger className={inputClass}><SelectValue placeholder="Select source" /></SelectTrigger>
-                          <SelectContent>
-                            {SOURCE_OF_INCOME_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                          </SelectContent>
+                          <SelectContent>{SOURCE_OF_INCOME_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                         </Select>
                         {err1.source_of_income && <p className="text-xs text-red-500 font-medium">{err1.source_of_income.message}</p>}
                       </div>
@@ -1156,33 +1192,22 @@ export function MembershipApply() {
                         <input type="hidden" {...reg1('monthly_income_range', { required: 'Required' })} />
                         <Select value={monthlyIncomeRange || ''} onValueChange={(v) => set1('monthly_income_range', v, { shouldValidate: true, shouldDirty: true })}>
                           <SelectTrigger className={inputClass}><SelectValue placeholder="Select range" /></SelectTrigger>
-                          <SelectContent>
-                            {MONTHLY_INCOME_RANGES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                          </SelectContent>
+                          <SelectContent>{MONTHLY_INCOME_RANGES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                         </Select>
                         {err1.monthly_income_range && <p className="text-xs text-red-500 font-medium">{err1.monthly_income_range.message}</p>}
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* ── Monthly Income — digits only ── */}
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Monthly Income (₱) <span className="text-red-500">*</span></Label>
                         <div className="flex items-center rounded-xl border border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] overflow-hidden focus-within:border-green-500 dark:focus-within:border-green-400 focus-within:ring-2 focus-within:ring-green-500/20">
                           <span className="px-3 text-sm font-black text-gray-500 dark:text-gray-400 border-r border-green-200 dark:border-green-900/50 select-none">₱</span>
                           <Input
-                            inputMode="numeric"
-                            placeholder="0"
+                            inputMode="numeric" placeholder="0"
                             className="border-0 shadow-none focus-visible:ring-0 rounded-none bg-transparent"
-                            {...reg1('monthly_income', {
-                              required: 'Required',
-                              pattern: { value: /^[0-9]+$/, message: 'Must be a valid amount' },
-                            })}
-                            onInput={(e) => {
-                              const input = e.currentTarget;
-                              input.value = digitsOnly(input.value);
-                              set1('monthly_income', input.value, { shouldValidate: true });
-                            }}
+                            {...reg1('monthly_income', { required: 'Required', pattern: { value: /^[0-9]+$/, message: 'Must be a valid amount' } })}
+                            onInput={(e) => { const i = e.currentTarget; i.value = digitsOnly(i.value); set1('monthly_income', i.value, { shouldValidate: true }); }}
                             onPaste={(e) => e.preventDefault()}
                             onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
                           />
@@ -1193,14 +1218,8 @@ export function MembershipApply() {
                         <div className="space-y-1.5">
                           <Label className={labelClass}>Years in Business</Label>
                           <Input
-                            inputMode="numeric"
-                            {...reg1('years_in_business')}
-                            className={inputClass}
-                            onInput={(e) => {
-                              const input = e.currentTarget;
-                              input.value = digitsOnly(input.value);
-                              set1('years_in_business', input.value);
-                            }}
+                            inputMode="numeric" {...reg1('years_in_business')} className={inputClass}
+                            onInput={(e) => { const i = e.currentTarget; i.value = digitsOnly(i.value); set1('years_in_business', i.value); }}
                             onPaste={(e) => e.preventDefault()}
                             onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
                           />
@@ -1213,33 +1232,11 @@ export function MembershipApply() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Number of Dependents</Label>
-                        <Input
-                          inputMode="numeric"
-                          {...reg1('dependents_count')}
-                          className={inputClass}
-                          onInput={(e) => {
-                            const input = e.currentTarget;
-                            input.value = digitsOnly(input.value);
-                            set1('dependents_count', input.value);
-                          }}
-                          onPaste={(e) => e.preventDefault()}
-                          onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
-                        />
+                        <Input inputMode="numeric" {...reg1('dependents_count')} className={inputClass} onInput={(e) => { const i = e.currentTarget; i.value = digitsOnly(i.value); set1('dependents_count', i.value); }} onPaste={(e) => e.preventDefault()} onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }} />
                       </div>
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Children Currently in School</Label>
-                        <Input
-                          inputMode="numeric"
-                          {...reg1('children_in_school_count')}
-                          className={inputClass}
-                          onInput={(e) => {
-                            const input = e.currentTarget;
-                            input.value = digitsOnly(input.value);
-                            set1('children_in_school_count', input.value);
-                          }}
-                          onPaste={(e) => e.preventDefault()}
-                          onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
-                        />
+                        <Input inputMode="numeric" {...reg1('children_in_school_count')} className={inputClass} onInput={(e) => { const i = e.currentTarget; i.value = digitsOnly(i.value); set1('children_in_school_count', i.value); }} onPaste={(e) => e.preventDefault()} onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }} />
                       </div>
                     </div>
 
@@ -1251,33 +1248,20 @@ export function MembershipApply() {
                         <Input {...reg1('emergency_full_name', { required: 'Required' })} className={inputClass} />
                         {err1.emergency_full_name && <p className="text-xs text-red-500 font-medium">{err1.emergency_full_name.message}</p>}
                       </div>
-
-                      {/* ── Emergency Phone (PH format) ── */}
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Phone Number <span className="text-red-500">*</span></Label>
                         <div className="flex items-center rounded-xl border border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] overflow-hidden focus-within:border-green-500 dark:focus-within:border-green-400 focus-within:ring-2 focus-within:ring-green-500/20">
-                          {/* <span className="px-3 text-sm font-black text-gray-500 dark:text-gray-400 border-r border-green-200 dark:border-green-900/50 select-none">+63</span> */}
                           <Input
-                            inputMode="numeric"
-                            placeholder="09XXXXXXXXX"
-                            maxLength={11}
+                            inputMode="numeric" placeholder="09XXXXXXXXX" maxLength={11}
                             className="border-0 shadow-none focus-visible:ring-0 rounded-none bg-transparent"
-                            {...reg1('emergency_phone', {
-                              required: 'Required',
-                              pattern: { value: /^09\d{9}$/, message: 'Must be a valid PH number starting with 09' },
-                            })}
-                            onInput={(e) => {
-                              const input = e.currentTarget;
-                              input.value = phMobileFormat(input.value);
-                              set1('emergency_phone', input.value, { shouldValidate: true });
-                            }}
+                            {...reg1('emergency_phone', { required: 'Required', pattern: { value: /^09\d{9}$/, message: 'Must be a valid PH number starting with 09' } })}
+                            onInput={(e) => { const i = e.currentTarget; i.value = phMobileFormat(i.value); set1('emergency_phone', i.value, { shouldValidate: true }); }}
                             onPaste={(e) => e.preventDefault()}
                             onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
                           />
                         </div>
                         {err1.emergency_phone && <p className="text-xs text-red-500 font-medium">{err1.emergency_phone.message}</p>}
                       </div>
-
                       <div className="space-y-1.5">
                         <Label className={labelClass}>Relationship <span className="text-red-500">*</span></Label>
                         <Input {...reg1('emergency_relationship', { required: 'Required' })} className={inputClass} />
@@ -1295,7 +1279,7 @@ export function MembershipApply() {
               </form>
             )}
 
-            {/* ── STEP 2 ── */}
+            {/* ══════════════════ STEP 2 ══════════════════ */}
             {step === 2 && (
               <form onSubmit={handle2(saveApplicationStep)}>
                 <div className="flex flex-col lg:flex-row gap-6">
@@ -1313,7 +1297,7 @@ export function MembershipApply() {
                           </div>
                         )}
                         <FileDropZone label="ID Front" required inputRef={idFrontRef} fileName={idFileFront?.name} onChange={setIdFileFront} helperText="Front side of your ID" />
-                        <FileDropZone label="ID Back" required inputRef={idBackRef} fileName={idFileBack?.name} onChange={setIdFileBack} helperText="Back side of your ID" />
+                        <FileDropZone label="ID Back"  required inputRef={idBackRef}  fileName={idFileBack?.name}  onChange={setIdFileBack}  helperText="Back side of your ID" />
                       </CardContent>
                     </Card>
                   </div>
@@ -1330,36 +1314,25 @@ export function MembershipApply() {
                         </div>
                         <p className="text-sm text-white/70 mt-2 font-medium">Review and save before orientation.</p>
                       </div>
-
                       <CardContent className="space-y-6 p-6 sm:p-8">
                         <div className="space-y-2">
                           <p className="text-xs font-black uppercase tracking-widest text-gray-600 dark:text-gray-400 mb-3">Membership Type</p>
-                          {MEMBERSHIP_TYPES.filter(type => type.id === selectedTypeId).map((type) => (
+                          {MEMBERSHIP_TYPES.filter(t => t.id === selectedTypeId).map(type => (
                             <MembershipTypeCard key={type.id} type={type} selected onSelect={() => {}} />
                           ))}
                         </div>
-
                         <div className="space-y-1.5">
                           <Label className={labelClass}>Application Date</Label>
                           <Input type="date" {...reg2('application_date')} className={`${inputClass} opacity-60 cursor-not-allowed`} readOnly />
                         </div>
-
                         <div className="space-y-1.5">
                           <Label className={labelClass}>Branch <span className="text-red-500">*</span></Label>
-                          <select
-                            {...reg2('branch_id', { required: 'Please select a branch.' })}
-                            className={`h-11 w-full rounded-xl border border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] px-3 text-sm text-gray-900 dark:text-white focus:border-green-500 dark:focus:border-green-400 focus:ring-2 focus:ring-green-500/20 appearance-none`}
-                          >
+                          <select {...reg2('branch_id', { required: 'Please select a branch.' })} className={`h-11 w-full rounded-xl border border-green-200 dark:border-green-900/50 bg-white dark:bg-[#0d1410] px-3 text-sm text-gray-900 dark:text-white focus:border-green-500 dark:focus:border-green-400 focus:ring-2 focus:ring-green-500/20 appearance-none`}>
                             <option value="">Select branch</option>
-                            {branches.map((branch) => (
-                              <option key={branch.branch_id} value={String(branch.branch_id)}>
-                                {branch.name}
-                              </option>
-                            ))}
+                            {branches.map(b => <option key={b.branch_id} value={String(b.branch_id)}>{b.name}</option>)}
                           </select>
                           {err2.branch_id && <p className="text-xs text-red-500 font-medium">{err2.branch_id.message}</p>}
                         </div>
-
                         <div className="space-y-1.5">
                           <Label className={labelClass}>Remarks <span className="text-gray-400 dark:text-gray-600 normal-case font-medium">(optional)</span></Label>
                           <Textarea {...reg2('remarks')} placeholder="Any additional notes..." rows={3} className={`${inputClass} resize-none`} />
@@ -1368,19 +1341,14 @@ export function MembershipApply() {
                     </Card>
                   </div>
                 </div>
-
                 <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-6">
-                  <button type="button" onClick={() => setStep(1)} className={`inline-flex items-center justify-center ${navButtonClass}`}>
-                    <ChevronLeft className="w-4 h-4" /> Back
-                  </button>
-                  <button type="submit" className={`inline-flex items-center justify-center ${primaryButtonClass}`}>
-                    Save & Continue <ArrowRight className="ml-2 w-4 h-4" />
-                  </button>
+                  <button type="button" onClick={() => setStep(1)} className={`inline-flex items-center justify-center ${navButtonClass}`}><ChevronLeft className="w-4 h-4" /> Back</button>
+                  <button type="submit" className={`inline-flex items-center justify-center ${primaryButtonClass}`}>Save & Continue <ArrowRight className="ml-2 w-4 h-4" /></button>
                 </div>
               </form>
             )}
 
-            {/* ── STEP 3 ── */}
+            {/* ══════════════════ STEP 3 ══════════════════ */}
             {step === 3 && (
               <form onSubmit={handle3((data) => { setSpouseData(data); toast.success('Spouse information saved.'); })}>
                 <Card className={cardClass}>
@@ -1394,7 +1362,6 @@ export function MembershipApply() {
                     </div>
                     <p className="text-sm text-white/70 mt-2 font-medium">Add spouse and co-maker information (optional).</p>
                   </div>
-
                   <CardContent className="space-y-6 p-6 sm:p-8">
                     {civilStatus === 'Married' && (
                       <>
@@ -1404,29 +1371,31 @@ export function MembershipApply() {
                             <Label className={labelClass}>Full Name</Label>
                             <Input {...reg3('full_name')} className={inputClass} />
                           </div>
+
+                          {/* ── SPOUSE BIRTHDATE — custom picker ── */}
                           <div className="space-y-1.5">
                             <Label className={labelClass}>Birthdate</Label>
-                            <Input
-                              type="date"
-                              max={getMaxBirthdate(selectedTypeId)}
+                            <input
+                              type="hidden"
                               {...reg3('birthdate', {
                                 validate: {
-                                  notFuture: (value) => {
-                                    if (!value) return true;
-                                    const today = new Date().toISOString().split('T')[0];
-                                    return value < today || 'Birthdate cannot be today or in the future';
-                                  },
-                                  ageRequirement: (value) => {
-                                    if (!value) return true;
+                                  notFuture: (v) => { if (!v) return true; return v < new Date().toISOString().split('T')[0] || 'Cannot be today or in the future'; },
+                                  ageRequirement: (v) => {
+                                    if (!v) return true;
                                     const minAge = getMinimumAge(selectedTypeId);
-                                    const age = calculateAge(value);
+                                    const age = calculateAge(v);
                                     return age >= minAge || `Spouse must be at least ${minAge} years old (age: ${age})`;
                                   },
                                 },
                               })}
-                              className={inputClass}
+                            />
+                            <BirthdatePicker
+                              value={spouseBirthdateValue ?? ''}
+                              onChange={(iso) => set3('birthdate', iso, { shouldValidate: true, shouldDirty: true })}
+                              minAge={getMinimumAge(selectedTypeId)}
                             />
                           </div>
+
                           <div className="space-y-1.5">
                             <Label className={labelClass}>Occupation</Label>
                             <Input {...reg3('occupation')} className={inputClass} />
@@ -1444,121 +1413,48 @@ export function MembershipApply() {
                         </div>
                         <div className="space-y-1.5">
                           <Label className={labelClass}>Monthly Income (₱)</Label>
-                          <Input
-                            inputMode="numeric"
-                            {...reg3('monthly_income')}
-                            className={inputClass}
-                            onInput={(e) => {
-                              const input = e.currentTarget;
-                              input.value = digitsOnly(input.value);
-                              set3('monthly_income', input.value);
-                            }}
-                            onPaste={(e) => e.preventDefault()}
-                            onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
-                          />
+                          <Input inputMode="numeric" {...reg3('monthly_income')} className={inputClass} onInput={(e) => { const i = e.currentTarget; i.value = digitsOnly(i.value); set3('monthly_income', i.value); }} onPaste={(e) => e.preventDefault()} onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }} />
                         </div>
                       </>
                     )}
 
                     <SectionDivider label="Co-Makers / Guarantors" />
-
                     <div className="space-y-4">
-                      {coMakersData.map((coMaker, idx) => (
+                      {coMakersData.map((cm, idx) => (
                         <div key={idx} className="border border-green-100 dark:border-green-900/40 rounded-2xl p-5 space-y-4 bg-green-50/20 dark:bg-green-900/10">
                           <div className="flex items-center justify-between">
                             <h4 className="font-black text-sm uppercase tracking-wide text-green-700 dark:text-green-400">Co-Maker {idx + 1}</h4>
-                            <button
-                              type="button"
-                              onClick={() => setCoMakersData(coMakersData.filter((_, i) => i !== idx))}
-                              className="text-xs font-black uppercase tracking-widest text-red-500 hover:text-red-700 border border-red-200 dark:border-red-900 rounded-full px-4 py-1.5 transition-colors"
-                            >
-                              Remove
-                            </button>
+                            <button type="button" onClick={() => setCoMakersData(coMakersData.filter((_, i) => i !== idx))} className="text-xs font-black uppercase tracking-widest text-red-500 hover:text-red-700 border border-red-200 dark:border-red-900 rounded-full px-4 py-1.5 transition-colors">Remove</button>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                              <Label className={labelClass}>Full Name</Label>
-                              <Input value={coMaker.full_name} onChange={(e) => { const u = [...coMakersData]; u[idx].full_name = e.target.value; setCoMakersData(u); }} className={inputClass} />
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className={labelClass}>Relationship</Label>
-                              <Input value={coMaker.relationship} onChange={(e) => { const u = [...coMakersData]; u[idx].relationship = e.target.value; setCoMakersData(u); }} className={inputClass} />
-                            </div>
+                            <div className="space-y-1.5"><Label className={labelClass}>Full Name</Label><Input value={cm.full_name} onChange={(e) => { const u = [...coMakersData]; u[idx].full_name = e.target.value; setCoMakersData(u); }} className={inputClass} /></div>
+                            <div className="space-y-1.5"><Label className={labelClass}>Relationship</Label><Input value={cm.relationship} onChange={(e) => { const u = [...coMakersData]; u[idx].relationship = e.target.value; setCoMakersData(u); }} className={inputClass} /></div>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                              <Label className={labelClass}>Contact Number</Label>
-                              <Input
-                                inputMode="numeric"
-                                placeholder="09XXXXXXXXX"
-                                maxLength={11}
-                                value={coMaker.contact_number}
-                                onChange={(e) => {
-                                  const val = phMobileFormat(e.target.value);
-                                  const u = [...coMakersData]; u[idx].contact_number = val; setCoMakersData(u);
-                                }}
-                                onPaste={(e) => e.preventDefault()}
-                                onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
-                                className={inputClass}
-                              />
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className={labelClass}>Occupation</Label>
-                              <Input value={coMaker.occupation} onChange={(e) => { const u = [...coMakersData]; u[idx].occupation = e.target.value; setCoMakersData(u); }} className={inputClass} />
-                            </div>
+                            <div className="space-y-1.5"><Label className={labelClass}>Contact Number</Label><Input inputMode="numeric" placeholder="09XXXXXXXXX" maxLength={11} value={cm.contact_number} onChange={(e) => { const val = phMobileFormat(e.target.value); const u = [...coMakersData]; u[idx].contact_number = val; setCoMakersData(u); }} onPaste={(e) => e.preventDefault()} onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }} className={inputClass} /></div>
+                            <div className="space-y-1.5"><Label className={labelClass}>Occupation</Label><Input value={cm.occupation} onChange={(e) => { const u = [...coMakersData]; u[idx].occupation = e.target.value; setCoMakersData(u); }} className={inputClass} /></div>
                           </div>
-                          <div className="space-y-1.5">
-                            <Label className={labelClass}>Address</Label>
-                            <Input value={coMaker.address} onChange={(e) => { const u = [...coMakersData]; u[idx].address = e.target.value; setCoMakersData(u); }} className={inputClass} />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className={labelClass}>Employer</Label>
-                            <Input value={coMaker.employer_name} onChange={(e) => { const u = [...coMakersData]; u[idx].employer_name = e.target.value; setCoMakersData(u); }} className={inputClass} />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className={labelClass}>Monthly Income (₱)</Label>
-                            <Input
-                              inputMode="numeric"
-                              value={coMaker.monthly_income}
-                              onChange={(e) => {
-                                const val = digitsOnly(e.target.value);
-                                const u = [...coMakersData]; u[idx].monthly_income = val; setCoMakersData(u);
-                              }}
-                              onPaste={(e) => e.preventDefault()}
-                              onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
-                              className={inputClass}
-                            />
-                          </div>
+                          <div className="space-y-1.5"><Label className={labelClass}>Address</Label><Input value={cm.address} onChange={(e) => { const u = [...coMakersData]; u[idx].address = e.target.value; setCoMakersData(u); }} className={inputClass} /></div>
+                          <div className="space-y-1.5"><Label className={labelClass}>Employer</Label><Input value={cm.employer_name} onChange={(e) => { const u = [...coMakersData]; u[idx].employer_name = e.target.value; setCoMakersData(u); }} className={inputClass} /></div>
+                          <div className="space-y-1.5"><Label className={labelClass}>Monthly Income (₱)</Label><Input inputMode="numeric" value={cm.monthly_income} onChange={(e) => { const val = digitsOnly(e.target.value); const u = [...coMakersData]; u[idx].monthly_income = val; setCoMakersData(u); }} onPaste={(e) => e.preventDefault()} onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }} className={inputClass} /></div>
                         </div>
                       ))}
-
-                      <button
-                        type="button"
-                        onClick={() => setCoMakersData([...coMakersData, { full_name: '', relationship: '', contact_number: '', address: '', occupation: '', employer_name: '', monthly_income: '' }])}
-                        className="w-full py-3 rounded-2xl border-2 border-dashed border-green-300 dark:border-green-800 text-green-600 dark:text-green-400 font-black uppercase tracking-widest text-xs hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
-                      >
+                      <button type="button" onClick={() => setCoMakersData([...coMakersData, { full_name: '', relationship: '', contact_number: '', address: '', occupation: '', employer_name: '', monthly_income: '' }])} className="w-full py-3 rounded-2xl border-2 border-dashed border-green-300 dark:border-green-800 text-green-600 dark:text-green-400 font-black uppercase tracking-widest text-xs hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
                         + Add Co-Maker
                       </button>
                     </div>
                   </CardContent>
                 </Card>
-
                 <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-6">
-                  <button type="button" onClick={() => setStep(2)} className={`inline-flex items-center justify-center ${navButtonClass}`}>
-                    <ChevronLeft className="w-4 h-4" /> Back
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setSpouseData(watch3() as SpouseData); toast.success('Spouse and co-maker information saved.'); setStep(4); }}
-                    className={`inline-flex items-center justify-center ${primaryButtonClass}`}
-                  >
+                  <button type="button" onClick={() => setStep(2)} className={`inline-flex items-center justify-center ${navButtonClass}`}><ChevronLeft className="w-4 h-4" /> Back</button>
+                  <button type="button" onClick={() => { setSpouseData(watch3() as SpouseData); toast.success('Spouse and co-maker information saved.'); setStep(4); }} className={`inline-flex items-center justify-center ${primaryButtonClass}`}>
                     Save & Continue to Orientation <ArrowRight className="ml-2 w-4 h-4" />
                   </button>
                 </div>
               </form>
             )}
 
-            {/* ── STEP 4 ── */}
+            {/* ══════════════════ STEP 4 ══════════════════ */}
             {step === 4 && (
               <div className="space-y-6">
                 <Card className={cardClass}>
@@ -1572,36 +1468,17 @@ export function MembershipApply() {
                     </div>
                     <p className="text-sm text-white/70 mt-2 font-medium">Complete the orientation before submitting your application.</p>
                   </div>
-
                   <CardContent className="space-y-6 p-6 sm:p-8">
                     {!orientationMethod && (
                       <div className="space-y-3">
                         <p className="text-sm font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">Choose your orientation method</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <button
-                            type="button"
-                            onClick={() => setOrientationMethod('zoom')}
-                            className="text-left rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10 hover:border-green-400 hover:bg-green-50 transition"
-                          >
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-                                <CalendarCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
-                              </div>
-                              <h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Zoom Meet</h3>
-                            </div>
+                          <button type="button" onClick={() => setOrientationMethod('zoom')} className="text-left rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10 hover:border-green-400 hover:bg-green-50 transition">
+                            <div className="flex items-center gap-2 mb-2"><div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center"><CalendarCheck className="w-4 h-4 text-green-600 dark:text-green-400" /></div><h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Zoom Meet</h3></div>
                             <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Attend the live Zoom orientation if scheduled today.</p>
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => setOrientationMethod('video')}
-                            className="text-left rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10 hover:border-green-400 hover:bg-green-50 transition"
-                          >
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-                                <Video className="w-4 h-4 text-green-600 dark:text-green-400" />
-                              </div>
-                              <h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Orientation Video</h3>
-                            </div>
+                          <button type="button" onClick={() => setOrientationMethod('video')} className="text-left rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10 hover:border-green-400 hover:bg-green-50 transition">
+                            <div className="flex items-center gap-2 mb-2"><div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center"><Video className="w-4 h-4 text-green-600 dark:text-green-400" /></div><h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Orientation Video</h3></div>
                             <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Watch the recorded orientation video at your own pace.</p>
                           </button>
                         </div>
@@ -1611,41 +1488,22 @@ export function MembershipApply() {
                     {orientationMethod === 'zoom' && (
                       <div className="rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10">
                         <div className="flex items-center justify-between gap-2 mb-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-                              <CalendarCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
-                            </div>
-                            <h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Zoom Orientation</h3>
-                          </div>
-                          {!zoomClicked && (
-                            <button type="button" onClick={() => { setOrientationMethod(null); setZoomScheduleToday(null); }} className="text-xs font-bold uppercase tracking-widest text-green-700 dark:text-green-400 hover:underline">Change method</button>
-                          )}
+                          <div className="flex items-center gap-2"><div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center"><CalendarCheck className="w-4 h-4 text-green-600 dark:text-green-400" /></div><h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Zoom Orientation</h3></div>
+                          {!zoomClicked && <button type="button" onClick={() => { setOrientationMethod(null); setZoomScheduleToday(null); }} className="text-xs font-bold uppercase tracking-widest text-green-700 dark:text-green-400 hover:underline">Change method</button>}
                         </div>
                         {zoomScheduleLoading ? (
                           <div className="w-full rounded-2xl border border-green-100 bg-green-50/30 px-4 py-6 text-center text-sm text-gray-400 font-medium">Checking today's schedule…</div>
                         ) : zoomScheduleToday?.available ? (
                           <>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium mb-4">
-                              Today's session: <strong className="text-green-700 dark:text-green-400">{zoomScheduleToday.start_time}{zoomScheduleToday.end_time ? ` – ${zoomScheduleToday.end_time}` : ''}</strong>
-                            </p>
-                            <button
-                              onClick={handleZoomClick}
-                              className={`w-full inline-flex items-center justify-center ${zoomClicked ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-2 border-green-300 dark:border-green-700 rounded-full font-black uppercase tracking-widest text-xs py-3' : primaryButtonClass}`}
-                            >
+                            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium mb-4">Today's session: <strong className="text-green-700 dark:text-green-400">{zoomScheduleToday.start_time}{zoomScheduleToday.end_time ? ` – ${zoomScheduleToday.end_time}` : ''}</strong></p>
+                            <button onClick={handleZoomClick} className={`w-full inline-flex items-center justify-center ${zoomClicked ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-2 border-green-300 dark:border-green-700 rounded-full font-black uppercase tracking-widest text-xs py-3' : primaryButtonClass}`}>
                               {zoomClicked ? '✓ Zoom Link Accessed' : 'Join Zoom Orientation'}
                             </button>
-                            <p className="text-xs text-gray-400 dark:text-gray-600 mt-3 font-medium">
-                              {zoomClicked ? '✓ Thank you for attending the Zoom orientation. Proceed to the assessment below.' : 'Click the button above to join the Zoom meeting.'}
-                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-600 mt-3 font-medium">{zoomClicked ? '✓ Thank you for attending. Proceed to the assessment below.' : 'Click the button above to join the Zoom meeting.'}</p>
                           </>
                         ) : (
                           <div className="w-full rounded-2xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-900/10 px-4 py-5 text-sm text-amber-800 dark:text-amber-300 font-medium text-center">
-                            There is no Zoom meeting today.
-                            {zoomScheduleToday?.next ? (
-                              <> Come back on <strong>{zoomScheduleToday.next.date}</strong> at <strong>{zoomScheduleToday.next.start_time}</strong>.</>
-                            ) : (
-                              <> No upcoming sessions are scheduled yet.</>
-                            )}
+                            There is no Zoom meeting today.{zoomScheduleToday?.next ? <> Come back on <strong>{zoomScheduleToday.next.date}</strong> at <strong>{zoomScheduleToday.next.start_time}</strong>.</> : <> No upcoming sessions are scheduled yet.</>}
                           </div>
                         )}
                       </div>
@@ -1654,117 +1512,73 @@ export function MembershipApply() {
                     {orientationMethod === 'video' && (
                       <div className="rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10">
                         <div className="flex items-center justify-between gap-2 mb-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-                              <Video className="w-4 h-4 text-green-600 dark:text-green-400" />
-                            </div>
-                            <h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Orientation Video</h3>
-                          </div>
-                          {!videoInteracted && (
-                            <button type="button" onClick={() => setOrientationMethod(null)} className="text-xs font-bold uppercase tracking-widest text-green-700 dark:text-green-400 hover:underline">Change method</button>
-                          )}
+                          <div className="flex items-center gap-2"><div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center"><Video className="w-4 h-4 text-green-600 dark:text-green-400" /></div><h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Orientation Video</h3></div>
+                          {!videoInteracted && <button type="button" onClick={() => setOrientationMethod(null)} className="text-xs font-bold uppercase tracking-widest text-green-700 dark:text-green-400 hover:underline">Change method</button>}
                         </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-4">Watch the orientation video completely.</p>
                         {orientationSettings.video_link ? (
                           <div className="space-y-3">
-                            <div className="w-full bg-black rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
-                              <div id="orientation-video-player" className="w-full h-full" />
-                            </div>
+                            <div className="w-full bg-black rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9' }}><div id="orientation-video-player" className="w-full h-full" /></div>
                             {videoInteracted ? (
-                              <div className="w-full rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-3 py-2.5 text-center text-sm text-green-700 dark:text-green-400 font-black uppercase tracking-widest">
-                                ✓ Video Watched
-                              </div>
+                              <div className="w-full rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-3 py-2.5 text-center text-sm text-green-700 dark:text-green-400 font-black uppercase tracking-widest">✓ Video Watched</div>
                             ) : (
-                              <div className="w-full rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/40 px-3 py-2.5 text-center text-xs text-amber-700 dark:text-amber-400 font-medium">
-                                Watch until the end to mark as watched
-                              </div>
+                              <div className="w-full rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/40 px-3 py-2.5 text-center text-xs text-amber-700 dark:text-amber-400 font-medium">Watch until the end to mark as watched</div>
                             )}
                           </div>
                         ) : (
-                          <div className="w-full h-40 rounded-2xl border border-green-100 dark:border-green-900/40 bg-green-50/30 flex items-center justify-center text-sm text-gray-400 dark:text-gray-600 px-4 text-center font-medium">
-                            No video link configured yet.
-                          </div>
+                          <div className="w-full h-40 rounded-2xl border border-green-100 dark:border-green-900/40 bg-green-50/30 flex items-center justify-center text-sm text-gray-400 dark:text-gray-600 px-4 text-center font-medium">No video link configured yet.</div>
                         )}
                       </div>
                     )}
 
                     {orientationMethod && (!(orientationMethod === 'zoom' && zoomScheduleToday && !zoomScheduleToday.available)) && (
-                    <div className="rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-                          <FileBadge className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      <div className="rounded-2xl border border-green-100 dark:border-green-900/40 p-5 bg-green-50/20 dark:bg-green-900/10">
+                        <div className="flex items-center gap-2 mb-3"><div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center"><FileBadge className="w-4 h-4 text-green-600 dark:text-green-400" /></div><h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Post-Orientation Assessment</h3></div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 font-medium">Passing score: <strong className="text-green-700 dark:text-green-400 font-black">{orientationSettings.passing_score}%</strong></p>
+                        <div className="space-y-5">
+                          {normalizedQuestions.length === 0 && <div className="rounded-2xl border border-green-100 dark:border-green-900/40 bg-green-50/30 px-4 py-4 text-sm text-gray-400 dark:text-gray-600 font-medium">No assessment questions configured yet.</div>}
+                          {normalizedQuestions.map((q: any, idx: number) => (
+                            <div key={idx} className="space-y-2">
+                              <Label className={labelClass}>{idx + 1}. {q.question}</Label>
+                              <Select onValueChange={(v) => { if (!assessmentSubmitted) setAssessmentAnswers(prev => ({ ...prev, [idx]: v })); }} value={assessmentAnswers[idx] ?? ''} disabled={assessmentSubmitted}>
+                                <SelectTrigger className={inputClass}><SelectValue placeholder="Select your answer" /></SelectTrigger>
+                                <SelectContent>{q.choices.map((c: string) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                          ))}
                         </div>
-                        <h3 className="font-black uppercase tracking-wide text-sm text-gray-800 dark:text-gray-200">Post-Orientation Assessment</h3>
-                      </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 font-medium">
-                        Passing score: <strong className="text-green-700 dark:text-green-400 font-black">{orientationSettings.passing_score}%</strong>
-                      </p>
-                      <div className="space-y-5">
-                        {normalizedQuestions.length === 0 && (
-                          <div className="rounded-2xl border border-green-100 dark:border-green-900/40 bg-green-50/30 px-4 py-4 text-sm text-gray-400 dark:text-gray-600 font-medium">
-                            No assessment questions configured yet.
+                        {!assessmentSubmitted && normalizedQuestions.length > 0 && (
+                          <div className="mt-6 rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-5">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-4">Answer all {normalizedQuestions.length} questions above, then submit to see your score.</p>
+                            <button onClick={submitAssessment} disabled={!allQuestionsAnswered} className={`w-full inline-flex items-center justify-center ${allQuestionsAnswered ? primaryButtonClass : 'rounded-full bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 font-black uppercase tracking-widest text-xs px-8 py-3 cursor-not-allowed'}`}>
+                              {allQuestionsAnswered ? 'Submit Assessment' : `Answer all questions (${Object.keys(assessmentAnswers).length}/${normalizedQuestions.length})`}
+                            </button>
                           </div>
                         )}
-                        {normalizedQuestions.map((question: any, index: number) => (
-                          <div key={index} className="space-y-2">
-                            <Label className={labelClass}>{index + 1}. {question.question}</Label>
-                            <Select
-                              onValueChange={(value) => { if (!assessmentSubmitted) setAssessmentAnswers((prev) => ({ ...prev, [index]: value })); }}
-                              value={assessmentAnswers[index] ?? ''}
-                              disabled={assessmentSubmitted}
-                            >
-                              <SelectTrigger className={inputClass}><SelectValue placeholder="Select your answer" /></SelectTrigger>
-                              <SelectContent>
-                                {question.choices.map((choice: string) => <SelectItem key={choice} value={choice}>{choice}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
+                        {assessmentSubmitted && (
+                          <div className={`mt-6 rounded-2xl border p-5 ${assessmentPassed ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20' : 'border-red-200 dark:border-red-900 bg-red-50/30 dark:bg-red-900/10'}`}>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-black uppercase tracking-widest text-xs text-gray-600 dark:text-gray-400">Your Score</span>
+                              <span className={`font-black text-xl ${assessmentPassed ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{assessmentScore}%</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="font-black uppercase tracking-widest text-xs text-gray-600 dark:text-gray-400">Result</span>
+                              <span className={`font-black text-sm ${assessmentPassed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{assessmentPassed ? '✓ Passed' : '✗ Did not pass'}</span>
+                            </div>
+                            {!assessmentPassed && <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-3">You need {orientationSettings.passing_score}% to pass. Please review your answers.</p>}
                           </div>
-                        ))}
+                        )}
                       </div>
-                      {!assessmentSubmitted && normalizedQuestions.length > 0 && (
-                        <div className="mt-6 rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-5">
-                          <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-4">
-                            Answer all {normalizedQuestions.length} questions above, then submit to see your score.
-                          </p>
-                          <button
-                            onClick={submitAssessment}
-                            disabled={!allQuestionsAnswered}
-                            className={`w-full inline-flex items-center justify-center ${allQuestionsAnswered ? primaryButtonClass : 'rounded-full bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 font-black uppercase tracking-widest text-xs px-8 py-3 cursor-not-allowed'}`}
-                          >
-                            {allQuestionsAnswered ? 'Submit Assessment' : `Answer all questions (${Object.keys(assessmentAnswers).length}/${normalizedQuestions.length})`}
-                          </button>
-                        </div>
-                      )}
-                      {assessmentSubmitted && (
-                        <div className={`mt-6 rounded-2xl border p-5 ${assessmentPassed ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20' : 'border-red-200 dark:border-red-900 bg-red-50/30 dark:bg-red-900/10'}`}>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-black uppercase tracking-widest text-xs text-gray-600 dark:text-gray-400">Your Score</span>
-                            <span className={`font-black text-xl ${assessmentPassed ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{assessmentScore}%</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="font-black uppercase tracking-widest text-xs text-gray-600 dark:text-gray-400">Result</span>
-                            <span className={`font-black text-sm ${assessmentPassed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                              {assessmentPassed ? '✓ Passed' : '✗ Did not pass'}
-                            </span>
-                          </div>
-                          {!assessmentPassed && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-3">
-                              You need {orientationSettings.passing_score}% to pass. Please review your answers.
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
                     )}
 
                     <div className="rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-5">
                       <p className="font-black uppercase tracking-widest text-xs text-green-700 dark:text-green-400 mb-4">Orientation Checklist</p>
                       <div className="space-y-3">
                         {[
-                          ...(orientationMethod === 'zoom' ? [{ label: 'Zoom Pre-Membership Orientation', done: zoomClicked }] : []),
-                          ...(orientationMethod === 'video' ? [{ label: 'Orientation Video', done: videoInteracted }] : []),
-                          { label: 'Assessment', done: assessmentSubmitted && assessmentPassed, failed: assessmentSubmitted && !assessmentPassed },
-                          { label: 'Certificate Generation', done: orientationComplete },
+                          ...(orientationMethod === 'zoom'  ? [{ label: 'Zoom Pre-Membership Orientation', done: zoomClicked,       failed: false }] : []),
+                          ...(orientationMethod === 'video' ? [{ label: 'Orientation Video',               done: videoInteracted,    failed: false }] : []),
+                          { label: 'Assessment',            done: assessmentSubmitted && assessmentPassed, failed: assessmentSubmitted && !assessmentPassed },
+                          { label: 'Certificate Generation', done: orientationComplete,                    failed: false },
                         ].map(({ label, done, failed }) => (
                           <div key={label} className="flex items-center justify-between gap-2">
                             <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{label}</span>
@@ -1776,34 +1590,20 @@ export function MembershipApply() {
                       </div>
                     </div>
 
-                    {!orientationComplete && (
-                      <div className="rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10 px-5 py-4 text-sm text-amber-900 dark:text-amber-400 font-medium">
-                        Submit Application will stay disabled until orientation is completed and the assessment passing score is met.
-                      </div>
-                    )}
-                    {orientationComplete && (
-                      <div className="rounded-2xl border border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20 px-5 py-4 text-sm text-green-800 dark:text-green-400 font-medium">
-                        ✓ Orientation completed. You can now submit the application.
-                      </div>
-                    )}
+                    {!orientationComplete && <div className="rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10 px-5 py-4 text-sm text-amber-900 dark:text-amber-400 font-medium">Submit Application will stay disabled until orientation is completed and the assessment passing score is met.</div>}
+                    {orientationComplete  && <div className="rounded-2xl border border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20 px-5 py-4 text-sm text-green-800 dark:text-green-400 font-medium">✓ Orientation completed. You can now submit the application.</div>}
                   </CardContent>
                 </Card>
 
                 <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                  <button type="button" onClick={() => setStep(3)} className={`inline-flex items-center justify-center ${navButtonClass}`}>
-                    <ChevronLeft className="w-4 h-4" /> Back
-                  </button>
+                  <button type="button" onClick={() => setStep(3)} className={`inline-flex items-center justify-center ${navButtonClass}`}><ChevronLeft className="w-4 h-4" /> Back</button>
                   <button
                     type="button"
                     disabled={!orientationComplete || saving}
                     onClick={submitFinalApplication}
                     className={`inline-flex items-center justify-center ${orientationComplete && !saving ? primaryButtonClass : 'rounded-full bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 font-black uppercase tracking-widest text-xs px-8 py-3 cursor-not-allowed'}`}
                   >
-                    {saving ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</>
-                    ) : (
-                      <>Submit Application <ArrowRight className="ml-2 w-4 h-4" /></>
-                    )}
+                    {saving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</> : <>Submit Application <ArrowRight className="ml-2 w-4 h-4" /></>}
                   </button>
                 </div>
               </div>
@@ -1813,42 +1613,5 @@ export function MembershipApply() {
         </section>
       </div>
     </>
-  );
-}
-
-/* ─── Hero Section ─── */
-function HeroSection({ heroVisible, membershipTypeLabel }: { heroVisible: boolean; membershipTypeLabel: string }) {
-  return (
-    <section className="relative min-h-[50dvh] sm:min-h-[60dvh] flex items-center justify-center overflow-hidden">
-      <div
-        className="absolute inset-0 bg-[url('/src/images/bghd.jpg')] bg-cover bg-center"
-        style={{ transition: 'transform 20s linear', transform: heroVisible ? 'scale(1)' : 'scale(1.05)' }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-green-50/80 to-green-100/90 dark:from-[#022c22]/95 dark:via-[#064e3b]/95 dark:to-[#065f46]/95 transition-colors duration-500" />
-      <Particles />
-      <div
-        className={`relative z-10 max-w-7xl mx-auto px-6 text-center transition-all duration-1000 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-      >
-        <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-green-200/50 dark:bg-white/10 border border-green-300 dark:border-white/20 backdrop-blur-md">
-          <div className="w-2.5 h-2.5 bg-green-600 dark:bg-green-400 rounded-full animate-pulse" />
-          <span className="text-xs sm:text-sm text-green-900 dark:text-white/90 font-medium uppercase tracking-widest">Application Form</span>
-        </div>
-        <h1 className="text-4xl sm:text-6xl font-extrabold mb-4 uppercase tracking-tight text-gray-900 dark:text-white leading-[0.95]">
-          Membership{' '}
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-700 to-green-500 dark:from-green-400 dark:to-green-200">
-            Application
-          </span>
-        </h1>
-        {membershipTypeLabel && (
-          <p className="text-base sm:text-lg text-gray-600 dark:text-white/70 mb-2 font-medium">
-            Applying as:{' '}
-            <span className="text-green-700 dark:text-green-400 font-black uppercase tracking-wide">{membershipTypeLabel}</span>
-          </p>
-        )}
-        <p className="text-base sm:text-lg text-gray-700 dark:text-white/70 max-w-xl mx-auto font-medium leading-relaxed">
-          Complete the form below to begin your journey with us.
-        </p>
-      </div>
-    </section>
   );
 }
